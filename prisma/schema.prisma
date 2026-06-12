@@ -1,0 +1,271 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ──────────────────────────────────────
+// ENUMS
+// ──────────────────────────────────────
+
+enum UserRole {
+  INSPECTOR       // ช่างตรวจ
+  SUPERVISOR      // QC / Supervisor
+  WAREHOUSE       // Warehouse Staff
+  BRANCH_MANAGER  // ผู้จัดการสาขา
+  ADMIN           // Admin
+}
+
+enum PdiType {
+  INCOMING        // ตรวจรถลงเรือ (24h SLA)
+  LONG_TERM       // ตรวจรถค้าง stock
+  PRE_DELIVERY    // ตรวจก่อนส่งมอบ
+}
+
+enum PdiStatus {
+  PENDING         // รอตรวจ
+  IN_PROGRESS     // กำลังตรวจ
+  DEFECT_FOUND    // พบ defect รอแก้ไข
+  PENDING_APPROVAL // รอ supervisor อนุมัติ
+  APPROVED        // อนุมัติแล้ว
+  REJECTED        // ถูก reject ให้ตรวจใหม่
+}
+
+enum CheckResult {
+  PASS            // ปกติ √
+  FAIL            // ผิดปกติ ×
+  REPAIRED        // แก้ไขแล้ว ○
+  NA              // ไม่มีในรุ่นนี้ -
+}
+
+enum DefectStatus {
+  OPEN
+  IN_REPAIR
+  RESOLVED
+  CLOSED
+}
+
+enum DocumentType {
+  PDI_CHECKLIST
+  BATTERY_REPORT
+  VEHICLE_REPORT
+  DELIVERY_FORM
+  PDPA_CONSENT
+}
+
+// ──────────────────────────────────────
+// USERS & BRANCHES
+// ──────────────────────────────────────
+
+model Branch {
+  id          String    @id @default(cuid())
+  code        String    @unique              // เช่น "MBR", "RMN"
+  name        String                         // เช่น "มีนบุรี"
+  address     String?
+  users       User[]
+  vehicles    Vehicle[]
+  createdAt   DateTime  @default(now())
+}
+
+model User {
+  id            String    @id @default(cuid())
+  employeeId    String    @unique
+  name          String
+  email         String?   @unique
+  passwordHash  String
+  role          UserRole
+  branch        Branch    @relation(fields: [branchId], references: [id])
+  branchId      String
+  isActive      Boolean   @default(true)
+  pdiJobs       PdiJob[]  @relation("AssignedInspector")
+  approvals     PdiJob[]  @relation("Approver")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ──────────────────────────────────────
+// VEHICLE MASTER
+// ──────────────────────────────────────
+
+model Vehicle {
+  id              String    @id @default(cuid())
+  vin             String    @unique           // Primary key ทุก process
+  engineNumber    String?
+  modelCode       String                     // เช่น "AION_V", "AION_UT", "HYPTEC_HT"
+  modelName       String                     // เช่น "AION V", "HYPTEC HT 620 Premium"
+  colorCode       String?
+  colorName       String?
+  exteriorColor   String?                    // ลักษณะสีภายนอก
+  interiorColor   String?                    // ลักษณะสีภายใน
+  wsDate          DateTime?                  // Wholesale Date (วันที่ซื้อเข้า Stock)
+  productionYear  Int?                       // ปีผลิตรถ
+  branch          Branch    @relation(fields: [branchId], references: [id])
+  branchId        String
+  warehouse       String?                    // ชื่อ warehouse
+  floorplan       String?                    // zone / floorplan
+  arrivedAt       DateTime                   // วันที่รถลงเรือ / เข้า stock
+  incomingDeadline DateTime                  // arrivedAt + 24h (สำหรับ Incoming PDI SLA)
+  currentStatus   String    @default("IN_STOCK")
+  pdiJobs         PdiJob[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// ──────────────────────────────────────
+// PDI JOB
+// ──────────────────────────────────────
+
+model PdiJob {
+  id              String      @id @default(cuid())
+  jobNumber       String      @unique       // JO-YYYYMMDD-XXXX
+  pdiType         PdiType
+  status          PdiStatus   @default(PENDING)
+  vehicle         Vehicle     @relation(fields: [vehicleVin], references: [vin])
+  vehicleVin      String
+  inspector       User?       @relation("AssignedInspector", fields: [inspectorId], references: [id])
+  inspectorId     String?
+  approver        User?       @relation("Approver", fields: [approverId], references: [id])
+  approverId      String?
+
+  // สำหรับ Long-term: interval
+  ltmInterval     Int?                      // 30, 60, 90 วัน
+  scheduledDate   DateTime?                 // วันที่กำหนดตรวจ
+
+  // สำหรับ Pre-delivery
+  targetDeliveryDate DateTime?              // วันส่งมอบ
+  salesName          String?               // ชื่อ Sales
+  customerName       String?               // ชื่อลูกค้า (masked per PDPA)
+  customerPhone      String?               // เบอร์โทร (masked)
+
+  // Timestamps
+  startedAt       DateTime?
+  completedAt     DateTime?
+  approvedAt      DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  checklistItems  ChecklistResult[]
+  defects         Defect[]
+  documents       JobDocument[]
+  notes           String?
+}
+
+// ──────────────────────────────────────
+// CHECKLIST TEMPLATE (Master data ต่อรุ่น)
+// ──────────────────────────────────────
+
+model ChecklistTemplate {
+  id          String              @id @default(cuid())
+  modelCode   String                            // "AION_V", "AION_UT", etc.
+  pdiType     PdiType
+  version     String              @default("1.0")
+  isActive    Boolean             @default(true)
+  items       ChecklistItem[]
+  createdAt   DateTime            @default(now())
+  
+  @@unique([modelCode, pdiType, version])
+}
+
+model ChecklistItem {
+  id            String            @id @default(cuid())
+  template      ChecklistTemplate @relation(fields: [templateId], references: [id])
+  templateId    String
+  category      String            // หมวด เช่น "ลักษณะภายนอก", "ไฟส่องสว่าง"
+  categoryOrder Int               // ลำดับหมวด
+  itemCode      String            // รหัส item เช่น "EXT_001"
+  itemName      String            // ชื่อรายการตรวจ
+  itemOrder     Int               // ลำดับใน category
+  isMandatory   Boolean           @default(true)
+  hasPhoto      Boolean           @default(false)  // ต้องถ่ายรูป?
+  hasNumeric    Boolean           @default(false)  // ต้องกรอกตัวเลข?
+  numericUnit   String?                            // เช่น "V", "%", "psi"
+  numericMin    Float?                             // ค่าต่ำสุดที่ผ่าน
+  numericMax    Float?                             // ค่าสูงสุด
+  notes         String?                            // คำอธิบายเพิ่มเติม
+  results       ChecklistResult[]
+}
+
+// ──────────────────────────────────────
+// CHECKLIST RESULT (ผลตรวจจริงต่อ Job)
+// ──────────────────────────────────────
+
+model ChecklistResult {
+  id            String          @id @default(cuid())
+  job           PdiJob          @relation(fields: [jobId], references: [id])
+  jobId         String
+  item          ChecklistItem   @relation(fields: [itemId], references: [id])
+  itemId        String
+  result        CheckResult     @default(PASS)
+  numericValue  Float?          // สำหรับ battery voltage, SOH, etc.
+  numericValue2 Float?          // สำหรับ AION V dual battery (รอง)
+  photoUrl      String?         // URL รูปประกอบ
+  remark        String?
+  checkedAt     DateTime        @default(now())
+  
+  @@unique([jobId, itemId])
+}
+
+// ──────────────────────────────────────
+// DEFECT
+// ──────────────────────────────────────
+
+model Defect {
+  id            String        @id @default(cuid())
+  job           PdiJob        @relation(fields: [jobId], references: [id])
+  jobId         String
+  defectNo      Int           // ลำดับ 1, 2, 3...
+  checklistItemCode String?   // อ้างอิง item ที่พบปัญหา (optional)
+  description   String        // รายละเอียดปัญหา
+  cause         String?       // สาเหตุ
+  solution      String?       // วิธีแก้ไข
+  severity      String        @default("NORMAL") // NORMAL, CRITICAL
+  status        DefectStatus  @default(OPEN)
+  photoUrl      String?
+  resolvedAt    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+// ──────────────────────────────────────
+// DOCUMENTS (PDI, Battery Report, PDPA, etc.)
+// ──────────────────────────────────────
+
+model JobDocument {
+  id            String        @id @default(cuid())
+  job           PdiJob        @relation(fields: [jobId], references: [id])
+  jobId         String
+  docType       DocumentType
+  fileName      String
+  fileUrl       String        // path หรือ S3 URL
+  fileSize      Int?          // bytes
+  uploadedBy    String?       // userId
+  uploadedAt    DateTime      @default(now())
+  isVerified    Boolean       @default(false)
+}
+
+// ──────────────────────────────────────
+// BATTERY TEST RESULT (แยกตาราง เพราะมีหลาย field)
+// ──────────────────────────────────────
+
+model BatteryTestResult {
+  id              String    @id @default(cuid())
+  jobId           String    @unique
+  // Main battery (ทุกรุ่น)
+  mainVoltage     Float?    // V (≥ 12.6V)
+  mainSoh         Float?    // % (≥ 80%)
+  mainCca         Float?    // A (สำหรับ AION YP ≥ 400A)
+  mainSoc         Float?    // % (AION YP = 100%)
+  // Secondary battery (AION V เท่านั้น)
+  secVoltage      Float?
+  secSoh          Float?
+  // HV Battery level
+  hvBatteryLevel  Float?    // % (AION YP ≥ 50%)
+  // Tire pressure (AION YP)
+  tirePressure    Float?    // psi (35-39 psi)
+  // Report image URL (Midtronics printout)
+  reportPhotoUrl  String?
+  testedAt        DateTime  @default(now())
+}
