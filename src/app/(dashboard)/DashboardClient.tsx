@@ -7,6 +7,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Button } from '@/components/ui/button';
 import { Clock, CheckCircle, AlertCircle, Play, ShieldAlert, ArrowUpRight, ShieldCheck, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
+import { getPdiRouteSlug } from '@/lib/utils';
 
 interface DashboardClientProps {
   initialJobs: any[];
@@ -258,7 +259,7 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
                       <SlaTimerRow job={job} />
                     </div>
 
-                    <Link href={`/pdi/${job.pdiType.toLowerCase()}/${job.id}`}>
+                    <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
                       <Button size="sm" className="h-8 gap-1">
                         <span>เริ่มตรวจ</span>
                         <ArrowUpRight className="w-3.5 h-3.5" />
@@ -345,7 +346,7 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
                       {job.scheduledDate ? new Date(job.scheduledDate).toLocaleDateString('th-TH') : '-'}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Link href={`/pdi/${job.pdiType.toLowerCase()}/${job.id}`}>
+                      <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
                         <Button variant="outline" size="sm" className="h-8 text-xs px-2.5">
                           {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ทำรายการ'}
                         </Button>

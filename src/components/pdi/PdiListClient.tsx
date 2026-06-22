@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Clock, CheckCircle, AlertCircle, Play, ShieldAlert, ArrowUpRight, Search, Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
+import { getPdiRouteSlug } from '@/lib/utils';
 
 interface PdiListClientProps {
   pdiType: 'INCOMING' | 'LONG_TERM' | 'PRE_DELIVERY';
@@ -237,7 +238,7 @@ export default function PdiListClient({ pdiType, initialJobs, isDbConnected }: P
 
                     <TableCell className="text-xs">{job.inspector?.name || '-'}</TableCell>
                     <TableCell className="text-right">
-                      <Link href={`/pdi/${pdiType.toLowerCase()}/${job.id}`}>
+                      <Link href={`/pdi/${getPdiRouteSlug(pdiType)}/${job.id}`}>
                         <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5">
                           {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ลงบันทึกตรวจ'}
                         </Button>

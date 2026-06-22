@@ -244,7 +244,7 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
   const isInspector = userRole === 'INSPECTOR' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
   const isQC = userRole === 'SUPERVISOR' || userRole === 'BRANCH_MANAGER' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
   
-  const readOnly = job.status === 'APPROVED' || job.status === 'REJECTED' || job.status === 'PENDING_APPROVAL';
+  const readOnly = job.status === 'APPROVED' || (job.status === 'PENDING_APPROVAL' && !isQC);
 
   return (
     <div className="space-y-6">

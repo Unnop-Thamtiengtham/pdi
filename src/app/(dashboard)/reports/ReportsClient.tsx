@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Search, Printer, FileText, CheckCircle2, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, getPdiRouteSlug } from '@/lib/utils';
 
 interface ReportsClientProps {
   initialJobs: any[];
@@ -135,7 +135,7 @@ export default function ReportsClient({ initialJobs, isDbConnected }: ReportsCli
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Link href={`/pdi/${job.pdiType.toLowerCase()}/${job.id}`}>
+                        <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
                           <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5 gap-1">
                             <FileText className="w-3.5 h-3.5" />
                             <span>ดูผล</span>

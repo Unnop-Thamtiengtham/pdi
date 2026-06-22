@@ -18,6 +18,20 @@ export function formatDateTime(dateInput: Date | string | null | undefined): str
   }) + ' น.';
 }
 
+/**
+ * แปลง PdiType enum (เช่น "LONG_TERM") ให้เป็น route slug
+ * ที่ตรงกับชื่อโฟลเดอร์ใน Next.js App Router
+ */
+const pdiTypeRouteMap: Record<string, string> = {
+  INCOMING: 'incoming',
+  LONG_TERM: 'longterm',
+  PRE_DELIVERY: 'predelivery',
+};
+
+export function getPdiRouteSlug(pdiType: string): string {
+  return pdiTypeRouteMap[pdiType] || pdiType.toLowerCase();
+}
+
 export function formatLocalDate(dateInput: Date | string | null | undefined): string {
   if (!dateInput) return '-';
   const date = new Date(dateInput);

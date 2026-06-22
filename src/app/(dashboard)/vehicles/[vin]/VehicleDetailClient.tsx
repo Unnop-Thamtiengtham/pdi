@@ -11,7 +11,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { ArrowLeft, Plus, Calendar, UserCheck, Shield, Clipboard, MapPin, BarChart2, Car } from 'lucide-react';
 import Link from 'next/link';
-import { formatDateTime, formatLocalDate } from '@/lib/utils';
+import { formatDateTime, formatLocalDate, getPdiRouteSlug } from '@/lib/utils';
 
 interface VehicleDetailClientProps {
   initialVehicle: any;
@@ -460,7 +460,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                         <TableCell className="text-xs">{job.inspector?.name || '-'}</TableCell>
                         <TableCell className="text-xs">{new Date(job.createdAt).toLocaleDateString('th-TH')}</TableCell>
                         <TableCell className="text-right">
-                          <Link href={`/pdi/${job.pdiType.toLowerCase()}/${job.id}`}>
+                          <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
                             <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5">
                               {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ตรวจรถ'}
                             </Button>
