@@ -304,59 +304,61 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
         </CardHeader>
 
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>เลขที่งาน (Job No.)</TableHead>
-                <TableHead>รุ่นรถ (Model)</TableHead>
-                <TableHead>เลขตัวถัง (VIN)</TableHead>
-                <TableHead>ประเภท (PDI Type)</TableHead>
-                <TableHead>สถานะ (Status)</TableHead>
-                <TableHead>วันครบกำหนด (Deadline)</TableHead>
-                <TableHead className="text-right">จัดการ (Action)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredJobs.length === 0 ? (
+          <div className="overflow-x-auto w-full">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-slate-500">
-                    ไม่พบข้อมูลรายการงานตรวจ PDI
-                  </TableCell>
+                  <TableHead>เลขที่งาน (Job No.)</TableHead>
+                  <TableHead>รุ่นรถ (Model)</TableHead>
+                  <TableHead>เลขตัวถัง (VIN)</TableHead>
+                  <TableHead>ประเภท (PDI Type)</TableHead>
+                  <TableHead>สถานะ (Status)</TableHead>
+                  <TableHead>วันครบกำหนด (Deadline)</TableHead>
+                  <TableHead className="text-right">จัดการ (Action)</TableHead>
                 </TableRow>
-              ) : (
-                filteredJobs.map((job) => (
-                  <TableRow key={job.id}>
-                    <TableCell className="font-mono text-xs text-slate-800 font-medium select-all">{job.jobNumber}</TableCell>
-                    <TableCell className="text-xs">{job.vehicle?.modelName}</TableCell>
-                    <TableCell className="font-mono text-xs select-all">{job.vehicleVin}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {job.pdiType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {job.status === 'PENDING' && <Badge variant="default">รอตรวจ</Badge>}
-                      {job.status === 'IN_PROGRESS' && <Badge variant="info">กำลังตรวจ</Badge>}
-                      {job.status === 'DEFECT_FOUND' && <Badge variant="danger">พบจุดชำรุด</Badge>}
-                      {job.status === 'PENDING_APPROVAL' && <Badge variant="warning">รอ QC อนุมัติ</Badge>}
-                      {job.status === 'APPROVED' && <Badge variant="success">ผ่านการตรวจ</Badge>}
-                      {job.status === 'REJECTED' && <Badge variant="danger">ถูกปฏิเสธ</Badge>}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {job.scheduledDate ? new Date(job.scheduledDate).toLocaleDateString('th-TH') : '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
-                        <Button variant="outline" size="sm" className="h-8 text-xs px-2.5">
-                          {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ทำรายการ'}
-                        </Button>
-                      </Link>
+              </TableHeader>
+              <TableBody>
+                {filteredJobs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-12 text-slate-500">
+                      ไม่พบข้อมูลรายการงานตรวจ PDI
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredJobs.map((job) => (
+                    <TableRow key={job.id}>
+                      <TableCell className="font-mono text-xs text-slate-800 font-medium select-all">{job.jobNumber}</TableCell>
+                      <TableCell className="text-xs">{job.vehicle?.modelName}</TableCell>
+                      <TableCell className="font-mono text-xs select-all">{job.vehicleVin}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {job.pdiType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {job.status === 'PENDING' && <Badge variant="default">รอตรวจ</Badge>}
+                        {job.status === 'IN_PROGRESS' && <Badge variant="info">กำลังตรวจ</Badge>}
+                        {job.status === 'DEFECT_FOUND' && <Badge variant="danger">พบจุดชำรุด</Badge>}
+                        {job.status === 'PENDING_APPROVAL' && <Badge variant="warning">รอ QC อนุมัติ</Badge>}
+                        {job.status === 'APPROVED' && <Badge variant="success">ผ่านการตรวจ</Badge>}
+                        {job.status === 'REJECTED' && <Badge variant="danger">ถูกปฏิเสธ</Badge>}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {job.scheduledDate ? new Date(job.scheduledDate).toLocaleDateString('th-TH') : '-'}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
+                          <Button variant="outline" size="sm" className="h-8 text-xs px-2.5 whitespace-nowrap">
+                            {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ทำรายการ'}
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
