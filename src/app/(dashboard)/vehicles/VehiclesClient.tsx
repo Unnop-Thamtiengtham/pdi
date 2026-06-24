@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,14 +9,141 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Plus, Car, Calendar, Sliders, ChevronRight } from 'lucide-react';
+import { Plus, Car, Calendar, Sliders, ChevronRight, Download, Upload, FileSpreadsheet, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
+// @ts-ignore
+import XLSX from 'xlsx-js-style';
+import { toast } from 'sonner';
 
 interface VehiclesClientProps {
   initialVehicles: any[];
   branches: any[];
   isDbConnected: boolean;
 }
+
+const pdiStatusMap: Record<string, string> = {
+  PENDING: 'รอตรวจ',
+  IN_PROGRESS: 'กำลังตรวจ',
+  PENDING_APPROVAL: 'รอ QC',
+  APPROVED: 'อนุมัติแล้ว',
+  REJECTED: 'ถูก Reject',
+};
+
+const formatWorksheet = (ws: any, hasHeader = true, fontName = 'Segoe UI') => {
+  if (!ws || !ws['!ref']) return;
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const cols: any[] = [];
+
+  const isSarabun = fontName === 'TH Sarabun New';
+  const defaultSize = isSarabun ? 14 : 10;
+  const headerSize = isSarabun ? 16 : 11;
+  const monoSize = isSarabun ? 13 : 9.5;
+
+  // Initialize column widths with default 15
+  for (let C = range.s.c; C <= range.e.c; ++C) {
+    cols.push({ wch: 15 });
+  }
+
+  for (const cellRef in ws) {
+    if (cellRef.startsWith('!')) continue;
+    const cell = ws[cellRef];
+    if (!cell) continue;
+
+    const cellDecoded = XLSX.utils.decode_cell(cellRef);
+    const row = cellDecoded.r;
+    const col = cellDecoded.c;
+
+    // Find the header text for this column
+    const headerCellRef = XLSX.utils.encode_cell({ r: 0, c: col });
+    const headerText = ws[headerCellRef]?.v ? String(ws[headerCellRef].v).toLowerCase() : '';
+
+    // Auto-calculate column width
+    const textVal = cell.v ? String(cell.v) : '';
+    const len = textVal.split('').reduce((acc: number, char: string) => {
+      return acc + (char.charCodeAt(0) > 127 ? 1.5 : 1);
+    }, 0);
+
+    if (len > (cols[col].wch - 3)) {
+      cols[col].wch = Math.min(Math.ceil(len + 4), 40);
+    }
+
+    // Default style
+    const style: any = {
+      font: { name: fontName, sz: defaultSize, color: { rgb: '334155' } },
+      alignment: { vertical: 'center' },
+      border: {
+        bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
+        top: { style: 'thin', color: { rgb: 'E2E8F0' } },
+        left: { style: 'thin', color: { rgb: 'E2E8F0' } },
+        right: { style: 'thin', color: { rgb: 'E2E8F0' } }
+      }
+    };
+
+    // Header styling
+    if (hasHeader && row === 0) {
+      style.font = { name: fontName, sz: headerSize, bold: true, color: { rgb: '1E293B' } };
+      style.fill = { fgColor: { rgb: 'F1F5F9' } }; // slate-100
+      style.alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
+      style.border = {
+        bottom: { style: 'medium', color: { rgb: '94A3B8' } }, // slate-400
+        top: { style: 'thin', color: { rgb: 'CBD5E1' } },
+        left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+        right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+      };
+    } else {
+      // Cell styling based on header name
+      if (headerText.includes('vin') || headerText.includes('ตัวถัง')) {
+        style.font = { name: isSarabun ? fontName : 'Consolas', sz: defaultSize, bold: true, color: { rgb: '0F172A' } };
+        style.alignment = { horizontal: 'center', vertical: 'center' };
+      } 
+      else if (headerText.includes('code') || headerText.includes('รหัส')) {
+        style.font = { name: isSarabun ? fontName : 'Consolas', sz: monoSize, color: { rgb: '475569' } };
+        if (headerText.includes('branch') || headerText.includes('สาขา')) {
+          style.alignment = { horizontal: 'center', vertical: 'center' };
+        }
+      } 
+      else if (headerText.includes('year') || headerText.includes('date') || headerText.includes('ปี') || headerText.includes('วัน')) {
+        style.alignment = { horizontal: 'center', vertical: 'center' };
+      } 
+      else if (headerText.includes('status') || headerText.includes('สถานะ')) {
+        style.alignment = { horizontal: 'center', vertical: 'center' };
+        
+        const v = String(cell.v);
+        if (v.includes('อนุมัติแล้ว') || v.includes('ใน Stock')) {
+          style.font.bold = true;
+          style.font.color = { rgb: '166534' }; // green-800
+          style.fill = { fgColor: { rgb: 'DCFCE7' } }; // green-100
+        } else if (v.includes('ถูก Reject') || v.includes('ส่งมอบแล้ว')) {
+          style.font.bold = true;
+          style.font.color = { rgb: '991B1B' }; // red-800
+          style.fill = { fgColor: { rgb: 'FEE2E2' } }; // red-100
+        } else if (v.includes('กำลังตรวจ')) {
+          style.font.bold = true;
+          style.font.color = { rgb: '0F766E' }; // teal-800
+          style.fill = { fgColor: { rgb: 'CCFBF1' } }; // teal-100
+        } else if (v.includes('รอ QC')) {
+          style.font.bold = true;
+          style.font.color = { rgb: '92400E' }; // amber-800
+          style.fill = { fgColor: { rgb: 'FEF3C7' } }; // amber-100
+        } else if (v.includes('รอตรวจ')) {
+          style.font.bold = true;
+          style.font.color = { rgb: '475569' }; // slate-600
+          style.fill = { fgColor: { rgb: 'F1F5F9' } }; // slate-100
+        }
+      }
+    }
+
+    cell.s = style;
+  }
+
+  ws['!cols'] = cols;
+
+  const rows: any[] = [];
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    rows.push({ hpt: R === 0 ? (isSarabun ? 34 : 28) : (isSarabun ? 26 : 22) });
+  }
+  ws['!rows'] = rows;
+};
 
 export default function VehiclesClient({ initialVehicles, branches, isDbConnected }: VehiclesClientProps) {
   const [vehicles, setVehicles] = useState(
@@ -72,6 +199,224 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
   const [floorplan, setFloorplan] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Excel Import & Export States
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importVehicles, setImportVehicles] = useState<any[]>([]);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [importLoading, setImportLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportExcel = () => {
+    const exportData = vehicles.map(v => {
+      const latestJob = v.pdiJobs?.[0];
+      const pdiStatusStr = latestJob 
+        ? `${latestJob.pdiType}: ${pdiStatusMap[latestJob.status] || latestJob.status}` 
+        : 'ไม่มีงานตรวจ';
+      return {
+        'เลขตัวถัง (VIN)': v.vin,
+        'รุ่นโมเดล (Model)': v.modelName || v.modelCode,
+        'รหัสรุ่น (Model Code)': v.modelCode,
+        'สีหลัก (Color)': v.colorName,
+        'ลักษณะสีภายนอก (Exterior Color)': v.exteriorColor || '',
+        'โทนสีภายใน (Interior Color)': v.interiorColor || '',
+        'ปีที่ผลิต (Year)': v.productionYear || '',
+        'วันที่ขายส่ง (WSDate)': v.wsDate ? new Date(v.wsDate).toLocaleDateString('th-TH') : '',
+        'วันที่เข้าคลัง (Arrived)': v.arrivedAt ? new Date(v.arrivedAt).toLocaleDateString('th-TH') : '',
+        'คลังสินค้า (Warehouse)': v.warehouse || '',
+        'ตำแหน่งจอด (Floorplan)': v.floorplan || '',
+        'สาขา (Branch)': v.branch?.name || '',
+        'สถานะสต็อก (Stock Status)': v.currentStatus === 'IN_STOCK' ? 'ใน Stock' : 'ส่งมอบแล้ว',
+        'สถานะ PDI (PDI Status)': pdiStatusStr
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    formatWorksheet(ws);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Stock');
+    XLSX.writeFile(wb, `pdi_vehicles_stock_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        'เลขตัวถัง': 'LNAT4AB34T5G00001',
+        'รหัสรุ่น': 'AION_V',
+        'สีหลัก': 'Space Gray',
+        'สีภายนอก': 'Gray Metallic',
+        'สีภายใน': 'Coal Black',
+        'ปีผลิต': 2026,
+        'วันที่ขายส่ง': '2026-06-23',
+        'โกดัง': 'คลังท่าเรือแหลมฉบัง',
+        'ตำแหน่งจอด': 'Zone A-3',
+        'รหัสสาขา': 'MBR'
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    formatWorksheet(ws, true, 'TH Sarabun New');
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    XLSX.writeFile(wb, 'pdi_import_vehicles_template.xlsx');
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = event.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rawRows = XLSX.utils.sheet_to_json(sheet) as any[];
+
+        if (rawRows.length === 0) {
+          toast.error('ไม่พบข้อมูลรถยนต์ในไฟล์ Excel');
+          return;
+        }
+
+        const parsedRows = rawRows.map(row => ({
+          vin: row.vin || row['เลขตัวถัง'] || row['VIN'] || '',
+          modelCode: row.modelCode || row['รหัสรุ่น'] || row['Model Code'] || '',
+          colorName: row.colorName || row['สีหลัก'] || row['Color'] || '',
+          exteriorColor: row.exteriorColor || row['สีภายนอก'] || row['Exterior Color'] || '',
+          interiorColor: row.interiorColor || row['สีภายใน'] || row['Interior Color'] || '',
+          productionYear: row.productionYear || row['ปีผลิต'] || row['Year'] || '',
+          wsDate: row.wsDate || row['วันที่ขายส่ง'] || row['WSDate'] || '',
+          warehouse: row.warehouse || row['โกดัง'] || row['Warehouse'] || '',
+          floorplan: row.floorplan || row['ตำแหน่งจอด'] || row['Floorplan'] || '',
+          branchCode: row.branchCode || row['รหัสสาขา'] || row['Branch Code'] || '',
+        }));
+
+        const clientErrors: string[] = [];
+        const validModelCodes = ['AION_V', 'AION_UT', 'AION_YP', 'AION_ES', 'HYPTEC_HT', 'HYPTEC_SSR', 'GAC_M8'];
+        const branchCodesInDb = branches.map(b => b.code.toUpperCase());
+        const existingVinsInDb = new Set(vehicles.map(v => v.vin.toUpperCase()));
+        const seenVins = new Set<string>();
+
+        parsedRows.forEach((row, idx) => {
+          const rowNum = idx + 1;
+          
+          if (!row.vin) {
+            clientErrors.push(`แถวที่ ${rowNum}: ไม่มีเลขตัวถัง (VIN)`);
+          } else {
+            const vinUpper = String(row.vin).trim().toUpperCase();
+            if (existingVinsInDb.has(vinUpper)) {
+              clientErrors.push(`แถวที่ ${rowNum}: เลขตัวถัง (VIN) "${row.vin}" มีอยู่ในระบบแล้ว`);
+            }
+            if (seenVins.has(vinUpper)) {
+              clientErrors.push(`แถวที่ ${rowNum}: เลขตัวถัง (VIN) "${row.vin}" ซ้ำกับรายการอื่นในไฟล์`);
+            }
+            seenVins.add(vinUpper);
+          }
+
+          if (!row.modelCode) {
+            clientErrors.push(`แถวที่ ${rowNum}: ไม่มีรหัสรุ่นรถ (modelCode)`);
+          } else if (!validModelCodes.includes(String(row.modelCode).trim())) {
+            clientErrors.push(`แถวที่ ${rowNum}: รหัสรุ่น "${row.modelCode}" ไม่ถูกต้อง (เลือกได้เฉพาะ: AION_V, AION_UT, AION_YP, AION_ES, HYPTEC_HT, HYPTEC_SSR, GAC_M8)`);
+          }
+
+          if (!row.colorName) {
+            clientErrors.push(`แถวที่ ${rowNum}: ไม่มีสีหลักภายนอก (colorName)`);
+          }
+
+          if (!row.branchCode) {
+            clientErrors.push(`แถวที่ ${rowNum}: ไม่มีรหัสสาขา (branchCode)`);
+          } else {
+            const bCode = String(row.branchCode).trim().toUpperCase();
+            if (isDbConnected && !branchCodesInDb.includes(bCode)) {
+              clientErrors.push(`แถวที่ ${rowNum}: รหัสสาขา "${row.branchCode}" ไม่ถูกต้อง (สาขาที่มี: ${branchCodesInDb.join(', ')})`);
+            }
+          }
+
+          if (!row.wsDate) {
+            clientErrors.push(`แถวที่ ${rowNum}: ไม่มีวันที่ wsDate`);
+          } else {
+            let dateVal = row.wsDate;
+            if (typeof dateVal === 'number') {
+              const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+              dateVal = new Date(excelEpoch.getTime() + dateVal * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+              row.wsDate = dateVal;
+            }
+            const d = new Date(dateVal);
+            if (isNaN(d.getTime())) {
+              clientErrors.push(`แถวที่ ${rowNum}: วันที่ wsDate "${row.wsDate}" รูปแบบไม่ถูกต้อง`);
+            }
+          }
+        });
+
+        setImportVehicles(parsedRows);
+        setImportErrors(clientErrors);
+        setIsImportOpen(true);
+      } catch (err) {
+        console.error(err);
+        toast.error('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel');
+      } finally {
+        if (e.target) e.target.value = '';
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const handleConfirmImport = async () => {
+    if (importErrors.length > 0) {
+      toast.warning('กรุณาแก้ไขข้อผิดพลาดในไฟล์ Excel ก่อนทำการนำเข้า');
+      return;
+    }
+
+    setImportLoading(true);
+    try {
+      if (isDbConnected) {
+        const res = await fetch('/api/vehicles/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vehicles: importVehicles }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to import vehicles');
+        }
+
+        const data = await res.json();
+        toast.success(`นำเข้าเรียบร้อยแล้ว: ${data.message}`);
+        
+        const refreshRes = await fetch('/api/vehicles');
+        if (refreshRes.ok) {
+          const updatedList = await refreshRes.json();
+          setVehicles(updatedList);
+        }
+      } else {
+        const mockImported = importVehicles.map((v, i) => ({
+          vin: String(v.vin).toUpperCase(),
+          modelCode: v.modelCode,
+          modelName: modelMap[v.modelCode] || v.modelCode,
+          colorName: v.colorName,
+          exteriorColor: v.exteriorColor,
+          interiorColor: v.interiorColor,
+          productionYear: parseInt(v.productionYear) || 2026,
+          wsDate: new Date(v.wsDate).toISOString(),
+          arrivedAt: new Date().toISOString(),
+          currentStatus: 'IN_STOCK',
+          branch: { name: branches.find(b => b.code.toUpperCase() === String(v.branchCode).toUpperCase())?.name || 'มีนบุรี' },
+          pdiJobs: [{ id: `mock-import-${Date.now()}-${i}`, pdiType: 'INCOMING', status: 'PENDING' }],
+        }));
+        setVehicles([...mockImported, ...vehicles]);
+        toast.success(`[Mock Mode] จำลองการนำเข้ารถยนต์สำเร็จ ${mockImported.length} คัน`);
+      }
+      window.dispatchEvent(new Event('pdi-job-updated'));
+      setIsImportOpen(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   const modelMap: Record<string, string> = {
     AION_V: 'AION V',
     AION_UT: 'AION UT',
@@ -85,7 +430,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vin || !colorName || !wsDate) {
-      alert('กรุณากรอกข้อมูลสำคัญ: เลขตัวถัง (VIN), สีหลัก, วันที่ Wholesale');
+      toast.warning('กรุณากรอกข้อมูลสำคัญ: เลขตัวถัง (VIN), สีหลัก, วันที่ Wholesale');
       return;
     }
 
@@ -131,7 +476,8 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
         setVehicles([mockNewVeh, ...vehicles]);
       }
 
-      alert('ลงทะเบียนรถเข้า Stock เรียบร้อย และระบบได้สั่งการสร้าง Incoming PDI Job อัตโนมัติ');
+      window.dispatchEvent(new Event('pdi-job-updated'));
+      toast.success('ลงทะเบียนรถเข้า Stock เรียบร้อย และระบบได้สั่งการสร้าง Incoming PDI Job อัตโนมัติ');
       setIsDialogOpen(false);
       // Reset form
       setVin('');
@@ -143,7 +489,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
       setWsDate('');
     } catch (err: any) {
       console.error(err);
-      alert(`เกิดข้อผิดพลาด: ${err.message}`);
+      toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -152,20 +498,63 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-slate-800 tracking-wide">จัดการสต็อกรถยนต์ (Vehicle Stock)</h2>
           <p className="text-xs text-slate-500 mt-1">ทะเบียนรถในระบบ ตรวจสอบประวัติการรับรถและงาน PDI ครบวงจร</p>
         </div>
 
-        {/* Dialog register trigger */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-1.5 text-xs font-semibold">
-              <Plus className="w-4 h-4 text-slate-950" />
-              <span>ลงทะเบียนรับรถใหม่ (Receive Vehicle)</span>
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Download Template button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadTemplate}
+            className="gap-1.5 text-xs font-semibold border-slate-200 hover:bg-slate-50 text-slate-600"
+          >
+            <Download className="w-4 h-4 text-slate-500" />
+            <span>เทมเพลต (Template)</span>
+          </Button>
+
+          {/* Export Excel button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportExcel}
+            className="gap-1.5 text-xs font-semibold border-slate-200 hover:bg-slate-50 text-slate-600"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>ส่งออก Excel (Export)</span>
+          </Button>
+
+          {/* Hidden file input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".xlsx, .xls, .csv"
+            className="hidden"
+          />
+
+          {/* Import Excel button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="gap-1.5 text-xs font-semibold border-slate-200 hover:bg-slate-50 text-slate-600"
+          >
+            <Upload className="w-4 h-4 text-brand-teal" />
+            <span>นำเข้า Excel (Import)</span>
+          </Button>
+
+          {/* Dialog register trigger */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-1.5 text-xs font-semibold">
+                <Plus className="w-4 h-4 text-slate-950" />
+                <span>ลงทะเบียนรับรถใหม่ (Receive Vehicle)</span>
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-xl">
             <form onSubmit={handleRegister}>
               <DialogHeader>
@@ -175,8 +564,8 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="grid grid-cols-2 gap-4 py-4">
-                <div className="space-y-1.5 col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label className="text-xs text-slate-500">เลขตัวถัง (VIN) *</Label>
                   <Input
                     required
@@ -270,7 +659,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                   />
                 </div>
 
-                <div className="space-y-1.5 col-span-2">
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label className="text-xs text-slate-500">สาขาที่จัดสรร (Branch)</Label>
                   <Select value={branchId} onChange={(e: any) => setBranchId(e.target.value)}>
                     {isDbConnected && branches.length > 0 ? (
@@ -300,96 +689,182 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
           </DialogContent>
         </Dialog>
       </div>
+    </div>
 
       {/* Stock list table */}
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>เลขตัวถัง (VIN)</TableHead>
-                <TableHead>รุ่น (Model)</TableHead>
-                <TableHead>สี (ภายนอก/ภายใน)</TableHead>
-                <TableHead>ปีผลิต</TableHead>
-                <TableHead>โกดัง/ล็อค</TableHead>
-                <TableHead>วันที่เข้าคลัง</TableHead>
-                <TableHead>สถานะ Stock</TableHead>
-                <TableHead>สถานะ PDI</TableHead>
-                <TableHead className="text-right">ดูรายละเอียด</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {vehicles.length === 0 ? (
+          <div className="overflow-x-auto w-full">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-12 text-slate-500">
-                    ไม่มีข้อมูลรถยนต์ในสต็อก
-                  </TableCell>
+                  <TableHead>เลขตัวถัง (VIN)</TableHead>
+                  <TableHead>รุ่น (Model)</TableHead>
+                  <TableHead>สี (ภายนอก/ภายใน)</TableHead>
+                  <TableHead>ปีผลิต</TableHead>
+                  <TableHead>โกดัง/ล็อค</TableHead>
+                  <TableHead>วันที่เข้าคลัง</TableHead>
+                  <TableHead>สถานะ Stock</TableHead>
+                  <TableHead>สถานะ PDI</TableHead>
+                  <TableHead className="text-right">ดูรายละเอียด</TableHead>
                 </TableRow>
-              ) : (
-                vehicles.map((veh) => {
-                  // Find current PDI status
-                  const latestJob = veh.pdiJobs?.[0];
-                  
-                  return (
-                    <TableRow key={veh.vin}>
-                      <TableCell className="font-mono text-xs text-slate-800 font-medium select-all">{veh.vin}</TableCell>
-                      <TableCell className="text-xs font-semibold">{veh.modelName}</TableCell>
-                      <TableCell className="text-xs">
-                        <div className="text-slate-700">{veh.exteriorColor || veh.colorName || '-'}</div>
-                        <div className="text-slate-500 text-[10px]">ใน: {veh.interiorColor || '-'}</div>
-                      </TableCell>
-                      <TableCell className="text-xs font-mono">{veh.productionYear || '-'}</TableCell>
-                      <TableCell className="text-xs">
-                        <div className="text-slate-700">{veh.warehouse || '-'}</div>
-                        <div className="text-slate-500 text-[10px]">{veh.floorplan || '-'}</div>
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        {new Date(veh.arrivedAt).toLocaleDateString('th-TH')}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            veh.currentStatus === 'DELIVERED'
-                              ? 'success'
-                              : veh.currentStatus === 'IN_STOCK'
-                              ? 'info'
-                              : 'default'
-                          }
-                        >
-                          {veh.currentStatus === 'IN_STOCK' && 'ใน Stock'}
-                          {veh.currentStatus === 'DELIVERED' && 'ส่งมอบแล้ว'}
-                          {veh.currentStatus !== 'IN_STOCK' && veh.currentStatus !== 'DELIVERED' && veh.currentStatus}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {latestJob ? (
-                          <span className="text-[10px] font-semibold">
-                            {latestJob.pdiType}: {' '}
-                            {latestJob.status === 'PENDING' && <span className="text-slate-500">รอตรวจ</span>}
-                            {latestJob.status === 'IN_PROGRESS' && <span className="text-brand-teal">กำลังตรวจ</span>}
-                            {latestJob.status === 'PENDING_APPROVAL' && <span className="text-warning">รอ QC</span>}
-                            {latestJob.status === 'APPROVED' && <span className="text-success">อนุมัติแล้ว</span>}
-                            {latestJob.status === 'REJECTED' && <span className="text-danger">ถูก Reject</span>}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-slate-500">ไม่มีงานตรวจ</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Link href={`/vehicles/${veh.vin}`}>
-                          <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                            <ChevronRight className="w-4 h-4 text-slate-400" />
-                          </Button>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {vehicles.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-12 text-slate-500">
+                      ไม่มีข้อมูลรถยนต์ในสต็อก
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  vehicles.map((veh) => {
+                    // Find current PDI status
+                    const latestJob = veh.pdiJobs?.[0];
+                    
+                    return (
+                      <TableRow key={veh.vin}>
+                        <TableCell className="font-mono text-xs text-slate-800 font-medium select-all">{veh.vin}</TableCell>
+                        <TableCell className="text-xs font-semibold">{veh.modelName}</TableCell>
+                        <TableCell className="text-xs">
+                          <div className="text-slate-700">{veh.exteriorColor || veh.colorName || '-'}</div>
+                          <div className="text-slate-500 text-[10px]">ใน: {veh.interiorColor || '-'}</div>
+                        </TableCell>
+                        <TableCell className="text-xs font-mono">{veh.productionYear || '-'}</TableCell>
+                        <TableCell className="text-xs">
+                          <div className="text-slate-700">{veh.warehouse || '-'}</div>
+                          <div className="text-slate-500 text-[10px]">{veh.floorplan || '-'}</div>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {new Date(veh.arrivedAt).toLocaleDateString('th-TH')}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              veh.currentStatus === 'DELIVERED'
+                                ? 'success'
+                                : veh.currentStatus === 'IN_STOCK'
+                                ? 'info'
+                                : 'default'
+                            }
+                          >
+                            {veh.currentStatus === 'IN_STOCK' && 'ใน Stock'}
+                            {veh.currentStatus === 'DELIVERED' && 'ส่งมอบแล้ว'}
+                            {veh.currentStatus !== 'IN_STOCK' && veh.currentStatus !== 'DELIVERED' && veh.currentStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {latestJob ? (
+                            <span className="text-[10px] font-semibold">
+                              {latestJob.pdiType}: {' '}
+                              {latestJob.status === 'PENDING' && <span className="text-slate-500">รอตรวจ</span>}
+                              {latestJob.status === 'IN_PROGRESS' && <span className="text-brand-teal">กำลังตรวจ</span>}
+                              {latestJob.status === 'PENDING_APPROVAL' && <span className="text-warning">รอ QC</span>}
+                              {latestJob.status === 'APPROVED' && <span className="text-success">อนุมัติแล้ว</span>}
+                              {latestJob.status === 'REJECTED' && <span className="text-danger">ถูก Reject</span>}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-500">ไม่มีงานตรวจ</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link href={`/vehicles/${veh.vin}`}>
+                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                              <ChevronRight className="w-4 h-4 text-slate-400" />
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Import Preview Dialog */}
+      <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="w-5 h-5 text-brand-teal" />
+              <span>พรีวิวและตรวจสอบข้อมูลนำเข้า Excel ({importVehicles.length} คัน)</span>
+            </DialogTitle>
+            <DialogDescription>
+              ตรวจสอบความถูกต้องก่อนกดนำเข้าเข้าสู่ระบบ เมื่อสำเร็จระบบจะสร้าง Incoming PDI Job ให้อัตโนมัติ
+            </DialogDescription>
+          </DialogHeader>
+
+          {importErrors.length > 0 ? (
+            <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg space-y-2">
+              <h4 className="text-xs font-bold flex items-center gap-1">
+                <AlertTriangle className="w-4 h-4 text-red-500" />
+                <span>พบข้อผิดพลาดในไฟล์ Excel ({importErrors.length} รายการ) กรุณาแก้ไขแล้วอัปโหลดใหม่:</span>
+              </h4>
+              <ul className="text-[11px] list-disc pl-4 space-y-1 max-h-48 overflow-y-auto font-medium">
+                {importErrors.map((err, idx) => (
+                  <li key={idx}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-500" />
+              <span className="text-xs font-semibold">ข้อมูลทั้งหมดผ่านเกณฑ์การตรวจสอบเบื้องต้นแล้ว! พร้อมนำเข้าข้อมูลรถจำนวน {importVehicles.length} คัน</span>
+            </div>
+          )}
+
+          <div className="border border-slate-200 rounded-lg overflow-hidden mt-4">
+            <div className="max-h-80 overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">เลขตัวถัง (VIN)</TableHead>
+                    <TableHead className="text-xs">รุ่นโมเดล</TableHead>
+                    <TableHead className="text-xs">สีภายนอก</TableHead>
+                    <TableHead className="text-xs">สีภายใน</TableHead>
+                    <TableHead className="text-xs">ปีผลิต</TableHead>
+                    <TableHead className="text-xs">วันที่ WSDate</TableHead>
+                    <TableHead className="text-xs">สาขา</TableHead>
+                    <TableHead className="text-xs">โกดัง/โซน</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {importVehicles.map((v, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-mono text-xs font-semibold text-slate-800">{v.vin}</TableCell>
+                      <TableCell className="text-xs">{modelMap[v.modelCode] || v.modelCode}</TableCell>
+                      <TableCell className="text-xs">{v.colorName} {v.exteriorColor ? `(${v.exteriorColor})` : ''}</TableCell>
+                      <TableCell className="text-xs">{v.interiorColor || '-'}</TableCell>
+                      <TableCell className="text-xs font-mono">{v.productionYear || '-'}</TableCell>
+                      <TableCell className="text-xs font-mono">{v.wsDate}</TableCell>
+                      <TableCell className="text-xs font-bold text-slate-700">{v.branchCode}</TableCell>
+                      <TableCell className="text-xs">{v.warehouse || '-'} / {v.floorplan || '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4">
+            <DialogClose asChild>
+              <Button type="button" variant="secondary" size="sm">
+                ยกเลิก
+              </Button>
+            </DialogClose>
+            <Button 
+              type="button" 
+              onClick={handleConfirmImport} 
+              disabled={importErrors.length > 0 || importLoading}
+              size="sm"
+            >
+              {importLoading ? 'กำลังนำเข้าข้อมูล...' : 'ยืนยันนำเข้าข้อมูล'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

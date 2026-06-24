@@ -4,6 +4,8 @@ import React, { useRef, useState } from 'react';
 import { Camera, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+import { toast } from 'sonner';
+
 interface PhotoUploadProps {
   value?: string | null;
   onChange: (url: string | null) => void;
@@ -42,7 +44,7 @@ export default function PhotoUpload({
       onChange(data.fileUrl);
     } catch (err) {
       console.error('File upload error:', err);
-      alert('ไม่สามารถอัปโหลดไฟล์ได้ กรุณาลองใหม่อีกครั้ง');
+      toast.error('ไม่สามารถอัปโหลดไฟล์ได้ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setUploading(false);
     }

@@ -11,6 +11,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { ArrowLeft, Plus, Calendar, UserCheck, Shield, Clipboard, MapPin, BarChart2, Car } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { formatDateTime, formatLocalDate, getPdiRouteSlug } from '@/lib/utils';
 
 interface VehicleDetailClientProps {
@@ -69,7 +70,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
   const handleTriggerLtm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ltmScheduledDate) {
-      alert('กรุณาระบุวันที่กำหนดตรวจ');
+      toast.warning('กรุณาระบุวันที่กำหนดตรวจ');
       return;
     }
 
@@ -118,12 +119,13 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
         });
       }
 
-      alert(`สร้างงานตรวจบำรุงรักษาระยะยาว ${ltmInterval} วัน เรียบร้อยแล้ว`);
+      window.dispatchEvent(new Event('pdi-job-updated'));
+      toast.success(`สร้างงานตรวจบำรุงรักษาระยะยาว ${ltmInterval} วัน เรียบร้อยแล้ว`);
       setIsLtmOpen(false);
       setLtmScheduledDate('');
     } catch (err: any) {
       console.error(err);
-      alert(`เกิดข้อผิดพลาด: ${err.message}`);
+      toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -133,7 +135,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
   const handleTriggerPd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!targetDeliveryDate || !salesName || !customerName || !customerPhone) {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วนเพื่อรองรับการตรวจก่อนส่งมอบและ PDPA');
+      toast.warning('กรุณากรอกข้อมูลให้ครบถ้วนเพื่อรองรับการตรวจก่อนส่งมอบและ PDPA');
       return;
     }
 
@@ -186,7 +188,8 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
         });
       }
 
-      alert('สร้างงานตรวจสภาพเตรียมส่งมอบลูกค้า (Pre-delivery PDI) เรียบร้อยแล้ว');
+      window.dispatchEvent(new Event('pdi-job-updated'));
+      toast.success('สร้างงานตรวจสภาพเตรียมส่งมอบลูกค้า (Pre-delivery PDI) เรียบร้อยแล้ว');
       setIsPdOpen(false);
       setTargetDeliveryDate('');
       setSalesName('');
@@ -194,7 +197,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
       setCustomerPhone('');
     } catch (err: any) {
       console.error(err);
-      alert(`เกิดข้อผิดพลาด: ${err.message}`);
+      toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -238,7 +241,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                 <p className="text-slate-800 font-mono text-sm select-all">{vehicle.vin}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 border-b border-slate-100 pb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-slate-100 pb-3">
                 <div>
                   <p className="text-slate-500">สีรถภายนอกหลัก</p>
                   <p className="text-slate-800 font-medium">{vehicle.colorName || '-'}</p>
@@ -250,7 +253,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
               </div>
 
               {/* Added requested fields display */}
-              <div className="grid grid-cols-2 gap-4 border-b border-slate-100 pb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-slate-100 pb-3">
                 <div>
                   <p className="text-slate-500">ลักษณะสีภายนอก</p>
                   <p className="text-slate-800 font-medium">{vehicle.exteriorColor || '-'}</p>
@@ -266,7 +269,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                 <p className="text-slate-800 font-medium">{formatLocalDate(vehicle.wsDate)}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 border-b border-slate-100 pb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-slate-100 pb-3">
                 <div>
                   <p className="text-slate-500">คลังสินค้าโกดัง</p>
                   <p className="text-slate-800 font-medium">{vehicle.warehouse || '-'}</p>
@@ -377,7 +380,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                         className="text-xs"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <Label className="text-xs text-slate-500">ชื่อที่ปรึกษาการขาย (Sales) *</Label>
                         <Input
@@ -422,55 +425,57 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>เลขสั่งงาน (Job No.)</TableHead>
-                    <TableHead>ประเภท (PDI Type)</TableHead>
-                    <TableHead>สถานะ (Status)</TableHead>
-                    <TableHead>ช่างตรวจ (Inspector)</TableHead>
-                    <TableHead>วันที่สั่งสร้าง (Created)</TableHead>
-                    <TableHead className="text-right">เข้าดำเนินการ</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {vehicle.pdiJobs.length === 0 ? (
+              <div className="overflow-x-auto w-full">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-slate-500 text-xs">
-                        ยังไม่มีประวัติการเปิดงาน PDI
-                      </TableCell>
+                      <TableHead>เลขสั่งงาน (Job No.)</TableHead>
+                      <TableHead>ประเภท (PDI Type)</TableHead>
+                      <TableHead>สถานะ (Status)</TableHead>
+                      <TableHead>ช่างตรวจ (Inspector)</TableHead>
+                      <TableHead>วันที่สั่งสร้าง (Created)</TableHead>
+                      <TableHead className="text-right">เข้าดำเนินการ</TableHead>
                     </TableRow>
-                  ) : (
-                    vehicle.pdiJobs.map((job: any) => (
-                      <TableRow key={job.id}>
-                        <TableCell className="font-mono text-xs text-slate-800 select-all">{job.jobNumber}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {job.pdiType}
-                            {job.ltmInterval ? ` (${job.ltmInterval}วัน)` : ''}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {job.status === 'PENDING' && <Badge variant="default">รอตรวจ</Badge>}
-                          {job.status === 'IN_PROGRESS' && <Badge variant="info">กำลังตรวจ</Badge>}
-                          {job.status === 'PENDING_APPROVAL' && <Badge variant="warning">รอ QC</Badge>}
-                          {job.status === 'APPROVED' && <Badge variant="success">ผ่านตรวจ</Badge>}
-                          {job.status === 'REJECTED' && <Badge variant="danger">ถูก Reject</Badge>}
-                        </TableCell>
-                        <TableCell className="text-xs">{job.inspector?.name || '-'}</TableCell>
-                        <TableCell className="text-xs">{new Date(job.createdAt).toLocaleDateString('th-TH')}</TableCell>
-                        <TableCell className="text-right">
-                          <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
-                            <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5">
-                              {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ตรวจรถ'}
-                            </Button>
-                          </Link>
+                  </TableHeader>
+                  <TableBody>
+                    {vehicle.pdiJobs.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-slate-500 text-xs">
+                          ยังไม่มีประวัติการเปิดงาน PDI
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      vehicle.pdiJobs.map((job: any) => (
+                        <TableRow key={job.id}>
+                          <TableCell className="font-mono text-xs text-slate-800 select-all">{job.jobNumber}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {job.pdiType}
+                              {job.ltmInterval ? ` (${job.ltmInterval}วัน)` : ''}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {job.status === 'PENDING' && <Badge variant="default">รอตรวจ</Badge>}
+                            {job.status === 'IN_PROGRESS' && <Badge variant="info">กำลังตรวจ</Badge>}
+                            {job.status === 'PENDING_APPROVAL' && <Badge variant="warning">รอ QC</Badge>}
+                            {job.status === 'APPROVED' && <Badge variant="success">ผ่านตรวจ</Badge>}
+                            {job.status === 'REJECTED' && <Badge variant="danger">ถูก Reject</Badge>}
+                          </TableCell>
+                          <TableCell className="text-xs">{job.inspector?.name || '-'}</TableCell>
+                          <TableCell className="text-xs">{new Date(job.createdAt).toLocaleDateString('th-TH')}</TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
+                              <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5 whitespace-nowrap">
+                                {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ตรวจรถ'}
+                              </Button>
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </div>

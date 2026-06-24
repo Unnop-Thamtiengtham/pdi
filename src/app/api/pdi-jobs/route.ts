@@ -231,8 +231,29 @@ export async function PATCH(req: NextRequest) {
     // 4. Update PDI Job Status & timestamps
     const updateData: any = {};
     if (status) updateData.status = status as PdiStatus;
-    if (inspectorId) updateData.inspectorId = inspectorId;
-    if (approverId) updateData.approverId = approverId;
+    
+    if (inspectorId) {
+      const userExists = await prisma.user.findUnique({ where: { id: inspectorId } });
+      if (!userExists) {
+        return NextResponse.json(
+          { error: 'เซสชันผู้ใช้งานช่างตรวจไม่พบในฐานข้อมูล (เนื่องจากอาจมีการ Reset/Reseed ฐานข้อมูลล่าสุด) กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่อีกครั้ง' },
+          { status: 400 }
+        );
+      }
+      updateData.inspectorId = inspectorId;
+    }
+
+    if (approverId) {
+      const userExists = await prisma.user.findUnique({ where: { id: approverId } });
+      if (!userExists) {
+        return NextResponse.json(
+          { error: 'เซสชันผู้อนุมัติไม่พบในฐานข้อมูล (เนื่องจากอาจมีการ Reset/Reseed ฐานข้อมูลล่าสุด) กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่อีกครั้ง' },
+          { status: 400 }
+        );
+      }
+      updateData.approverId = approverId;
+    }
+
     if (notes !== undefined) updateData.notes = notes;
 
     // SLA & Timings transitions

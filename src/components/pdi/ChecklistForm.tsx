@@ -9,6 +9,7 @@ import { Check, X, RefreshCw, AlertCircle, Save, Send, ShieldAlert, ArrowLeft } 
 import BatterySection from './BatterySection';
 import DefectPanel from './DefectPanel';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface ChecklistItem {
   id: string;
@@ -200,10 +201,10 @@ export default function ChecklistForm({
     setSaving(true);
     try {
       await onSave(Object.values(results), batteryData, defects);
-      alert('บันทึกแบบร่างสำเร็จ');
+      toast.success('บันทึกแบบร่างสำเร็จ');
     } catch (err) {
       console.error(err);
-      alert('เกิดข้อผิดพลาดในการบันทึกแบบร่าง');
+      toast.error('เกิดข้อผิดพลาดในการบันทึกแบบร่าง');
     } finally {
       setSaving(false);
     }
@@ -213,32 +214,32 @@ export default function ChecklistForm({
     // 1. Defect Block: If any defect is OPEN, cannot submit
     const openDefects = defects.filter(d => d.status === 'OPEN' || d.status === 'IN_REPAIR');
     if (openDefects.length > 0) {
-      alert('ไม่สามารถส่งตรวจได้: ยังมีจุดบกพร่องที่ค้างชำรุด (OPEN / IN REPAIR) ต้องดำเนินการแก้ไขหรือเปลี่ยนสถานะเป็น RESOLVED ก่อนส่งตรวจ');
+      toast.warning('ไม่สามารถส่งตรวจได้: ยังมีจุดบกพร่องที่ค้างชำรุด (OPEN / IN REPAIR) ต้องดำเนินการแก้ไขหรือเปลี่ยนสถานะเป็น RESOLVED ก่อนส่งตรวจ');
       return;
     }
 
     // 2. Battery values checklist validation
     const rules = MODEL_RULES[modelCode];
     if (batteryData.mainVoltage === undefined || batteryData.mainVoltage === null || batteryData.mainSoh === undefined || batteryData.mainSoh === null) {
-      alert('กรุณากรอกข้อมูลแบตเตอรี่ 12V (แรงดันไฟฟ้าและ SOH)');
+      toast.warning('กรุณากรอกข้อมูลแบตเตอรี่ 12V (แรงดันไฟฟ้าและ SOH)');
       return;
     }
     if (rules.hasDualBattery && (batteryData.secVoltage === undefined || batteryData.secVoltage === null || batteryData.secSoh === undefined || batteryData.secSoh === null)) {
-      alert('กรุณากรอกข้อมูลแบตเตอรี่ 12V ลูกรอง (แรงดันไฟฟ้าและ SOH)');
+      toast.warning('กรุณากรอกข้อมูลแบตเตอรี่ 12V ลูกรอง (แรงดันไฟฟ้าและ SOH)');
       return;
     }
     if (rules.hasCCA && (batteryData.mainCca === undefined || batteryData.mainCca === null)) {
-      alert('กรุณากรอกข้อมูล CCA แบตเตอรี่สำหรับรุ่น AION Y Plus');
+      toast.warning('กรุณากรอกข้อมูล CCA แบตเตอรี่สำหรับรุ่น AION Y Plus');
       return;
     }
 
     setSubmitting(true);
     try {
       await onSubmit(Object.values(results), batteryData, defects);
-      alert('ส่งผลงานตรวจให้ Supervisor พิจารณาเรียบร้อยแล้ว');
+      toast.success('ส่งผลงานตรวจให้ Supervisor พิจารณาเรียบร้อยแล้ว');
     } catch (err) {
       console.error(err);
-      alert('เกิดข้อผิดพลาดในการส่งตรวจ');
+      toast.error('เกิดข้อผิดพลาดในการส่งตรวจ');
     } finally {
       setSubmitting(false);
     }
@@ -382,7 +383,7 @@ export default function ChecklistForm({
                       </div>
 
                       {/* Result Selectors */}
-                      <div className="flex items-center gap-2 self-end md:self-auto">
+                      <div className="flex flex-wrap items-center gap-2 self-start md:self-auto justify-start md:justify-end">
                         <button
                           type="button"
                           disabled={readOnly}

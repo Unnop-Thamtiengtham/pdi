@@ -153,102 +153,104 @@ export default function PdiListClient({ pdiType, initialJobs, isDbConnected }: P
       {/* Jobs Table */}
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>เลขสั่งงาน (Job No.)</TableHead>
-                <TableHead>เลขตัวถัง (VIN)</TableHead>
-                <TableHead>รุ่นโมเดล (Model)</TableHead>
-                <TableHead>สถานะตรวจ</TableHead>
-                
-                {/* Dynamic Headers based on PDI Type */}
-                {pdiType === 'INCOMING' && <TableHead>กำหนด SLA (24h)</TableHead>}
-                {pdiType === 'LONG_TERM' && (
-                  <>
-                    <TableHead>รอบตรวจ (Interval)</TableHead>
-                    <TableHead>วันที่ครบกำหนด</TableHead>
-                  </>
-                )}
-                {pdiType === 'PRE_DELIVERY' && (
-                  <>
-                    <TableHead>ชื่อลูกค้า (PDPA)</TableHead>
-                    <TableHead>ผู้รับผิดชอบขาย</TableHead>
-                    <TableHead>วันส่งมอบรถ</TableHead>
-                  </>
-                )}
-
-                <TableHead>ช่างผู้ตรวจ</TableHead>
-                <TableHead className="text-right">ดำเนินการ</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredJobs.length === 0 ? (
+          <div className="overflow-x-auto w-full">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell
-                    colSpan={pdiType === 'LONG_TERM' ? 8 : pdiType === 'PRE_DELIVERY' ? 9 : 7}
-                    className="text-center py-12 text-slate-500 text-sm"
-                  >
-                    ไม่พบรายการงานตรวจที่สอดคล้อง
-                  </TableCell>
+                  <TableHead>เลขสั่งงาน (Job No.)</TableHead>
+                  <TableHead>เลขตัวถัง (VIN)</TableHead>
+                  <TableHead>รุ่นโมเดล (Model)</TableHead>
+                  <TableHead>สถานะตรวจ</TableHead>
+                  
+                  {/* Dynamic Headers based on PDI Type */}
+                  {pdiType === 'INCOMING' && <TableHead>กำหนด SLA (24h)</TableHead>}
+                  {pdiType === 'LONG_TERM' && (
+                    <>
+                      <TableHead>รอบตรวจ (Interval)</TableHead>
+                      <TableHead>วันที่ครบกำหนด</TableHead>
+                    </>
+                  )}
+                  {pdiType === 'PRE_DELIVERY' && (
+                    <>
+                      <TableHead>ชื่อลูกค้า (PDPA)</TableHead>
+                      <TableHead>ผู้รับผิดชอบขาย</TableHead>
+                      <TableHead>วันส่งมอบรถ</TableHead>
+                    </>
+                  )}
+
+                  <TableHead>ช่างผู้ตรวจ</TableHead>
+                  <TableHead className="text-right">ดำเนินการ</TableHead>
                 </TableRow>
-              ) : (
-                filteredJobs.map((job) => (
-                  <TableRow key={job.id}>
-                    <TableCell className="font-mono text-xs text-slate-800 font-medium select-all">{job.jobNumber}</TableCell>
-                    <TableCell className="font-mono text-xs select-all">{job.vehicleVin}</TableCell>
-                    <TableCell className="text-xs">{job.vehicle?.modelName}</TableCell>
-                    <TableCell>
-                      {job.status === 'PENDING' && <Badge variant="default">รอตรวจ</Badge>}
-                      {job.status === 'IN_PROGRESS' && <Badge variant="info">กำลังตรวจ</Badge>}
-                      {job.status === 'DEFECT_FOUND' && <Badge variant="danger">พบจุดชำรุด</Badge>}
-                      {job.status === 'PENDING_APPROVAL' && <Badge variant="warning">รอ QC</Badge>}
-                      {job.status === 'APPROVED' && <Badge variant="success">ผ่านตรวจ</Badge>}
-                      {job.status === 'REJECTED' && <Badge variant="danger">ถูก Reject</Badge>}
-                    </TableCell>
-
-                    {/* Dynamic Columns */}
-                    {pdiType === 'INCOMING' && (
-                      <TableCell className="text-xs text-error font-mono">
-                        {new Date(job.vehicle?.incomingDeadline || job.scheduledDate).toLocaleString('th-TH')}
-                      </TableCell>
-                    )}
-                    {pdiType === 'LONG_TERM' && (
-                      <>
-                        <TableCell>
-                          <Badge variant="outline" className="text-brand-teal border-brand-teal/20">
-                            {job.ltmInterval} วัน
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs font-mono">
-                          {job.scheduledDate ? new Date(job.scheduledDate).toLocaleDateString('th-TH') : '-'}
-                        </TableCell>
-                      </>
-                    )}
-                    {pdiType === 'PRE_DELIVERY' && (
-                      <>
-                        <TableCell className="text-xs font-semibold">
-                          {job.customerName ? `${job.customerName.charAt(0)}***` : 'ไม่ระบุ'}
-                        </TableCell>
-                        <TableCell className="text-xs">{job.salesName || '-'}</TableCell>
-                        <TableCell className="text-xs font-mono text-slate-800">
-                          {job.targetDeliveryDate ? new Date(job.targetDeliveryDate).toLocaleDateString('th-TH') : '-'}
-                        </TableCell>
-                      </>
-                    )}
-
-                    <TableCell className="text-xs">{job.inspector?.name || '-'}</TableCell>
-                    <TableCell className="text-right">
-                      <Link href={`/pdi/${getPdiRouteSlug(pdiType)}/${job.id}`}>
-                        <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5">
-                          {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ลงบันทึกตรวจ'}
-                        </Button>
-                      </Link>
+              </TableHeader>
+              <TableBody>
+                {filteredJobs.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={pdiType === 'LONG_TERM' ? 8 : pdiType === 'PRE_DELIVERY' ? 9 : 7}
+                      className="text-center py-12 text-slate-500 text-sm"
+                    >
+                      ไม่พบรายการงานตรวจที่สอดคล้อง
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredJobs.map((job) => (
+                    <TableRow key={job.id}>
+                      <TableCell className="font-mono text-xs text-slate-800 font-medium select-all">{job.jobNumber}</TableCell>
+                      <TableCell className="font-mono text-xs select-all">{job.vehicleVin}</TableCell>
+                      <TableCell className="text-xs">{job.vehicle?.modelName}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {job.status === 'PENDING' && <Badge variant="default">รอตรวจ</Badge>}
+                        {job.status === 'IN_PROGRESS' && <Badge variant="info">กำลังตรวจ</Badge>}
+                        {job.status === 'DEFECT_FOUND' && <Badge variant="danger">พบจุดชำรุด</Badge>}
+                        {job.status === 'PENDING_APPROVAL' && <Badge variant="warning">รอ QC</Badge>}
+                        {job.status === 'APPROVED' && <Badge variant="success">ผ่านตรวจ</Badge>}
+                        {job.status === 'REJECTED' && <Badge variant="danger">ถูก Reject</Badge>}
+                      </TableCell>
+
+                      {/* Dynamic Columns */}
+                      {pdiType === 'INCOMING' && (
+                        <TableCell className="text-xs text-error font-mono">
+                          {new Date(job.vehicle?.incomingDeadline || job.scheduledDate).toLocaleString('th-TH')}
+                        </TableCell>
+                      )}
+                      {pdiType === 'LONG_TERM' && (
+                        <>
+                          <TableCell>
+                            <Badge variant="outline" className="text-brand-teal border-brand-teal/20">
+                              {job.ltmInterval} วัน
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs font-mono">
+                            {job.scheduledDate ? new Date(job.scheduledDate).toLocaleDateString('th-TH') : '-'}
+                          </TableCell>
+                        </>
+                      )}
+                      {pdiType === 'PRE_DELIVERY' && (
+                        <>
+                          <TableCell className="text-xs font-semibold">
+                            {job.customerName ? `${job.customerName.charAt(0)}***` : 'ไม่ระบุ'}
+                          </TableCell>
+                          <TableCell className="text-xs">{job.salesName || '-'}</TableCell>
+                          <TableCell className="text-xs font-mono text-slate-800">
+                            {job.targetDeliveryDate ? new Date(job.targetDeliveryDate).toLocaleDateString('th-TH') : '-'}
+                          </TableCell>
+                        </>
+                      )}
+
+                      <TableCell className="text-xs">{job.inspector?.name || '-'}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <Link href={`/pdi/${getPdiRouteSlug(pdiType)}/${job.id}`}>
+                          <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5 whitespace-nowrap">
+                            {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ลงบันทึกตรวจ'}
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

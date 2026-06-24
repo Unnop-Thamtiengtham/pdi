@@ -12,6 +12,7 @@ import SignatureCapture from './SignatureCapture';
 import PhotoUpload from './PhotoUpload';
 import { FileText, ShieldAlert, Sparkles, CheckCircle2, UserCheck, AlertTriangle, ArrowLeft, Printer, Play } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface PdiWorkspaceClientProps {
   jobId: string;
@@ -120,7 +121,10 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
           }),
         });
 
-        if (!res.ok) throw new Error('Failed to update job');
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Failed to update job');
+        }
         const updated = await res.json();
         setJob({ ...job, status: updated.status, inspectorId: updated.inspectorId });
       } else {
@@ -130,17 +134,18 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
           inspector: { name: session?.user?.name || 'สมชาย ช่างตรวจ' },
         });
       }
-      alert('เริ่มดำเนินการตรวจรถแล้ว');
-    } catch (err) {
+      window.dispatchEvent(new Event('pdi-job-updated'));
+      toast.success('เริ่มดำเนินการตรวจรถแล้ว');
+    } catch (err: any) {
       console.error(err);
-      alert('ไม่สามารถเริ่มงานตรวจได้');
+      toast.error(err.message || 'ไม่สามารถเริ่มงานตรวจได้');
     }
   };
 
   const handleSaveResults = async (resultsPayload: any[], batteryPayload: any, defectsPayload: any[]) => {
     try {
       if (isDbConnected) {
-        await fetch('/api/pdi-jobs', {
+        const res = await fetch('/api/pdi-jobs', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -151,6 +156,10 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
             status: 'IN_PROGRESS',
           }),
         });
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Failed to save results');
+        }
       }
       // Update local state
       setJob({
@@ -159,16 +168,18 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
         defects: defectsPayload,
         batteryTestResult: batteryPayload,
       });
-    } catch (err) {
+      window.dispatchEvent(new Event('pdi-job-updated'));
+      toast.success('บันทึกความคืบหน้าแล้ว');
+    } catch (err: any) {
       console.error(err);
-      throw err;
+      toast.error(err.message || 'ไม่สามารถบันทึกแบบร่างได้');
     }
   };
 
   const handleSubmitResults = async (resultsPayload: any[], batteryPayload: any, defectsPayload: any[]) => {
     try {
       if (isDbConnected) {
-        await fetch('/api/pdi-jobs', {
+        const res = await fetch('/api/pdi-jobs', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -179,6 +190,10 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
             status: 'PENDING_APPROVAL',
           }),
         });
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Failed to submit results');
+        }
       }
       setJob({
         ...job,
@@ -187,10 +202,12 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
         defects: defectsPayload,
         batteryTestResult: batteryPayload,
       });
+      window.dispatchEvent(new Event('pdi-job-updated'));
+      toast.success('ส่งรายงานผลการตรวจสภาพเรียบร้อยแล้ว');
       router.push('/');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      throw err;
+      toast.error(err.message || 'ไม่สามารถส่งบันทึกผลการตรวจได้');
     }
   };
 
@@ -198,13 +215,13 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
   const handleSupervisorDecision = async (decision: 'APPROVED' | 'REJECTED') => {
     if (decision === 'APPROVED' && job.pdiType === 'PRE_DELIVERY') {
       if (!pdpaConsent || !customerSig || !inspectorSig || !supervisorSig) {
-        alert('สำหรับงาน Pre-delivery: กรุณายินยอมเงื่อนไข PDPA และลงลายมือชื่อให้ครบถ้วน (ลูกค้า, ช่างตรวจ, ผู้จัดการ QC)');
+        toast.warning('สำหรับงาน Pre-delivery: กรุณายินยอมเงื่อนไข PDPA และลงลายมือชื่อให้ครบถ้วน (ลูกค้า, ช่างตรวจ, ผู้จัดการ QC)');
         return;
       }
     }
 
     if (decision === 'APPROVED' && !supervisorSig) {
-      alert('กรุณาลงลายมือชื่อเพื่อเซ็นอนุมัติรายงานผลการตรวจสภาพรถ');
+      toast.warning('กรุณาลงลายมือชื่อเพื่อเซ็นอนุมัติรายงานผลการตรวจสภาพรถ');
       return;
     }
 
@@ -212,7 +229,7 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
 
     try {
       if (isDbConnected) {
-        await fetch('/api/pdi-jobs', {
+        const res = await fetch('/api/pdi-jobs', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -221,18 +238,27 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
             approverId: currentUserId,
           }),
         });
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Failed to save decision');
+        }
       }
 
-      alert(decision === 'APPROVED' ? 'อนุมัติผ่านงานตรวจสภาพสำเร็จ' : 'ปฏิเสธผลงานตรวจและส่งกลับให้แก้ไข');
+      if (decision === 'APPROVED') {
+        toast.success('อนุมัติผ่านงานตรวจสภาพสำเร็จ');
+      } else {
+        toast.info('ปฏิเสธผลงานตรวจและส่งกลับให้แก้ไข');
+      }
       setJob({
         ...job,
         status: decision,
         approver: { name: session?.user?.name || 'ธีรพล QC' },
       });
+      window.dispatchEvent(new Event('pdi-job-updated'));
       router.push('/');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('เกิดข้อผิดพลาดในการส่งการอนุมัติ');
+      toast.error(err.message || 'เกิดข้อผิดพลาดในการส่งการอนุมัติ');
     }
   };
 

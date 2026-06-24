@@ -97,57 +97,59 @@ export default function ReportsClient({ initialJobs, isDbConnected }: ReportsCli
       {/* Reports Table Card */}
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>เลขสั่งงาน (Job No.)</TableHead>
-                <TableHead>เลขตัวถัง (VIN)</TableHead>
-                <TableHead>รุ่นโมเดล (Model)</TableHead>
-                <TableHead>ประเภท (PDI Type)</TableHead>
-                <TableHead>ผู้ตรวจ (Inspector)</TableHead>
-                <TableHead>ผู้อนุมัติ (QC)</TableHead>
-                <TableHead>วันที่อนุมัติ (Approved At)</TableHead>
-                <TableHead className="text-right">พิมพ์รายงาน</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredJobs.length === 0 ? (
+          <div className="overflow-x-auto w-full">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12 text-slate-500 text-sm">
-                    ไม่พบประวัติข้อมูลรายงานที่อนุมัติแล้ว
-                  </TableCell>
+                  <TableHead>เลขสั่งงาน (Job No.)</TableHead>
+                  <TableHead>เลขตัวถัง (VIN)</TableHead>
+                  <TableHead>รุ่นโมเดล (Model)</TableHead>
+                  <TableHead>ประเภท (PDI Type)</TableHead>
+                  <TableHead>ผู้ตรวจ (Inspector)</TableHead>
+                  <TableHead>ผู้อนุมัติ (QC)</TableHead>
+                  <TableHead>วันที่อนุมัติ (Approved At)</TableHead>
+                  <TableHead className="text-right">พิมพ์รายงาน</TableHead>
                 </TableRow>
-              ) : (
-                filteredJobs.map((job) => (
-                  <TableRow key={job.id}>
-                    <TableCell className="font-mono text-xs text-slate-800 font-medium select-all">{job.jobNumber}</TableCell>
-                    <TableCell className="font-mono text-xs select-all">{job.vehicleVin}</TableCell>
-                    <TableCell className="text-xs">{job.vehicle?.modelName}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {job.pdiType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-xs">{job.inspector?.name || '-'}</TableCell>
-                    <TableCell className="text-xs">{job.approver?.name || '-'}</TableCell>
-                    <TableCell className="text-xs font-mono">
-                      {formatDateTime(job.approvedAt)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
-                          <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5 gap-1">
-                            <FileText className="w-3.5 h-3.5" />
-                            <span>ดูผล</span>
-                          </Button>
-                        </Link>
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {filteredJobs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-12 text-slate-500 text-sm">
+                      ไม่พบประวัติข้อมูลรายงานที่อนุมัติแล้ว
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredJobs.map((job) => (
+                    <TableRow key={job.id}>
+                      <TableCell className="font-mono text-xs text-slate-800 font-medium select-all">{job.jobNumber}</TableCell>
+                      <TableCell className="font-mono text-xs select-all">{job.vehicleVin}</TableCell>
+                      <TableCell className="text-xs">{job.vehicle?.modelName}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {job.pdiType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">{job.inspector?.name || '-'}</TableCell>
+                      <TableCell className="text-xs">{job.approver?.name || '-'}</TableCell>
+                      <TableCell className="text-xs font-mono">
+                        {formatDateTime(job.approvedAt)}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <div className="flex justify-end gap-2">
+                          <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
+                            <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5 gap-1 whitespace-nowrap">
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>ดูผล</span>
+                            </Button>
+                          </Link>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
