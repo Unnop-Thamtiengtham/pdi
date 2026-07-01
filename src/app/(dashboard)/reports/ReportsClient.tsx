@@ -70,8 +70,8 @@ export default function ReportsClient({ initialJobs, isDbConnected }: ReportsCli
         </div>
 
         {/* Filters and Search */}
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="relative flex-1 md:flex-initial md:w-56">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
             <Input
               value={searchTerm}
@@ -81,16 +81,18 @@ export default function ReportsClient({ initialJobs, isDbConnected }: ReportsCli
             />
           </div>
 
-          <Select
-            value={typeFilter}
-            onChange={(e: any) => setTypeFilter(e.target.value)}
-            className="w-full md:w-40 text-xs h-10"
-          >
-            <option value="ALL">ทุกประเภท (ALL)</option>
-            <option value="INCOMING">Incoming PDI</option>
-            <option value="LONG_TERM">Long-term Maintenance</option>
-            <option value="PRE_DELIVERY">Pre-delivery PDI</option>
-          </Select>
+          <div className="w-40 shrink-0">
+            <Select
+              value={typeFilter}
+              onChange={(e: any) => setTypeFilter(e.target.value)}
+              className="text-xs h-10"
+            >
+              <option value="ALL">ทุกประเภท (ALL)</option>
+              <option value="INCOMING">Incoming PDI</option>
+              <option value="LONG_TERM">Long-term Maintenance</option>
+              <option value="PRE_DELIVERY">Pre-delivery PDI</option>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -99,16 +101,16 @@ export default function ReportsClient({ initialJobs, isDbConnected }: ReportsCli
         <CardContent className="p-0">
           <div className="overflow-x-auto w-full">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-slate-50/75 border-b border-slate-100">
                 <TableRow>
-                  <TableHead>เลขสั่งงาน (Job No.)</TableHead>
-                  <TableHead>เลขตัวถัง (VIN)</TableHead>
-                  <TableHead>รุ่นโมเดล (Model)</TableHead>
-                  <TableHead>ประเภท (PDI Type)</TableHead>
-                  <TableHead>ผู้ตรวจ (Inspector)</TableHead>
-                  <TableHead>ผู้อนุมัติ (QC)</TableHead>
-                  <TableHead>วันที่อนุมัติ (Approved At)</TableHead>
-                  <TableHead className="text-right">พิมพ์รายงาน</TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขสั่งงาน<br/><span className="text-[10px] text-slate-400 font-normal">(Job No.)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขตัวถัง<br/><span className="text-[10px] text-slate-400 font-normal">(VIN)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">รุ่นโมเดล<br/><span className="text-[10px] text-slate-400 font-normal">(Model)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ประเภท<br/><span className="text-[10px] text-slate-400 font-normal">(PDI Type)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ผู้ตรวจ<br/><span className="text-[10px] text-slate-400 font-normal">(Inspector)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ผู้อนุมัติ<br/><span className="text-[10px] text-slate-400 font-normal">(QC / Approver)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">วันที่อนุมัติ<br/><span className="text-[10px] text-slate-400 font-normal">(Approved At)</span></TableHead>
+                  <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">พิมพ์รายงาน<br/><span className="text-[10px] text-slate-400 font-normal">(Print / View)</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -120,22 +122,22 @@ export default function ReportsClient({ initialJobs, isDbConnected }: ReportsCli
                   </TableRow>
                 ) : (
                   filteredJobs.map((job) => (
-                    <TableRow key={job.id}>
-                      <TableCell className="font-mono text-xs text-slate-800 font-medium select-all">{job.jobNumber}</TableCell>
-                      <TableCell className="font-mono text-xs select-all">{job.vehicleVin}</TableCell>
-                      <TableCell className="text-xs">{job.vehicle?.modelName}</TableCell>
-                      <TableCell>
+                    <TableRow key={job.id} className="hover:bg-slate-50/50 transition-colors">
+                      <TableCell className="font-mono text-xs text-slate-800 font-medium py-4 select-all">{job.jobNumber}</TableCell>
+                      <TableCell className="font-mono text-xs py-4 select-all">{job.vehicleVin}</TableCell>
+                      <TableCell className="text-xs py-4">{job.vehicle?.modelName}</TableCell>
+                      <TableCell className="py-4">
                         <Badge variant="outline" className="text-xs">
                           {job.pdiType}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs">{job.inspector?.name || '-'}</TableCell>
-                      <TableCell className="text-xs">{job.approver?.name || '-'}</TableCell>
-                      <TableCell className="text-xs font-mono">
+                      <TableCell className="text-xs py-4">{job.inspector?.name || '-'}</TableCell>
+                      <TableCell className="text-xs py-4">{job.approver?.name || '-'}</TableCell>
+                      <TableCell className="text-xs font-mono py-4">
                         {formatDateTime(job.approvedAt)}
                       </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        <div className="flex justify-end gap-2">
+                      <TableCell className="text-center whitespace-nowrap py-4">
+                        <div className="flex justify-center gap-2">
                           <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
                             <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5 gap-1 whitespace-nowrap">
                               <FileText className="w-3.5 h-3.5" />
