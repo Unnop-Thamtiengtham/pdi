@@ -91,6 +91,7 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
         colorName: 'Space Gray',
         floorplan: 'Zone A',
         incomingDeadline: new Date(Date.now() + 1.5 * 60 * 60 * 1000).toISOString(), // 1.5 hours left
+        branch: { name: 'มีนบุรี' },
       },
       inspector: null,
       createdAt: new Date(Date.now() - 22 * 60 * 60 * 1000).toISOString(),
@@ -107,6 +108,7 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
         colorName: 'Rose Gold',
         floorplan: 'Zone B',
         incomingDeadline: new Date(Date.now() + 20 * 60 * 60 * 1000).toISOString(), // 20 hours left
+        branch: { name: 'มีนบุรี' },
       },
       inspector: { name: 'สมชาย ช่างตรวจ' },
       createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
@@ -123,6 +125,7 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
         colorName: 'Lucky Gold',
         floorplan: 'Handover Bay 1',
         incomingDeadline: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+        branch: { name: 'มีนบุรี' },
       },
       inspector: { name: 'สมชาย ช่างตรวจ' },
       createdAt: new Date().toISOString(),
@@ -139,6 +142,7 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
         colorName: 'Crystal White',
         floorplan: 'Stock Lot C',
         incomingDeadline: new Date(Date.now() + 120 * 60 * 60 * 1000).toISOString(),
+        branch: { name: 'มีนบุรี' },
       },
       inspector: { name: 'สมชาย ช่างตรวจ' },
       createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
@@ -244,9 +248,24 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
               {urgentJobs.map((job) => (
                 <div key={job.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 gap-4">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-semibold text-slate-800">{job.vehicle?.modelName}</span>
                       <span className="text-xs font-mono text-slate-500 font-medium select-all">({job.vehicleVin})</span>
+                      {job.status === 'PENDING_APPROVAL' && (
+                        <Badge variant="warning" className="text-[9px] px-1.5 py-0 h-4 font-semibold">
+                          รอ QC อนุมัติ
+                        </Badge>
+                      )}
+                      {job.status === 'IN_PROGRESS' && (
+                        <Badge variant="info" className="text-[9px] px-1.5 py-0 h-4 font-semibold">
+                          กำลังตรวจ
+                        </Badge>
+                      )}
+                      {job.status === 'DEFECT_FOUND' && (
+                        <Badge variant="danger" className="text-[9px] px-1.5 py-0 h-4 font-semibold">
+                          พบจุดชำรุด
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-[10px] text-slate-500">
                       โซนจอด: {job.vehicle?.floorplan || 'ไม่ได้ระบุ'} · วันรับรถ: {new Date(job.createdAt).toLocaleString('th-TH')}
@@ -260,8 +279,18 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
                     </div>
 
                     <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
-                      <Button size="sm" className="h-8 gap-1">
-                        <span>เริ่มตรวจ</span>
+                      <Button
+                        size="sm"
+                        variant={job.status === 'PENDING_APPROVAL' ? 'outline' : 'primary'}
+                        className="h-8 gap-1"
+                      >
+                        <span>
+                          {job.status === 'PENDING_APPROVAL' && 'อนุมัติการตรวจ'}
+                          {job.status === 'IN_PROGRESS' && 'ตรวจต่อ'}
+                          {job.status === 'PENDING' && 'เริ่มตรวจ'}
+                          {job.status === 'DEFECT_FOUND' && 'ตรวจต่อ'}
+                          {job.status !== 'PENDING_APPROVAL' && job.status !== 'IN_PROGRESS' && job.status !== 'PENDING' && job.status !== 'DEFECT_FOUND' && 'ตรวจสอบ'}
+                        </span>
                         <ArrowUpRight className="w-3.5 h-3.5" />
                       </Button>
                     </Link>
@@ -306,36 +335,38 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
         <CardContent className="p-0">
           <div className="overflow-x-auto w-full">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-slate-50/75 border-b border-slate-100">
                 <TableRow>
-                  <TableHead>เลขที่งาน (Job No.)</TableHead>
-                  <TableHead>รุ่นรถ (Model)</TableHead>
-                  <TableHead>เลขตัวถัง (VIN)</TableHead>
-                  <TableHead>ประเภท (PDI Type)</TableHead>
-                  <TableHead>สถานะ (Status)</TableHead>
-                  <TableHead>วันครบกำหนด (Deadline)</TableHead>
-                  <TableHead className="text-right">จัดการ (Action)</TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขที่งาน<br/><span className="text-[10px] text-slate-400 font-normal">(Job No.)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">รุ่นรถ<br/><span className="text-[10px] text-slate-400 font-normal">(Model)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">สาขา<br/><span className="text-[10px] text-slate-400 font-normal">(Branch)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขตัวถัง<br/><span className="text-[10px] text-slate-400 font-normal">(VIN)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ประเภท<br/><span className="text-[10px] text-slate-400 font-normal">(PDI Type)</span></TableHead>
+                  <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">สถานะ<br/><span className="text-[10px] text-slate-400 font-normal">(Status)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">วันครบกำหนด<br/><span className="text-[10px] text-slate-400 font-normal">(Deadline)</span></TableHead>
+                  <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">จัดการ<br/><span className="text-[10px] text-slate-400 font-normal">(Action)</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredJobs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-12 text-slate-500">
+                    <TableCell colSpan={8} className="text-center py-12 text-slate-500">
                       ไม่พบข้อมูลรายการงานตรวจ PDI
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredJobs.map((job) => (
-                    <TableRow key={job.id}>
-                      <TableCell className="font-mono text-xs text-slate-800 font-medium select-all">{job.jobNumber}</TableCell>
-                      <TableCell className="text-xs">{job.vehicle?.modelName}</TableCell>
-                      <TableCell className="font-mono text-xs select-all">{job.vehicleVin}</TableCell>
-                      <TableCell>
+                    <TableRow key={job.id} className="hover:bg-slate-50/50 transition-colors">
+                      <TableCell className="font-mono text-xs text-slate-800 font-medium py-4 select-all">{job.jobNumber}</TableCell>
+                      <TableCell className="text-xs py-4">{job.vehicle?.modelName}</TableCell>
+                      <TableCell className="text-xs py-4">{job.vehicle?.branch?.name || '-'}</TableCell>
+                      <TableCell className="font-mono text-xs py-4 select-all">{job.vehicleVin}</TableCell>
+                      <TableCell className="py-4">
                         <Badge variant="outline" className="text-xs">
                           {job.pdiType}
                         </Badge>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">
+                      <TableCell className="text-center whitespace-nowrap py-4">
                         {job.status === 'PENDING' && <Badge variant="default">รอตรวจ</Badge>}
                         {job.status === 'IN_PROGRESS' && <Badge variant="info">กำลังตรวจ</Badge>}
                         {job.status === 'DEFECT_FOUND' && <Badge variant="danger">พบจุดชำรุด</Badge>}
@@ -343,10 +374,10 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
                         {job.status === 'APPROVED' && <Badge variant="success">ผ่านการตรวจ</Badge>}
                         {job.status === 'REJECTED' && <Badge variant="danger">ถูกปฏิเสธ</Badge>}
                       </TableCell>
-                      <TableCell className="text-xs">
+                      <TableCell className="text-xs py-4">
                         {job.scheduledDate ? new Date(job.scheduledDate).toLocaleDateString('th-TH') : '-'}
                       </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
+                      <TableCell className="text-center whitespace-nowrap py-4">
                         <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
                           <Button variant="outline" size="sm" className="h-8 text-xs px-2.5 whitespace-nowrap">
                             {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ทำรายการ'}
