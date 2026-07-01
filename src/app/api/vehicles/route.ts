@@ -78,8 +78,8 @@ export async function POST(req: NextRequest) {
     }
 
     const arrivedAt = new Date();
-    // SLA: arrivedAt + 24 hours
-    const incomingDeadline = new Date(arrivedAt.getTime() + 24 * 60 * 60 * 1000);
+    // SLA: not started yet, set incomingDeadline to arrivedAt initially
+    const incomingDeadline = arrivedAt;
 
     const vehicle = await prisma.vehicle.create({
       data: {
@@ -98,22 +98,6 @@ export async function POST(req: NextRequest) {
         arrivedAt,
         incomingDeadline,
         currentStatus: 'IN_STOCK',
-      },
-    });
-
-    // Auto-create Incoming PDI Job
-    // Formatted Job Number: JO-YYYYMMDD-XXXX
-    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const rand = Math.floor(1000 + Math.random() * 9000); // 4-digit random
-    const jobNumber = `JO-${todayStr}-${rand}`;
-
-    await prisma.pdiJob.create({
-      data: {
-        jobNumber,
-        pdiType: 'INCOMING',
-        status: 'PENDING',
-        vehicleVin: vin,
-        scheduledDate: incomingDeadline,
       },
     });
 
