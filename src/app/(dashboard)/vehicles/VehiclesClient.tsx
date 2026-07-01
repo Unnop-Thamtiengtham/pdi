@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Plus, Car, Calendar, Sliders, ChevronRight, Download, Upload, FileSpreadsheet, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Plus, Car, Calendar, Sliders, ChevronRight, Download, Upload, FileSpreadsheet, AlertTriangle, CheckCircle2, Play, Search } from 'lucide-react';
 import Link from 'next/link';
 // @ts-ignore
 import XLSX from 'xlsx-js-style';
@@ -163,7 +163,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
             warehouse: 'Main Dock',
             floorplan: 'Zone A',
             arrivedAt: '2026-06-08T12:00:00.000Z',
-            branch: { name: 'มีนบุรี' },
+            branch: { name: 'Aion มีนบุรี' },
             pdiJobs: [{ id: 'mock-1', pdiType: 'INCOMING', status: 'PENDING' }],
           },
           {
@@ -179,7 +179,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
             warehouse: 'Rooftop Lot',
             floorplan: 'Zone B',
             arrivedAt: '2026-06-09T08:00:00.000Z',
-            branch: { name: 'มีนบุรี' },
+            branch: { name: 'Aion มีนบุรี' },
             pdiJobs: [{ id: 'mock-2', pdiType: 'INCOMING', status: 'PENDING_APPROVAL' }],
           },
         ]
@@ -205,9 +205,40 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importLoading, setImportLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedVins, setSelectedVins] = useState<string[]>([]);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Filter & Search states
+  const [activeTab, setActiveTab] = useState<'ALL' | 'INCOMING' | 'LONG_TERM' | 'PRE_DELIVERY'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filtered dataset based on activeTab and searchQuery
+  const filteredVehicles = vehicles.filter((veh) => {
+    // 1. Filter by PDI Job Type of the latest job
+    const latestJob = veh.pdiJobs?.[0];
+    if (activeTab !== 'ALL') {
+      if (!latestJob || latestJob.pdiType !== activeTab) {
+        return false;
+      }
+    }
+
+    // 2. Filter by search text query
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      const vinMatch = veh.vin.toLowerCase().includes(q);
+      const modelMatch = (veh.modelName || '').toLowerCase().includes(q);
+      const branchMatch = (veh.branch?.name || '').toLowerCase().includes(q);
+      const warehouseMatch = (veh.warehouse || '').toLowerCase().includes(q);
+      const floorplanMatch = (veh.floorplan || '').toLowerCase().includes(q);
+      
+      return vinMatch || modelMatch || branchMatch || warehouseMatch || floorplanMatch;
+    }
+
+    return true;
+  });
 
   const handleExportExcel = () => {
-    const exportData = vehicles.map(v => {
+    const exportData = filteredVehicles.map(v => {
       const latestJob = v.pdiJobs?.[0];
       const pdiStatusStr = latestJob 
         ? `${latestJob.pdiType}: ${pdiStatusMap[latestJob.status] || latestJob.status}` 
@@ -255,8 +286,42 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
 
     const ws = XLSX.utils.json_to_sheet(templateData);
     formatWorksheet(ws, true, 'TH Sarabun New');
+
+    // Create a reference sheet showing all valid branch codes and model codes
+    const modelCodes = [
+      { code: 'AION_V', name: 'AION V' },
+      { code: 'AION_V5', name: 'AION V 5' },
+      { code: 'AION_UT', name: 'AION UT' },
+      { code: 'AION_YP', name: 'AION Y Plus' },
+      { code: 'AION_YP5', name: 'AION Y Plus 5' },
+      { code: 'AION_ES', name: 'AION ES' },
+      { code: 'HYPTEC_HT', name: 'HYPTEC HT' },
+      { code: 'HYPTEC_SSR', name: 'HYPTEC SSR' },
+      { code: 'GAC_M8', name: 'GAC M8' },
+    ];
+
+    const dbBranches = branches && branches.length > 0 ? branches : [{ code: 'MBR', name: 'มีนบุรี' }];
+    const maxRows = Math.max(dbBranches.length, modelCodes.length);
+    const referenceData = [];
+
+    for (let i = 0; i < maxRows; i++) {
+      const branch = dbBranches[i];
+      const model = modelCodes[i];
+      referenceData.push({
+        'รหัสสาขา (Branch Code)': branch ? branch.code : '',
+        'ชื่อสาขา (Branch Name)': branch ? branch.name : '',
+        ' ': '',
+        'รหัสรุ่น (Model Code)': model ? model.code : '',
+        'ชื่อรุ่น (Model Name)': model ? model.name : '',
+      });
+    }
+
+    const wsRef = XLSX.utils.json_to_sheet(referenceData);
+    formatWorksheet(wsRef, true, 'TH Sarabun New');
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    XLSX.utils.book_append_sheet(wb, wsRef, 'Reference_Data');
     XLSX.writeFile(wb, 'pdi_import_vehicles_template.xlsx');
   };
 
@@ -292,7 +357,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
         }));
 
         const clientErrors: string[] = [];
-        const validModelCodes = ['AION_V', 'AION_UT', 'AION_YP', 'AION_ES', 'HYPTEC_HT', 'HYPTEC_SSR', 'GAC_M8'];
+        const validModelCodes = ['AION_V', 'AION_V5', 'AION_UT', 'AION_YP', 'AION_YP5', 'AION_ES', 'HYPTEC_HT', 'HYPTEC_SSR', 'GAC_M8'];
         const branchCodesInDb = branches.map(b => b.code.toUpperCase());
         const existingVinsInDb = new Set(vehicles.map(v => v.vin.toUpperCase()));
         const seenVins = new Set<string>();
@@ -316,7 +381,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
           if (!row.modelCode) {
             clientErrors.push(`แถวที่ ${rowNum}: ไม่มีรหัสรุ่นรถ (modelCode)`);
           } else if (!validModelCodes.includes(String(row.modelCode).trim())) {
-            clientErrors.push(`แถวที่ ${rowNum}: รหัสรุ่น "${row.modelCode}" ไม่ถูกต้อง (เลือกได้เฉพาะ: AION_V, AION_UT, AION_YP, AION_ES, HYPTEC_HT, HYPTEC_SSR, GAC_M8)`);
+            clientErrors.push(`แถวที่ ${rowNum}: รหัสรุ่น "${row.modelCode}" ไม่ถูกต้อง (เลือกได้เฉพาะ: AION_V, AION_V5, AION_UT, AION_YP, AION_YP5, AION_ES, HYPTEC_HT, HYPTEC_SSR, GAC_M8)`);
           }
 
           if (!row.colorName) {
@@ -419,8 +484,10 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
 
   const modelMap: Record<string, string> = {
     AION_V: 'AION V',
+    AION_V5: 'AION V 5',
     AION_UT: 'AION UT',
     AION_YP: 'AION Y Plus',
+    AION_YP5: 'AION Y Plus 5',
     AION_ES: 'AION ES',
     HYPTEC_HT: 'HYPTEC HT',
     HYPTEC_SSR: 'HYPTEC SSR',
@@ -477,7 +544,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
       }
 
       window.dispatchEvent(new Event('pdi-job-updated'));
-      toast.success('ลงทะเบียนรถเข้า Stock เรียบร้อย และระบบได้สั่งการสร้าง Incoming PDI Job อัตโนมัติ');
+      toast.success('ลงทะเบียนรถสำเร็จ', { description: 'นำรถเข้า Stock และสร้างงาน Incoming PDI อัตโนมัติ' });
       setIsDialogOpen(false);
       // Reset form
       setVin('');
@@ -492,6 +559,73 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
       toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const eligibleVehicles = vehicles.filter(
+    (veh) => !veh.pdiJobs?.some((job: any) => job.pdiType === 'INCOMING')
+  );
+
+  const handleStartIncoming = async () => {
+    if (selectedVins.length === 0) return;
+    setActionLoading(true);
+    try {
+      if (isDbConnected) {
+        const res = await fetch('/api/vehicles/start-incoming', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vins: selectedVins }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to start incoming PDI');
+        }
+
+        const data = await res.json();
+        toast.success(`สำเร็จ: ${data.message}`);
+
+        // Refresh vehicle list
+        const refreshRes = await fetch('/api/vehicles');
+        if (refreshRes.ok) {
+          const updatedList = await refreshRes.json();
+          setVehicles(updatedList);
+        }
+      } else {
+        // Mock mode simulation
+        const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const updated = vehicles.map((veh) => {
+          if (selectedVins.includes(veh.vin)) {
+            const nowStr = new Date().toISOString();
+            const deadlineStr = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+            return {
+              ...veh,
+              arrivedAt: nowStr,
+              incomingDeadline: deadlineStr,
+              pdiJobs: [
+                {
+                  id: `mock-job-${Date.now()}-${veh.vin}`,
+                  jobNumber: `JO-INC-${todayStr}-${Math.floor(100000 + Math.random() * 900000)}`,
+                  pdiType: 'INCOMING',
+                  status: 'PENDING',
+                  scheduledDate: deadlineStr,
+                },
+                ...(veh.pdiJobs || [])
+              ],
+            };
+          }
+          return veh;
+        });
+        setVehicles(updated);
+        toast.success(`[Mock Mode] เริ่มส่งตรวจ Incoming สำเร็จจำนวน ${selectedVins.length} คัน`);
+      }
+      setSelectedVins([]);
+      window.dispatchEvent(new Event('pdi-job-updated'));
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -543,230 +677,325 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
             onClick={() => fileInputRef.current?.click()}
             className="gap-1.5 text-xs font-semibold border-slate-200 hover:bg-slate-50 text-slate-600"
           >
-            <Upload className="w-4 h-4 text-brand-teal" />
+            <Download className="w-4 h-4 text-brand-teal" />
             <span>นำเข้า Excel (Import)</span>
           </Button>
 
-          {/* Dialog register trigger */}
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          {/* Start Incoming PDI button */}
+          {selectedVins.length > 0 && (
+            <Button
+              onClick={handleStartIncoming}
+              disabled={actionLoading}
+              className="gap-1.5 text-xs font-semibold bg-brand-teal hover:bg-brand-teal/90 text-white"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span>เริ่มตรวจ Incoming ({selectedVins.length} คัน)</span>
+            </Button>
+          )}
+
+          {/* Dialog register trigger - hidden */}
+          {/* <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-1.5 text-xs font-semibold">
                 <Plus className="w-4 h-4 text-slate-950" />
                 <span>ลงทะเบียนรับรถใหม่ (Receive Vehicle)</span>
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-xl">
-            <form onSubmit={handleRegister}>
-              <DialogHeader>
-                <DialogTitle>ลงทะเบียนรับรถยนต์เข้าคลังสินค้า</DialogTitle>
-                <DialogDescription>
-                  กรอกข้อมูลรถยนต์จากเรือเพื่อทำการจัดสรรเข้าโกดังเก็บและระบบจะสร้างใบสั่งงาน PDI แรกเริ่มโดยอัตโนมัติ
-                </DialogDescription>
-              </DialogHeader>
+            <DialogContent className="max-w-xl">
+              <form onSubmit={handleRegister}>
+                <DialogHeader>
+                  <DialogTitle>ลงทะเบียนรับรถยนต์เข้าคลังสินค้า</DialogTitle>
+                  <DialogDescription>
+                    กรอกข้อมูลรถยนต์จากเรือเพื่อทำการจัดสรรเข้าโกดังเก็บและระบบจะสร้างใบสั่งงาน PDI แรกเริ่มโดยอัตโนมัติ
+                  </DialogDescription>
+                </DialogHeader>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-xs text-slate-500">เลขตัวถัง (VIN) *</Label>
-                  <Input
-                    required
-                    value={vin}
-                    onChange={(e) => setVin(e.target.value)}
-                    placeholder="เช่น LNAT4AB34T5G05011"
-                    className="font-mono text-xs uppercase"
-                  />
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs text-slate-500">เลขตัวถัง (VIN) *</Label>
+                    <Input
+                      required
+                      value={vin}
+                      onChange={(e) => setVin(e.target.value)}
+                      placeholder="เช่น LNAT4AB34T5G05011"
+                      className="font-mono text-xs uppercase"
+                    />
+                  </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">รุ่นโมเดลรถ (Model) *</Label>
-                  <Select value={modelCode} onChange={(e: any) => setModelCode(e.target.value)}>
-                    {Object.entries(modelMap).map(([code, name]) => (
-                      <option key={code} value={code}>
-                        {name}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">สีรถภายนอกหลัก (Color Code/Name) *</Label>
-                  <Input
-                    required
-                    value={colorName}
-                    onChange={(e) => setColorName(e.target.value)}
-                    placeholder="เช่น Space Gray"
-                    className="text-xs"
-                  />
-                </div>
-
-                {/* New Custom Fields */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">ลักษณะสีภายนอก (Exterior Color)</Label>
-                  <Input
-                    value={exteriorColor}
-                    onChange={(e) => setExteriorColor(e.target.value)}
-                    placeholder="เช่น Gray Metallic / Matte Black"
-                    className="text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">โทนสีตกแต่งภายใน (Interior Color)</Label>
-                  <Input
-                    value={interiorColor}
-                    onChange={(e) => setInteriorColor(e.target.value)}
-                    placeholder="เช่น Coal Black / Amber Brown"
-                    className="text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">ปีที่ผลิตรถ (Production Year)</Label>
-                  <Select value={productionYear} onChange={(e: any) => setProductionYear(e.target.value)}>
-                    <option value="2026">2026</option>
-                    <option value="2025">2025</option>
-                    <option value="2024">2024</option>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">วันที่ขายส่งดีลเลอร์ (WSDate) *</Label>
-                  <Input
-                    required
-                    type="date"
-                    value={wsDate}
-                    onChange={(e) => setWsDate(e.target.value)}
-                    className="text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">โซนจอดในคลัง (Warehouse/Zone)</Label>
-                  <Input
-                    value={warehouse}
-                    onChange={(e) => setWarehouse(e.target.value)}
-                    placeholder="เช่น โกดังท่าเรือแหลมฉบัง A"
-                    className="text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">ตำแหน่งจอดรถ (Floorplan/Lot)</Label>
-                  <Input
-                    value={floorplan}
-                    onChange={(e) => setFloorplan(e.target.value)}
-                    placeholder="เช่น แถว A ล็อต 3"
-                    className="text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-xs text-slate-500">สาขาที่จัดสรร (Branch)</Label>
-                  <Select value={branchId} onChange={(e: any) => setBranchId(e.target.value)}>
-                    {isDbConnected && branches.length > 0 ? (
-                      branches.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.name} ({b.code})
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">รุ่นโมเดลรถ (Model) *</Label>
+                    <Select value={modelCode} onChange={(e: any) => setModelCode(e.target.value)}>
+                      {Object.entries(modelMap).map(([code, name]) => (
+                        <option key={code} value={code}>
+                          {name}
                         </option>
-                      ))
-                    ) : (
-                      <option value="mock-branch">สาขามีนบุรี (MBR)</option>
-                    )}
-                  </Select>
-                </div>
-              </div>
+                      ))}
+                    </Select>
+                  </div>
 
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary" size="sm">
-                    ยกเลิก
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">สีรถภายนอกหลัก (Color Code/Name) *</Label>
+                    <Input
+                      required
+                      value={colorName}
+                      onChange={(e) => setColorName(e.target.value)}
+                      placeholder="เช่น Space Gray"
+                      className="text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">ลักษณะสีภายนอก (Exterior Color)</Label>
+                    <Input
+                      value={exteriorColor}
+                      onChange={(e) => setExteriorColor(e.target.value)}
+                      placeholder="เช่น Gray Metallic / Matte Black"
+                      className="text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">โทนสีตกแต่งภายใน (Interior Color)</Label>
+                    <Input
+                      value={interiorColor}
+                      onChange={(e) => setInteriorColor(e.target.value)}
+                      placeholder="เช่น Coal Black / Amber Brown"
+                      className="text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">ปีที่ผลิตรถ (Production Year)</Label>
+                    <Select value={productionYear} onChange={(e: any) => setProductionYear(e.target.value)}>
+                      <option value="2026">2026</option>
+                      <option value="2025">2025</option>
+                      <option value="2024">2024</option>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">วันที่ขายส่งดีลเลอร์ (WSDate) *</Label>
+                    <Input
+                      required
+                      type="date"
+                      value={wsDate}
+                      onChange={(e) => setWsDate(e.target.value)}
+                      className="text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">โซนจอดในคลัง (Warehouse/Zone)</Label>
+                    <Input
+                      value={warehouse}
+                      onChange={(e) => setWarehouse(e.target.value)}
+                      placeholder="เช่น โกดังท่าเรือแหลมฉบัง A"
+                      className="text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">ตำแหน่งจอดรถ (Floorplan/Lot)</Label>
+                    <Input
+                      value={floorplan}
+                      onChange={(e) => setFloorplan(e.target.value)}
+                      placeholder="เช่น แถว A ล็อต 3"
+                      className="text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs text-slate-500">สาขาที่จัดสรร (Branch)</Label>
+                    <Select value={branchId} onChange={(e: any) => setBranchId(e.target.value)}>
+                      {isDbConnected && branches.length > 0 ? (
+                        branches.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name} ({b.code})
+                          </option>
+                        ))
+                      ) : (
+                        <option value="mock-branch">สาขามีนบุรี (MBR)</option>
+                      )}
+                    </Select>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="secondary" size="sm">
+                      ยกเลิก
+                    </Button>
+                  </DialogClose>
+                  <Button type="submit" size="sm" disabled={loading}>
+                    {loading ? 'กำลังลงทะเบียน...' : 'ยืนยันลงทะเบียนรับรถ'}
                   </Button>
-                </DialogClose>
-                <Button type="submit" size="sm" disabled={loading}>
-                  {loading ? 'กำลังลงทะเบียน...' : 'ยืนยันลงทะเบียนรับรถ'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog> */}
       </div>
     </div>
+
+      {/* Search and Tab Filters Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 mb-4">
+        {/* Tab Filters */}
+        <div className="flex items-center bg-slate-100 border border-slate-200 p-1 rounded-lg">
+          {(['ALL', 'INCOMING', 'LONG_TERM', 'PRE_DELIVERY'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              className={`px-3 py-1.5 rounded-md text-[10px] font-semibold transition-all cursor-pointer ${
+                activeTab === tab
+                  ? 'bg-brand-teal text-slate-950 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              {tab === 'ALL' && 'ทั้งหมด'}
+              {tab === 'INCOMING' && 'Incoming'}
+              {tab === 'LONG_TERM' && 'Long-term'}
+              {tab === 'PRE_DELIVERY' && 'Pre-delivery'}
+            </button>
+          ))}
+        </div>
+
+        {/* Search Box */}
+        <div className="flex items-center gap-2 max-w-xs w-full">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <Input
+              type="text"
+              placeholder="ค้นหาเลขตัวถัง, รุ่นรถ, สาขา, โกดัง..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 text-[11px] border-slate-200 bg-white focus-visible:ring-brand-teal focus-visible:border-brand-teal"
+            />
+          </div>
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchQuery('')}
+              className="text-[10px] h-8 px-2 text-slate-400 hover:text-slate-600"
+            >
+              ล้าง
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* Stock list table */}
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto w-full">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-slate-50/75 border-b border-slate-100">
                 <TableRow>
-                  <TableHead>เลขตัวถัง (VIN)</TableHead>
-                  <TableHead>รุ่น (Model)</TableHead>
-                  <TableHead>สี (ภายนอก/ภายใน)</TableHead>
-                  <TableHead>ปีผลิต</TableHead>
-                  <TableHead>โกดัง/ล็อค</TableHead>
-                  <TableHead>วันที่เข้าคลัง</TableHead>
-                  <TableHead>สถานะ Stock</TableHead>
-                  <TableHead>สถานะ PDI</TableHead>
-                  <TableHead className="text-right">ดูรายละเอียด</TableHead>
+                  <TableHead className="w-16 text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">ส่งตรวจ<br/><span className="text-[10px] text-slate-400 font-normal">(Select)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขตัวถัง<br/><span className="text-[10px] text-slate-400 font-normal">(VIN)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">รุ่นรถ<br/><span className="text-[10px] text-slate-400 font-normal">(Model)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">สีรถ (นอก/ใน)<br/><span className="text-[10px] text-slate-400 font-normal">(Colors)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ปีผลิต<br/><span className="text-[10px] text-slate-400 font-normal">(Year)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">สาขา<br/><span className="text-[10px] text-slate-400 font-normal">(Branch)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">โกดัง/ล็อคจอด<br/><span className="text-[10px] text-slate-400 font-normal">(Location)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">วันที่เข้าคลัง<br/><span className="text-[10px] text-slate-400 font-normal">(Arrived At)</span></TableHead>
+                  <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">สถานะคลัง<br/><span className="text-[10px] text-slate-400 font-normal">(Stock Status)</span></TableHead>
+                  <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">สถานะ PDI<br/><span className="text-[10px] text-slate-400 font-normal">(PDI Status)</span></TableHead>
+                  <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">ดูรายละเอียด<br/><span className="text-[10px] text-slate-400 font-normal">(View Details)</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {vehicles.length === 0 ? (
+                {filteredVehicles.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12 text-slate-500">
-                      ไม่มีข้อมูลรถยนต์ในสต็อก
+                    <TableCell colSpan={11} className="text-center py-12 text-slate-500">
+                      {searchQuery.trim() !== '' || activeTab !== 'ALL'
+                        ? 'ไม่พบข้อมูลรถยนต์ที่ระบุ'
+                        : 'ไม่มีข้อมูลรถยนต์ในสต็อก'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  vehicles.map((veh) => {
+                   filteredVehicles.map((veh) => {
                     // Find current PDI status
                     const latestJob = veh.pdiJobs?.[0];
-                    
+                    const hasIncomingJob = veh.pdiJobs?.some((job: any) => job.pdiType === 'INCOMING');
+                    const isRepairing = latestJob && (latestJob.status === 'DEFECT_FOUND' || latestJob.status === 'REJECTED');
+
                     return (
-                      <TableRow key={veh.vin}>
-                        <TableCell className="font-mono text-xs text-slate-800 font-medium select-all">{veh.vin}</TableCell>
-                        <TableCell className="text-xs font-semibold">{veh.modelName}</TableCell>
-                        <TableCell className="text-xs">
+                      <TableRow key={veh.vin} className="hover:bg-slate-50/50 transition-colors">
+                        <TableCell className="w-16 text-center py-4">
+                          {!hasIncomingJob ? (
+                            <input
+                              type="checkbox"
+                              checked={selectedVins.includes(veh.vin)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedVins([...selectedVins, veh.vin]);
+                                } else {
+                                  setSelectedVins(selectedVins.filter((id) => id !== veh.vin));
+                                }
+                              }}
+                              className="h-4 w-4 rounded border-slate-300 text-brand-teal focus:ring-brand-teal cursor-pointer"
+                            />
+                          ) : (
+                            <div className="w-4 h-4 mx-auto flex items-center justify-center">
+                              {/* Empty space */}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-slate-800 font-medium py-4 select-all">{veh.vin}</TableCell>
+                        <TableCell className="text-xs font-semibold py-4">{veh.modelName}</TableCell>
+                        <TableCell className="text-xs py-4">
                           <div className="text-slate-700">{veh.exteriorColor || veh.colorName || '-'}</div>
                           <div className="text-slate-500 text-[10px]">ใน: {veh.interiorColor || '-'}</div>
                         </TableCell>
-                        <TableCell className="text-xs font-mono">{veh.productionYear || '-'}</TableCell>
-                        <TableCell className="text-xs">
+                        <TableCell className="text-xs font-mono py-4">{veh.productionYear || '-'}</TableCell>
+                        <TableCell className="text-xs py-4 font-semibold text-slate-700">{veh.branch?.name || '-'}</TableCell>
+                        <TableCell className="text-xs py-4">
                           <div className="text-slate-700">{veh.warehouse || '-'}</div>
                           <div className="text-slate-500 text-[10px]">{veh.floorplan || '-'}</div>
                         </TableCell>
-                        <TableCell className="text-xs">
+                        <TableCell className="text-xs py-4">
                           {new Date(veh.arrivedAt).toLocaleDateString('th-TH')}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-center py-4">
                           <Badge
                             variant={
-                              veh.currentStatus === 'DELIVERED'
+                              isRepairing
+                                ? 'danger'
+                                : veh.currentStatus === 'DELIVERED'
                                 ? 'success'
                                 : veh.currentStatus === 'IN_STOCK'
                                 ? 'info'
                                 : 'default'
                             }
                           >
-                            {veh.currentStatus === 'IN_STOCK' && 'ใน Stock'}
-                            {veh.currentStatus === 'DELIVERED' && 'ส่งมอบแล้ว'}
-                            {veh.currentStatus !== 'IN_STOCK' && veh.currentStatus !== 'DELIVERED' && veh.currentStatus}
+                            {isRepairing && 'พบจุดชำรุด'}
+                            {!isRepairing && veh.currentStatus === 'IN_STOCK' && 'ใน Stock'}
+                            {!isRepairing && veh.currentStatus === 'DELIVERED' && 'ส่งมอบแล้ว'}
+                            {!isRepairing && veh.currentStatus !== 'IN_STOCK' && veh.currentStatus !== 'DELIVERED' && veh.currentStatus}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-center py-4">
                           {latestJob ? (
                             <span className="text-[10px] font-semibold">
                               {latestJob.pdiType}: {' '}
-                              {latestJob.status === 'PENDING' && <span className="text-slate-500">รอตรวจ</span>}
-                              {latestJob.status === 'IN_PROGRESS' && <span className="text-brand-teal">กำลังตรวจ</span>}
-                              {latestJob.status === 'PENDING_APPROVAL' && <span className="text-warning">รอ QC</span>}
-                              {latestJob.status === 'APPROVED' && <span className="text-success">อนุมัติแล้ว</span>}
-                              {latestJob.status === 'REJECTED' && <span className="text-danger">ถูก Reject</span>}
+                              {isRepairing ? (
+                                <span className="text-amber-600">กำลังปรับสภาพซ่อม</span>
+                              ) : (
+                                <>
+                                  {latestJob.status === 'PENDING' && <span className="text-slate-500">รอตรวจ</span>}
+                                  {latestJob.status === 'IN_PROGRESS' && <span className="text-brand-teal">กำลังตรวจ</span>}
+                                  {latestJob.status === 'PENDING_APPROVAL' && <span className="text-warning">รอ QC</span>}
+                                  {latestJob.status === 'APPROVED' && <span className="text-success">อนุมัติแล้ว</span>}
+                                  {latestJob.status === 'REJECTED' && <span className="text-danger">ถูก Reject</span>}
+                                </>
+                              )}
                             </span>
                           ) : (
                             <span className="text-[10px] text-slate-500">ไม่มีงานตรวจ</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-center py-4">
                           <Link href={`/vehicles/${veh.vin}`}>
                             <Button variant="outline" size="sm" className="h-8 w-8 p-0">
                               <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -776,7 +1005,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                       </TableRow>
                     );
                   })
-                )}
+                )/* empty */}
               </TableBody>
             </Table>
           </div>
