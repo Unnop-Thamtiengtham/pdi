@@ -96,6 +96,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 });
     }
 
+    // Block non-incoming jobs if INCOMING PDI is not APPROVED yet
+    if (pdiType === 'LONG_TERM' || pdiType === 'PRE_DELIVERY') {
+      const incomingApproved = await prisma.pdiJob.findFirst({
+        where: {
+          vehicleVin,
+          pdiType: 'INCOMING',
+          status: 'APPROVED',
+        },
+      });
+
+      if (!incomingApproved) {
+        return NextResponse.json(
+          { error: 'ไม่สามารถสร้างใบงานได้: รถคันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI)' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Generate unique Job Number
     const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const rand = Math.floor(1000 + Math.random() * 9000);
@@ -124,7 +142,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PATCH /api/pdi-jobs — บันทึกผลการตรวจ
+// PATCH /api/pdi-jobs — บันทึกผลการตรวจ (Force route reload)
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
@@ -137,6 +155,14 @@ export async function PATCH(req: NextRequest) {
       inspectorId,
       approverId,
       notes,
+      sentToRepairAt,
+      repairLocation,
+      repairNotes,
+      repairCompleted,
+      customerSig,
+      inspectorSig,
+      supervisorSig,
+      pdpaConsent,
     } = body;
 
     if (!jobId) {
@@ -190,6 +216,7 @@ export async function PATCH(req: NextRequest) {
           hvBatteryLevel: batteryData.hvBatteryLevel,
           tirePressure: batteryData.tirePressure,
           reportPhotoUrl: batteryData.reportPhotoUrl,
+          terminalCheck: batteryData.terminalCheck,
         },
         create: {
           jobId,
@@ -202,6 +229,7 @@ export async function PATCH(req: NextRequest) {
           hvBatteryLevel: batteryData.hvBatteryLevel,
           tirePressure: batteryData.tirePressure,
           reportPhotoUrl: batteryData.reportPhotoUrl,
+          terminalCheck: batteryData.terminalCheck,
         },
       });
     }
@@ -228,9 +256,56 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
+    // If sent to repair, automatically set any OPEN defects to IN_REPAIR
+    if (sentToRepairAt) {
+      await prisma.defect.updateMany({
+        where: {
+          jobId,
+          status: 'OPEN',
+        },
+        data: {
+          status: 'IN_REPAIR',
+        },
+      });
+    }
+
+    // If repairCompleted is true, automatically set OPEN/IN_REPAIR defects to RESOLVED and FAIL results to REPAIRED
+    if (repairCompleted) {
+      await prisma.defect.updateMany({
+        where: {
+          jobId,
+          status: { in: ['OPEN', 'IN_REPAIR'] },
+        },
+        data: {
+          status: 'RESOLVED',
+          resolvedAt: new Date(),
+        },
+      });
+
+      await prisma.checklistResult.updateMany({
+        where: {
+          jobId,
+          result: 'FAIL',
+        },
+        data: {
+          result: 'REPAIRED',
+        },
+      });
+    }
+
     // 4. Update PDI Job Status & timestamps
     const updateData: any = {};
     if (status) updateData.status = status as PdiStatus;
+    
+    if (sentToRepairAt !== undefined) {
+      updateData.sentToRepairAt = sentToRepairAt ? new Date(sentToRepairAt) : null;
+    }
+    if (repairLocation !== undefined) {
+      updateData.repairLocation = repairLocation;
+    }
+    if (repairNotes !== undefined) {
+      updateData.repairNotes = repairNotes;
+    }
     
     if (inspectorId) {
       const userExists = await prisma.user.findUnique({ where: { id: inspectorId } });
@@ -255,9 +330,18 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (notes !== undefined) updateData.notes = notes;
+    if (customerSig !== undefined) updateData.customerSig = customerSig;
+    if (inspectorSig !== undefined) updateData.inspectorSig = inspectorSig;
+    if (supervisorSig !== undefined) updateData.supervisorSig = supervisorSig;
+    if (pdpaConsent !== undefined) updateData.pdpaConsent = pdpaConsent;
 
     // SLA & Timings transitions
-    if (status === 'IN_PROGRESS') {
+    if (status === 'PENDING') {
+      updateData.startedAt = null;
+      updateData.completedAt = null;
+      updateData.inspectorId = null;
+      updateData.approverId = null;
+    } else if (status === 'IN_PROGRESS') {
       updateData.startedAt = new Date();
     } else if (status === 'PENDING_APPROVAL') {
       updateData.completedAt = new Date();
@@ -272,10 +356,8 @@ export async function PATCH(req: NextRequest) {
 
     // Side effect: update vehicle status
     if (status === 'APPROVED') {
-      let nextVehicleStatus = 'PDI_APPROVED';
-      if (job.pdiType === 'INCOMING') {
-        nextVehicleStatus = 'IN_STOCK';
-      } else if (job.pdiType === 'PRE_DELIVERY') {
+      let nextVehicleStatus = 'IN_STOCK';
+      if (job.pdiType === 'PRE_DELIVERY') {
         nextVehicleStatus = 'DELIVERED';
       }
       await prisma.vehicle.update({
