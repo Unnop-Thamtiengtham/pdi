@@ -31,8 +31,10 @@ export async function POST(req: NextRequest) {
 
     const validModelCodes = new Set([
       'AION_V',
+      'AION_V5',
       'AION_UT',
       'AION_YP',
+      'AION_YP5',
       'AION_ES',
       'HYPTEC_HT',
       'HYPTEC_SSR',
@@ -71,7 +73,7 @@ export async function POST(req: NextRequest) {
       }
       const mCode = String(v.modelCode).trim();
       if (!validModelCodes.has(mCode)) {
-        errors.push(`แถวที่ ${rowNum}: รหัสรุ่นรถ "${v.modelCode}" ไม่ถูกต้อง (เลือกได้เฉพาะ: AION_V, AION_UT, AION_YP, AION_ES, HYPTEC_HT, HYPTEC_SSR, GAC_M8)`);
+        errors.push(`แถวที่ ${rowNum}: รหัสรุ่นรถ "${v.modelCode}" ไม่ถูกต้อง (เลือกได้เฉพาะ: AION_V, AION_V5, AION_UT, AION_YP, AION_YP5, AION_ES, HYPTEC_HT, HYPTEC_SSR, GAC_M8)`);
         continue;
       }
 
@@ -135,12 +137,11 @@ export async function POST(req: NextRequest) {
     // 4. Database Transaction for bulk creation
     const createdVehicles = await prisma.$transaction(async (tx) => {
       const results: any[] = [];
-      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
       for (let i = 0; i < validatedVehicles.length; i++) {
         const item = validatedVehicles[i];
         const arrivedAt = new Date();
-        const incomingDeadline = new Date(arrivedAt.getTime() + 24 * 60 * 60 * 1000);
+        const incomingDeadline = arrivedAt; // SLA timer starts when Incoming PDI starts manually
 
         // Create Vehicle
         const vehicle = await tx.vehicle.create({
@@ -162,21 +163,6 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // Auto-create Incoming PDI Job
-        // Generate random sequence for job number to guarantee unique key
-        const rand = Math.floor(100000 + Math.random() * 900000); // 6-digit random for bulk to minimize collision
-        const jobNumber = `JO-INC-${todayStr}-${rand}-${i}`;
-
-        await tx.pdiJob.create({
-          data: {
-            jobNumber,
-            pdiType: 'INCOMING',
-            status: 'PENDING',
-            vehicleVin: item.vin,
-            scheduledDate: incomingDeadline,
-          },
-        });
-
         results.push(vehicle);
       }
       return results;
@@ -184,7 +170,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Successfully imported ${createdVehicles.length} vehicles and created PDI jobs.`,
+      message: `Successfully imported ${createdVehicles.length} vehicles.`,
       count: createdVehicles.length
     }, { status: 201 });
 
