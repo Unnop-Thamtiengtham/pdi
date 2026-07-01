@@ -56,11 +56,13 @@ interface BatteryData {
   hvBatteryLevel?: number | null;
   tirePressure?: number | null;
   reportPhotoUrl?: string | null;
+  terminalCheck?: string | null;
 }
 
 interface ChecklistFormProps {
   jobId: string;
   modelCode: ModelCode;
+  pdiType?: string;
   templateItems: ChecklistItem[];
   initialResults?: ChecklistResult[];
   initialBatteryData?: BatteryData;
@@ -73,6 +75,7 @@ interface ChecklistFormProps {
 export default function ChecklistForm({
   jobId,
   modelCode,
+  pdiType = 'INCOMING',
   templateItems,
   initialResults = [],
   initialBatteryData = {},
@@ -83,7 +86,23 @@ export default function ChecklistForm({
 }: ChecklistFormProps) {
   // State management
   const [results, setResults] = useState<Record<string, ChecklistResult>>({});
-  const [batteryData, setBatteryData] = useState<BatteryData>(initialBatteryData);
+  const [batteryData, setBatteryData] = useState<BatteryData>(() => {
+    const data = { ...initialBatteryData };
+    
+    // Sync with initial results if present
+    const batTerm = templateItems.find(i => (i.itemCode === 'BAT_003' || i.itemCode === 'BAT_005') && !i.hasNumeric);
+    if (batTerm) {
+      const savedResult = initialResults.find(r => r.itemId === batTerm.id || r.itemCode === batTerm.itemCode);
+      if (savedResult) {
+        data.terminalCheck = savedResult.result === 'NA' ? 'N/A' : savedResult.result;
+      }
+    }
+
+    if (data.terminalCheck === undefined || data.terminalCheck === null) {
+      data.terminalCheck = 'PASS';
+    }
+    return data;
+  });
   const [defects, setDefects] = useState<Defect[]>(initialDefects);
   const [activeCategory, setActiveCategory] = useState<string>('EXTERIOR');
   const [saving, setSaving] = useState(false);
@@ -127,6 +146,13 @@ export default function ChecklistForm({
     const matched = CHECKLIST_CATEGORIES.find(cat => cat.name === i.category);
     return matched ? matched.code : 'EXTERIOR';
   })));
+
+  // Select first available category if activeCategory is not in the categories list (e.g. for LONG_TERM jobs)
+  useEffect(() => {
+    if (categories.length > 0 && !(categories as string[]).includes(activeCategory)) {
+      setActiveCategory(categories[0]);
+    }
+  }, [categories, activeCategory]);
 
   const filteredItems = templateItems.filter(item => {
     const matched = CHECKLIST_CATEGORIES.find(cat => cat.name === item.category);
@@ -192,6 +218,24 @@ export default function ChecklistForm({
     syncField('BAT_007', batteryData.mainSoc);
     syncField('BAT_008', batteryData.tirePressure);
 
+    // For AION_UT: BAT_004 is HV battery level, not secSoh
+    const bat004hv = templateItems.find(i => i.itemCode === 'BAT_004' && i.itemName?.includes('HV'));
+    if (bat004hv) {
+      syncField('BAT_004', batteryData.hvBatteryLevel);
+    }
+
+    // Sync terminalCheck (PASS/FAIL) to the non-numeric battery terminal check item (BAT_003 or BAT_005)
+    if (batteryData.terminalCheck) {
+      const batTerm = templateItems.find(i => (i.itemCode === 'BAT_003' || i.itemCode === 'BAT_005') && !i.hasNumeric);
+      if (batTerm && updatedResults[batTerm.id]) {
+        const newResult = batteryData.terminalCheck === 'N/A' ? 'NA' : batteryData.terminalCheck as 'PASS' | 'FAIL' | 'REPAIRED';
+        if (updatedResults[batTerm.id].result !== newResult) {
+          updatedResults[batTerm.id] = { ...updatedResults[batTerm.id], result: newResult };
+          changed = true;
+        }
+      }
+    }
+
     if (changed) {
       setResults(updatedResults);
     }
@@ -211,32 +255,26 @@ export default function ChecklistForm({
   };
 
   const handleSubmitJob = async () => {
-    // 1. Defect Block: If any defect is OPEN, cannot submit
-    const openDefects = defects.filter(d => d.status === 'OPEN' || d.status === 'IN_REPAIR');
-    if (openDefects.length > 0) {
-      toast.warning('ไม่สามารถส่งตรวจได้: ยังมีจุดบกพร่องที่ค้างชำรุด (OPEN / IN REPAIR) ต้องดำเนินการแก้ไขหรือเปลี่ยนสถานะเป็น RESOLVED ก่อนส่งตรวจ');
-      return;
-    }
-
-    // 2. Battery values checklist validation
-    const rules = MODEL_RULES[modelCode];
-    if (batteryData.mainVoltage === undefined || batteryData.mainVoltage === null || batteryData.mainSoh === undefined || batteryData.mainSoh === null) {
-      toast.warning('กรุณากรอกข้อมูลแบตเตอรี่ 12V (แรงดันไฟฟ้าและ SOH)');
-      return;
-    }
-    if (rules.hasDualBattery && (batteryData.secVoltage === undefined || batteryData.secVoltage === null || batteryData.secSoh === undefined || batteryData.secSoh === null)) {
-      toast.warning('กรุณากรอกข้อมูลแบตเตอรี่ 12V ลูกรอง (แรงดันไฟฟ้าและ SOH)');
-      return;
-    }
-    if (rules.hasCCA && (batteryData.mainCca === undefined || batteryData.mainCca === null)) {
-      toast.warning('กรุณากรอกข้อมูล CCA แบตเตอรี่สำหรับรุ่น AION Y Plus');
-      return;
+    // 2. Battery values checklist validation (skip for LONG_TERM since it uses standard checklist items instead of custom BatterySection inputs)
+    if (pdiType !== 'LONG_TERM') {
+      const rules = MODEL_RULES[modelCode];
+      if (batteryData.mainVoltage === undefined || batteryData.mainVoltage === null || batteryData.mainSoh === undefined || batteryData.mainSoh === null) {
+        toast.warning('กรุณากรอกข้อมูลแบตเตอรี่ 12V (แรงดันไฟฟ้าและ SOH)');
+        return;
+      }
+      if (rules.hasDualBattery && (batteryData.secVoltage === undefined || batteryData.secVoltage === null || batteryData.secSoh === undefined || batteryData.secSoh === null)) {
+        toast.warning('กรุณากรอกข้อมูลแบตเตอรี่ 12V ลูกรอง (แรงดันไฟฟ้าและ SOH)');
+        return;
+      }
+      if (rules.hasCCA && (batteryData.mainCca === undefined || batteryData.mainCca === null)) {
+        toast.warning('กรุณากรอกข้อมูล CCA แบตเตอรี่สำหรับรุ่น AION Y Plus');
+        return;
+      }
     }
 
     setSubmitting(true);
     try {
       await onSubmit(Object.values(results), batteryData, defects);
-      toast.success('ส่งผลงานตรวจให้ Supervisor พิจารณาเรียบร้อยแล้ว');
     } catch (err) {
       console.error(err);
       toast.error('เกิดข้อผิดพลาดในการส่งตรวจ');
@@ -314,8 +352,8 @@ export default function ChecklistForm({
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Categories list */}
         <div className="lg:col-span-1 space-y-1.5 no-print">
-          <span className="text-[10px] font-semibold text-slate-500 tracking-wider uppercase pl-2">หมวดการตรวจสอบ</span>
-          <div className="space-y-1">
+          <span className="text-[10px] font-semibold text-slate-500 tracking-wider uppercase pl-2 hidden lg:block">หมวดการตรวจสอบ</span>
+          <div className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible whitespace-nowrap lg:whitespace-normal gap-2 lg:gap-1 pb-2 lg:pb-0 scrollbar-none">
             {categories.map((catCode) => {
               const isActive = activeCategory === catCode;
               const catItems = templateItems.filter(i => {
@@ -323,27 +361,28 @@ export default function ChecklistForm({
                 return (matched ? matched.code : 'EXTERIOR') === catCode;
               });
               
-              // Count checked in this category
-              const checkedInCat = catItems.filter(i => results[i.id]?.result).length;
+              // Count PASS/REPAIRED/NA items in this category
+              const passInCat = catItems.filter(i => results[i.id]?.result === 'PASS' || results[i.id]?.result === 'REPAIRED' || results[i.id]?.result === 'NA').length;
               const totalInCat = catItems.length;
-              const isCatDone = checkedInCat === totalInCat;
+              const hasFailInCat = catItems.some(i => results[i.id]?.result === 'FAIL');
+              const isCatDone = passInCat === totalInCat;
 
               return (
                 <button
                   key={catCode}
                   type="button"
                   onClick={() => setActiveCategory(catCode)}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition-all flex items-center justify-between cursor-pointer border ${
+                  className={`flex-shrink-0 w-auto lg:w-full text-left px-3 py-2 lg:py-2.5 rounded-lg text-xs font-medium transition-all flex items-center justify-between gap-3 cursor-pointer border min-w-[130px] lg:min-w-0 ${
                     isActive
                       ? 'bg-brand-teal/10 border-brand-teal text-brand-teal glow-active font-semibold'
                       : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100'
                   }`}
                 >
                   <span>{getCategoryName(catCode)}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                    isCatDone ? 'bg-success/20 text-success' : 'bg-slate-100 text-slate-500'
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+                    hasFailInCat ? 'bg-error/15 text-error' : isCatDone ? 'bg-success/20 text-success' : 'bg-slate-100 text-slate-500'
                   }`}>
-                    {checkedInCat}/{totalInCat}
+                    {passInCat}/{totalInCat}
                   </span>
                 </button>
               );
@@ -373,7 +412,7 @@ export default function ChecklistForm({
                   const res = results[item.id] || { itemId: item.id, itemCode: item.itemCode, result: 'PASS' };
                   
                   return (
-                    <div key={item.id} className="py-4 first:pt-0 last:pb-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div key={item.id} className={`py-4 first:pt-0 last:pb-0 flex justify-between gap-4 ${item.hasNumeric ? 'flex-row items-center' : 'flex-col md:flex-row md:items-center'}`}>
                       <div className="space-y-1 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono text-brand-teal font-semibold">{item.itemCode}</span>
@@ -382,7 +421,8 @@ export default function ChecklistForm({
                         {item.notes && <p className="text-xs text-slate-500">{item.notes}</p>}
                       </div>
 
-                      {/* Result Selectors */}
+                      {/* Result Selectors (hidden for numeric-input items) */}
+                      {!item.hasNumeric && (
                       <div className="flex flex-wrap items-center gap-2 self-start md:self-auto justify-start md:justify-end">
                         <button
                           type="button"
@@ -439,6 +479,55 @@ export default function ChecklistForm({
                           <span>N/A</span>
                         </button>
                       </div>
+                      )}
+
+                      {/* Numeric Input (for items with hasNumeric) */}
+                      {item.hasNumeric && (
+                        <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-center">
+                          <div className="relative">
+                            <div className="relative">
+                              <input
+                                type="number"
+                                step="any"
+                                disabled={readOnly}
+                                placeholder={`เช่น ${item.numericMin ?? 0}`}
+                                value={res.numericValue ?? ''}
+                                onChange={(e) => {
+                                  const val = e.target.value === '' ? null : parseFloat(e.target.value);
+                                  const updated = {
+                                    ...res,
+                                    numericValue: val,
+                                  };
+                                  // Auto-evaluate PASS/FAIL based on threshold
+                                  if (val !== null && !isNaN(val)) {
+                                    const passMin = item.numericMin == null || val >= item.numericMin;
+                                    const passMax = item.numericMax == null || val <= item.numericMax;
+                                    updated.result = (passMin && passMax) ? 'PASS' : 'FAIL';
+                                  }
+                                  setResults(prev => ({ ...prev, [item.id]: updated }));
+                                }}
+                                className="w-28 px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal transition-all"
+                              />
+                              {item.numericUnit && (
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">
+                                  {item.numericUnit}
+                                </span>
+                              )}
+                            </div>
+                            <p className="absolute left-0 top-full mt-0.5 text-[10px] text-slate-400 whitespace-nowrap">
+                              เกณฑ์ ≥ {item.numericMin ?? 0}{item.numericUnit ?? ''}
+                            </p>
+                          </div>
+                          {/* Auto-result badge */}
+                          {res.numericValue != null && (
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              res.result === 'PASS' ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'
+                            }`}>
+                              {res.result}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -451,6 +540,7 @@ export default function ChecklistForm({
             defects={defects}
             onChange={setDefects}
             checklistItemCodes={templateItems.map(i => i.itemCode)}
+            checklistItems={templateItems.map(i => ({ itemCode: i.itemCode, itemName: i.itemName }))}
             readOnly={readOnly}
           />
         </div>

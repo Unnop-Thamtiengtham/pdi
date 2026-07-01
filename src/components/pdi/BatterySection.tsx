@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, Check, CheckCircle, X, RefreshCw } from 'lucide-react';
 
 interface BatteryData {
   mainVoltage?: number | null;
@@ -18,6 +18,7 @@ interface BatteryData {
   hvBatteryLevel?: number | null;
   tirePressure?: number | null;
   reportPhotoUrl?: string | null;
+  terminalCheck?: string | null;
 }
 
 interface BatterySectionProps {
@@ -79,8 +80,8 @@ export default function BatterySection({
             <span>แบตเตอรี่ 12V (ลูกหลัก)</span>
           </h4>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-xs text-slate-500">แรงดันไฟฟ้า (Voltage)</Label>
+            <div className="flex flex-col">
+              <Label className="text-xs text-slate-500 flex-1 flex items-end pb-1">แรงดันไฟฟ้า (Voltage)</Label>
               <div className="relative mt-1">
                 <Input
                   type="number"
@@ -89,7 +90,7 @@ export default function BatterySection({
                   value={value.mainVoltage !== undefined && value.mainVoltage !== null ? value.mainVoltage : ''}
                   onChange={(e) => handleFieldChange('mainVoltage', e.target.value)}
                   disabled={readOnly}
-                  className={!isMainVoltageValid ? 'border-error focus:ring-error focus:border-error' : ''}
+                  className={`pr-8 ${!isMainVoltageValid ? 'border-error focus:ring-error focus:border-error' : ''}`}
                 />
                 <span className="absolute right-3 top-2.5 text-xs text-slate-500">V</span>
               </div>
@@ -105,8 +106,8 @@ export default function BatterySection({
               </div>
             </div>
 
-            <div>
-              <Label className="text-xs text-slate-500">ค่าสุขภาพ SOH (State of Health)</Label>
+            <div className="flex flex-col">
+              <Label className="text-xs text-slate-500 flex-1 flex items-end pb-1">ค่าสุขภาพ SOH (State of Health)</Label>
               <div className="relative mt-1">
                 <Input
                   type="number"
@@ -114,7 +115,7 @@ export default function BatterySection({
                   value={value.mainSoh !== undefined && value.mainSoh !== null ? value.mainSoh : ''}
                   onChange={(e) => handleFieldChange('mainSoh', e.target.value)}
                   disabled={readOnly}
-                  className={!isMainSohValid ? 'border-error focus:ring-error focus:border-error' : ''}
+                  className={`pr-8 ${!isMainSohValid ? 'border-error focus:ring-error focus:border-error' : ''}`}
                 />
                 <span className="absolute right-3 top-2.5 text-xs text-slate-500">%</span>
               </div>
@@ -130,6 +131,64 @@ export default function BatterySection({
               </div>
             </div>
           </div>
+
+          {/* Terminal Check - PASS/FAIL */}
+          <div className="pt-3 border-t border-slate-200 mt-2">
+            <Label className="text-xs text-slate-500 block mb-2">ขั้วลบแบตเตอรี่ขันแน่และไม่หลุดหลวม</Label>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                disabled={readOnly}
+                onClick={() => onChange({ ...value, terminalCheck: 'PASS' })}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                  value.terminalCheck === 'PASS'
+                    ? 'bg-success/15 border-success text-success'
+                    : 'border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                }`}
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>PASS</span>
+              </button>
+              <button
+                type="button"
+                disabled={readOnly}
+                onClick={() => onChange({ ...value, terminalCheck: 'FAIL' })}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                  value.terminalCheck === 'FAIL'
+                    ? 'bg-danger/15 border-danger text-danger'
+                    : 'border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                }`}
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>FAIL</span>
+              </button>
+              <button
+                type="button"
+                disabled={readOnly}
+                onClick={() => onChange({ ...value, terminalCheck: 'REPAIRED' })}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                  value.terminalCheck === 'REPAIRED'
+                    ? 'bg-warning/15 border-warning text-warning'
+                    : 'border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                }`}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>REPAIRED</span>
+              </button>
+              <button
+                type="button"
+                disabled={readOnly}
+                onClick={() => onChange({ ...value, terminalCheck: 'N/A' })}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                  value.terminalCheck === 'N/A'
+                    ? 'bg-slate-100 border-slate-200 text-slate-600'
+                    : 'border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                }`}
+              >
+                <span>N/A</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Secondary 12V Battery (AION V & HYPTEC HT) */}
@@ -139,8 +198,8 @@ export default function BatterySection({
               <span>แบตเตอรี่ 12V (ลูกรอง)</span>
             </h4>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs text-slate-500">แรงดันไฟฟ้า (Voltage)</Label>
+              <div className="flex flex-col">
+                <Label className="text-xs text-slate-500 flex-1 flex items-end pb-1">แรงดันไฟฟ้า (Voltage)</Label>
                 <div className="relative mt-1">
                   <Input
                     type="number"
@@ -149,7 +208,7 @@ export default function BatterySection({
                     value={value.secVoltage !== undefined && value.secVoltage !== null ? value.secVoltage : ''}
                     onChange={(e) => handleFieldChange('secVoltage', e.target.value)}
                     disabled={readOnly}
-                    className={!isSecVoltageValid ? 'border-error focus:ring-error focus:border-error' : ''}
+                    className={`pr-8 ${!isSecVoltageValid ? 'border-error focus:ring-error focus:border-error' : ''}`}
                   />
                   <span className="absolute right-3 top-2.5 text-xs text-slate-500">V</span>
                 </div>
@@ -165,8 +224,8 @@ export default function BatterySection({
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs text-slate-500">ค่าสุขภาพ SOH (State of Health)</Label>
+              <div className="flex flex-col">
+                <Label className="text-xs text-slate-500 flex-1 flex items-end pb-1">ค่าสุขภาพ SOH (State of Health)</Label>
                 <div className="relative mt-1">
                   <Input
                     type="number"
@@ -174,7 +233,7 @@ export default function BatterySection({
                     value={value.secSoh !== undefined && value.secSoh !== null ? value.secSoh : ''}
                     onChange={(e) => handleFieldChange('secSoh', e.target.value)}
                     disabled={readOnly}
-                    className={!isSecSohValid ? 'border-error focus:ring-error focus:border-error' : ''}
+                    className={`pr-8 ${!isSecSohValid ? 'border-error focus:ring-error focus:border-error' : ''}`}
                   />
                   <span className="absolute right-3 top-2.5 text-xs text-slate-500">%</span>
                 </div>
@@ -209,7 +268,7 @@ export default function BatterySection({
                     value={value.mainCca !== undefined && value.mainCca !== null ? value.mainCca : ''}
                     onChange={(e) => handleFieldChange('mainCca', e.target.value)}
                     disabled={readOnly}
-                    className={!isCcaValid ? 'border-error focus:ring-error focus:border-error' : ''}
+                    className={`pr-8 ${!isCcaValid ? 'border-error focus:ring-error focus:border-error' : ''}`}
                   />
                   <span className="absolute right-3 top-2.5 text-xs text-slate-500">A</span>
                 </div>
@@ -234,7 +293,7 @@ export default function BatterySection({
                     value={value.mainSoc !== undefined && value.mainSoc !== null ? value.mainSoc : ''}
                     onChange={(e) => handleFieldChange('mainSoc', e.target.value)}
                     disabled={readOnly}
-                    className={!isSocValid ? 'border-error focus:ring-error focus:border-error' : ''}
+                    className={`pr-8 ${!isSocValid ? 'border-error focus:ring-error focus:border-error' : ''}`}
                   />
                   <span className="absolute right-3 top-2.5 text-xs text-slate-500">%</span>
                 </div>
@@ -268,7 +327,7 @@ export default function BatterySection({
                   value={value.hvBatteryLevel !== undefined && value.hvBatteryLevel !== null ? value.hvBatteryLevel : ''}
                   onChange={(e) => handleFieldChange('hvBatteryLevel', e.target.value)}
                   disabled={readOnly}
-                  className={!isHvValid ? 'border-error focus:ring-error focus:border-error' : ''}
+                  className={`pr-8 ${!isHvValid ? 'border-error focus:ring-error focus:border-error' : ''}`}
                 />
                 <span className="absolute right-3 top-2.5 text-xs text-slate-500">%</span>
               </div>
@@ -294,7 +353,7 @@ export default function BatterySection({
                     value={value.tirePressure !== undefined && value.tirePressure !== null ? value.tirePressure : ''}
                     onChange={(e) => handleFieldChange('tirePressure', e.target.value)}
                     disabled={readOnly}
-                    className={!isTirePressureValid ? 'border-error focus:ring-error focus:border-error' : ''}
+                    className={`pr-10 ${!isTirePressureValid ? 'border-error focus:ring-error focus:border-error' : ''}`}
                   />
                   <span className="absolute right-3 top-2.5 text-xs text-slate-500">psi</span>
                 </div>

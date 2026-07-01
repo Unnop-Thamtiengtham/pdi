@@ -3,8 +3,10 @@
 // ──────────────────────────────────────
 export type ModelCode =
   | 'AION_V'
+  | 'AION_V5'
   | 'AION_UT'
   | 'AION_YP'
+  | 'AION_YP5'
   | 'AION_ES'
   | 'HYPTEC_HT'
   | 'HYPTEC_SSR'
@@ -12,8 +14,10 @@ export type ModelCode =
 
 export const MODEL_NAMES: Record<ModelCode, string> = {
   AION_V: 'AION V',
+  AION_V5: 'AION V 5',
   AION_UT: 'AION UT',
   AION_YP: 'AION Y Plus',
+  AION_YP5: 'AION Y Plus 5',
   AION_ES: 'AION ES',
   HYPTEC_HT: 'HYPTEC HT',
   HYPTEC_SSR: 'HYPTEC SSR',
@@ -36,6 +40,13 @@ export const CHECKLIST_CATEGORIES = [
   { code: 'WARNING',     name: 'ตรวจสอบไฟเตือน',               order: 10 },
   { code: 'OTA',         name: 'วินิจฉัยและอัปเดตซอฟต์แวร์',   order: 11 },
   { code: 'CHARGEPORT',  name: 'การปลดล็อกฝาปิดช่องชาร์จ',    order: 12 },
+  { code: 'MAINTENANCE', name: 'บำรุงรักษาประจำ (Maintenance)',   order: 13 },
+  { code: 'DOCUMENTS',          name: 'ตรวจสอบเอกสารที่เกี่ยวข้องกับรถ',    order: 14 },
+  { code: 'VEHICLE_CONDITION',  name: 'ตรวจสอบสภาพรถภายนอกและภายใน',       order: 15 },
+  { code: 'FUNCTIONS',          name: 'ตรวจสอบการใช้งานและฟังก์ชัน',       order: 16 },
+  { code: 'ENGINE_ROOM',        name: 'ตรวจสอบห้องเครื่อง',                 order: 17 },
+  { code: 'DRIVE_TEST',          name: 'ตรวจสอบขณะรถเคลื่อนที่',             order: 18 },
+  { code: 'END_INSPECTION',      name: 'สิ้นสุดการตรวจสอบ',                  order: 19 },
 ] as const
 
 // ──────────────────────────────────────
@@ -54,8 +65,10 @@ export interface ModelRuleSet {
 
 export const MODEL_RULES: Record<ModelCode, ModelRuleSet> = {
   AION_V:      { hasDualBattery: true,  hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
+  AION_V5:     { hasDualBattery: true,  hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
   AION_UT:     { hasDualBattery: false, hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
   AION_YP:     { hasDualBattery: false, hasCCA: true,  hasSocCheck: true,  hasTirePressure: true,  hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 50  },
+  AION_YP5:    { hasDualBattery: false, hasCCA: true,  hasSocCheck: true,  hasTirePressure: true,  hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 50  },
   AION_ES:     { hasDualBattery: false, hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
   HYPTEC_HT:   { hasDualBattery: true,  hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: true,  hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
   HYPTEC_SSR:  { hasDualBattery: false, hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },

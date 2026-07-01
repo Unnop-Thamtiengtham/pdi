@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { Bell, MapPin, ShieldAlert, Zap, Menu, Clock, ArrowRight } from 'lucide-react';
@@ -18,6 +18,33 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [urgentJobs, setUrgentJobs] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const bellButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Close dropdown when clicking outside (non-blocking)
+  useEffect(() => {
+    if (!showDropdown) return;
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        bellButtonRef.current &&
+        !bellButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleOutsideClick);
+    }, 0);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [showDropdown]);
 
   useEffect(() => {
     async function fetchNotifications() {
@@ -91,6 +118,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <div className="flex items-center gap-3 md:gap-4 border-l border-slate-200 pl-3 md:pl-6">
           <div className="relative">
             <button 
+              ref={bellButtonRef}
               onClick={() => setShowDropdown(!showDropdown)}
               className="relative cursor-pointer text-slate-500 hover:text-slate-800 transition-colors p-1 rounded-full hover:bg-slate-100 flex items-center justify-center focus:outline-none"
               aria-label="Toggle notifications"
@@ -105,74 +133,71 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
             {/* Dropdown Popover */}
             {showDropdown && (
-              <>
-                <div 
-                  className="fixed inset-0 z-30 cursor-default" 
-                  onClick={() => setShowDropdown(false)}
-                />
-                <div className="absolute right-0 mt-2.5 w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-slate-100 transform origin-top-right transition-all">
-                  <div className="p-3 bg-slate-50 flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Bell className="w-3.5 h-3.5 text-brand-teal" />
-                      <span>การแจ้งเตือนงานด่วน ({unreadCount})</span>
+              <div 
+                ref={dropdownRef}
+                className="absolute right-0 mt-2.5 w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-slate-100 transform origin-top-right transition-all"
+              >
+                <div className="p-3 bg-slate-50 flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Bell className="w-3.5 h-3.5 text-brand-teal" />
+                    <span>การแจ้งเตือนงานด่วน ({unreadCount})</span>
+                  </span>
+                  {unreadCount > 0 && (
+                    <span className="text-[9px] bg-error/15 text-error font-semibold px-2 py-0.5 rounded-full animate-pulse">
+                      ใกล้ครบ SLA
                     </span>
-                    {unreadCount > 0 && (
-                      <span className="text-[9px] bg-error/15 text-error font-semibold px-2 py-0.5 rounded-full animate-pulse">
-                        ใกล้ครบ SLA
-                      </span>
-                    )}
-                  </div>
-                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-100">
-                    {urgentJobs.length === 0 ? (
-                      <div className="p-6 text-center text-xs text-slate-400">
-                        ไม่มีงานตรวจด่วนในขณะนี้
-                      </div>
-                    ) : (
-                      urgentJobs.map((job) => (
-                        <Link 
-                          key={job.id} 
-                          href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}
-                          onClick={() => setShowDropdown(false)}
-                          className="p-3 block hover:bg-slate-50/80 transition-colors text-left"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="space-y-0.5">
-                              <p className="text-xs font-semibold text-slate-800">
-                                {job.vehicle?.modelName || 'รถยนต์ไฟฟ้า'}
-                              </p>
-                              <p className="text-[10px] font-mono text-slate-500">
-                                VIN: {job.vehicleVin}
-                              </p>
-                            </div>
-                            <span className="text-[9px] font-semibold bg-warning/10 text-warning border border-warning/20 px-1.5 py-0.5 rounded-md uppercase font-mono">
-                              {job.status === 'PENDING' ? 'รอตรวจ' : 'กำลังตรวจ'}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between mt-2 text-[9px] text-slate-400">
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-brand-teal" />
-                              <span>SLA 24 ชั่วโมง</span>
-                            </span>
-                            <span className="text-brand-teal font-semibold flex items-center gap-0.5 hover:underline">
-                              <span>เริ่มตรวจ</span>
-                              <ArrowRight className="w-2.5 h-2.5" />
-                            </span>
-                          </div>
-                        </Link>
-                      ))
-                    )}
-                  </div>
-                  <div className="p-2 text-center bg-slate-50">
-                    <Link 
-                      href="/pdi/incoming" 
-                      onClick={() => setShowDropdown(false)}
-                      className="text-[10px] font-semibold text-brand-teal hover:underline block"
-                    >
-                      ดูงานตรวจ Incoming ทั้งหมด
-                    </Link>
-                  </div>
+                  )}
                 </div>
-              </>
+                <div className="max-h-64 overflow-y-auto divide-y divide-slate-100">
+                  {urgentJobs.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-slate-400">
+                      ไม่มีงานตรวจด่วนในขณะนี้
+                    </div>
+                  ) : (
+                    urgentJobs.map((job) => (
+                      <Link 
+                        key={job.id} 
+                        href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}
+                        onClick={() => setShowDropdown(false)}
+                        className="p-3 block hover:bg-slate-50/80 transition-colors text-left"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-0.5">
+                            <p className="text-xs font-semibold text-slate-800">
+                              {job.vehicle?.modelName || 'รถยนต์ไฟฟ้า'}
+                            </p>
+                            <p className="text-[10px] font-mono text-slate-500">
+                              VIN: {job.vehicleVin}
+                            </p>
+                          </div>
+                          <span className="text-[9px] font-semibold bg-warning/10 text-warning border border-warning/20 px-1.5 py-0.5 rounded-md uppercase font-mono">
+                            {job.status === 'PENDING' ? 'รอตรวจ' : 'กำลังตรวจ'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between mt-2 text-[9px] text-slate-400">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-brand-teal" />
+                            <span>SLA 24 ชั่วโมง</span>
+                          </span>
+                          <span className="text-brand-teal font-semibold flex items-center gap-0.5 hover:underline">
+                            <span>เริ่มตรวจ</span>
+                            <ArrowRight className="w-2.5 h-2.5" />
+                          </span>
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </div>
+                <div className="p-2 text-center bg-slate-50">
+                  <Link 
+                    href="/pdi/incoming" 
+                    onClick={() => setShowDropdown(false)}
+                    className="text-[10px] font-semibold text-brand-teal hover:underline block"
+                  >
+                    ดูงานตรวจ Incoming ทั้งหมด
+                  </Link>
+                </div>
+              </div>
             )}
           </div>
 

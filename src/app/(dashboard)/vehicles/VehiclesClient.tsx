@@ -11,8 +11,6 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Plus, Car, Calendar, Sliders, ChevronRight, Download, Upload, FileSpreadsheet, AlertTriangle, CheckCircle2, Play, Search } from 'lucide-react';
 import Link from 'next/link';
-// @ts-ignore
-import XLSX from 'xlsx-js-style';
 import { toast } from 'sonner';
 
 interface VehiclesClientProps {
@@ -29,7 +27,7 @@ const pdiStatusMap: Record<string, string> = {
   REJECTED: 'ถูก Reject',
 };
 
-const formatWorksheet = (ws: any, hasHeader = true, fontName = 'Segoe UI') => {
+const formatWorksheet = (XLSX: any, ws: any, hasHeader = true, fontName = 'Segoe UI') => {
   if (!ws || !ws['!ref']) return;
   const range = XLSX.utils.decode_range(ws['!ref']);
   const cols: any[] = [];
@@ -237,7 +235,8 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
     return true;
   });
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
+    const XLSX = (await import('xlsx-js-style')).default;
     const exportData = filteredVehicles.map(v => {
       const latestJob = v.pdiJobs?.[0];
       const pdiStatusStr = latestJob 
@@ -262,13 +261,14 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
     });
 
     const ws = XLSX.utils.json_to_sheet(exportData);
-    formatWorksheet(ws);
+    formatWorksheet(XLSX, ws);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Stock');
     XLSX.writeFile(wb, `pdi_vehicles_stock_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
+    const XLSX = (await import('xlsx-js-style')).default;
     const templateData = [
       {
         'เลขตัวถัง': 'LNAT4AB34T5G00001',
@@ -285,7 +285,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
     ];
 
     const ws = XLSX.utils.json_to_sheet(templateData);
-    formatWorksheet(ws, true, 'TH Sarabun New');
+    formatWorksheet(XLSX, ws, true, 'TH Sarabun New');
 
     // Create a reference sheet showing all valid branch codes and model codes
     const modelCodes = [
@@ -317,7 +317,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
     }
 
     const wsRef = XLSX.utils.json_to_sheet(referenceData);
-    formatWorksheet(wsRef, true, 'TH Sarabun New');
+    formatWorksheet(XLSX, wsRef, true, 'TH Sarabun New');
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');
@@ -332,6 +332,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
+        const XLSX = (await import('xlsx-js-style')).default;
         const data = event.target?.result;
         const workbook = XLSX.read(data, { type: 'binary' });
         const sheetName = workbook.SheetNames[0];

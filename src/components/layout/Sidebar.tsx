@@ -15,6 +15,8 @@ import {
   ChevronRight,
   Shield,
   X,
+  CheckSquare,
+  Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -58,6 +60,18 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       href: '/pdi/predelivery',
       icon: UserCheck,
       roles: ['ADMIN', 'SUPERVISOR', 'BRANCH_MANAGER', 'INSPECTOR'],
+    },
+    {
+      label: 'อนุมัติงาน PDI (QC Approvals)',
+      href: '/pdi/approvals',
+      icon: CheckSquare,
+      roles: ['ADMIN', 'SUPERVISOR', 'BRANCH_MANAGER'],
+    },
+    {
+      label: 'รายการส่งซ่อม/ปรับสภาพ (Pending Repairs)',
+      href: '/pdi/repairs',
+      icon: Wrench,
+      roles: ['ADMIN', 'SUPERVISOR', 'BRANCH_MANAGER', 'INSPECTOR', 'WAREHOUSE'],
     },
     {
       label: 'รายงาน PDI (Reports)',

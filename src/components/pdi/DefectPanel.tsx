@@ -21,10 +21,16 @@ interface Defect {
   photoUrl?: string | null;
 }
 
+interface ChecklistItemRef {
+  itemCode: string;
+  itemName: string;
+}
+
 interface DefectPanelProps {
   defects: Defect[];
   onChange: (defects: Defect[]) => void;
   checklistItemCodes?: string[];
+  checklistItems?: ChecklistItemRef[];
   readOnly?: boolean;
 }
 
@@ -32,6 +38,7 @@ export default function DefectPanel({
   defects,
   onChange,
   checklistItemCodes = [],
+  checklistItems = [],
   readOnly = false,
 }: DefectPanelProps) {
   const [description, setDescription] = useState('');
@@ -112,11 +119,19 @@ export default function DefectPanel({
                 <Label className="text-xs text-slate-500">อ้างอิงรหัสรายการตรวจ (เลือกจาก Checklist)</Label>
                 <Select value={itemCode} onChange={(e: any) => setItemCode(e.target.value)}>
                   <option value="">-- ไม่อ้างอิง --</option>
-                  {checklistItemCodes.map((code) => (
-                    <option key={code} value={code}>
-                      {code}
-                    </option>
-                  ))}
+                  {checklistItems && checklistItems.length > 0 ? (
+                    checklistItems.map((item) => (
+                      <option key={item.itemCode} value={item.itemCode}>
+                        {item.itemCode} - {item.itemName}
+                      </option>
+                    ))
+                  ) : (
+                    checklistItemCodes.map((code) => (
+                      <option key={code} value={code}>
+                        {code}
+                      </option>
+                    ))
+                  )}
                 </Select>
               </div>
 

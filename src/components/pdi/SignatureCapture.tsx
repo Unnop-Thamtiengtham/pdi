@@ -18,8 +18,9 @@ export default function SignatureCapture({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSigned, setHasSigned] = useState(!!value);
+  const lastValueRef = useRef<string | null | undefined>(value);
 
-  // Initialize Canvas with base64 image if it exists
+  // Initialize Canvas resolution and initial value on mount
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -51,6 +52,43 @@ export default function SignatureCapture({
       };
       img.src = value;
       setHasSigned(true);
+      lastValueRef.current = value;
+    }
+  }, []);
+
+  // Handle external changes to value
+  useEffect(() => {
+    if (value === lastValueRef.current) return;
+    lastValueRef.current = value;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear with transparent bg
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw baseline
+    ctx.strokeStyle = '#CBD5E1';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(30, canvas.height - 30);
+    ctx.lineTo(canvas.width - 30, canvas.height - 30);
+    ctx.stroke();
+    ctx.setLineDash([]); // Reset dash
+
+    if (value) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0);
+      };
+      img.src = value;
+      setHasSigned(true);
+    } else {
+      setHasSigned(false);
     }
   }, [value]);
 
@@ -102,6 +140,7 @@ export default function SignatureCapture({
     if (!canvas) return;
     
     const dataUrl = canvas.toDataURL('image/png');
+    lastValueRef.current = dataUrl;
     onChange(dataUrl);
     setHasSigned(true);
   };
@@ -124,6 +163,7 @@ export default function SignatureCapture({
     ctx.stroke();
     ctx.setLineDash([]);
 
+    lastValueRef.current = null;
     onChange(null);
     setHasSigned(false);
   };

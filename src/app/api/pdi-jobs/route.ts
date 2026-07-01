@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { PdiStatus, PdiType, DefectStatus } from '@prisma/client';
+import { PdiStatus, PdiType, DefectStatus, VehicleStatus } from '@prisma/client';
 
 // GET /api/pdi-jobs — ดึงข้อมูล jobs ทั้งหมด พร้อม filters
 export async function GET(req: NextRequest) {
@@ -10,7 +10,6 @@ export async function GET(req: NextRequest) {
     const statusParam = req.nextUrl.searchParams.get('status');
     const typeParam = req.nextUrl.searchParams.get('type');
     const vinParam = req.nextUrl.searchParams.get('vin');
-
     if (jobId) {
       const job = await prisma.pdiJob.findUnique({
         where: { id: jobId },
@@ -25,19 +24,17 @@ export async function GET(req: NextRequest) {
           },
           defects: true,
           documents: true,
+          batteryTest: true, // Fetch battery results in the same query via relation
         },
-      });
-
-      // Get battery results separately since it is a separate table
-      const battery = await prisma.batteryTestResult.findUnique({
-        where: { jobId },
       });
 
       if (!job) {
         return NextResponse.json({ error: 'Job not found' }, { status: 404 });
       }
 
-      return NextResponse.json({ ...job, batteryTestResult: battery });
+      // Map batteryTest to batteryTestResult to preserve the expected response shape
+      const { batteryTest, ...rest } = job;
+      return NextResponse.json({ ...rest, batteryTestResult: batteryTest });
     }
 
     // List filtering
@@ -356,9 +353,9 @@ export async function PATCH(req: NextRequest) {
 
     // Side effect: update vehicle status
     if (status === 'APPROVED') {
-      let nextVehicleStatus = 'IN_STOCK';
+      let nextVehicleStatus: VehicleStatus = VehicleStatus.IN_STOCK;
       if (job.pdiType === 'PRE_DELIVERY') {
-        nextVehicleStatus = 'DELIVERED';
+        nextVehicleStatus = VehicleStatus.DELIVERED;
       }
       await prisma.vehicle.update({
         where: { vin: job.vehicleVin },

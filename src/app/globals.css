@@ -11,6 +11,7 @@
   --success: #10B981;
   --warning: #F59E0B;
   --error: #EF4444;
+  --danger: #EF4444;
   --info: #3B82F6;
   --sidebar-width: 260px;
 }
@@ -25,6 +26,7 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
+  --color-danger: var(--danger);
   --color-info: var(--info);
   
   --font-sans: 'Outfit', 'Sarabun', sans-serif;
@@ -76,20 +78,48 @@ body {
 
 /* PDF/Print style rules */
 @media print {
+  @page {
+    size: A4;
+    margin: 12mm 10mm;
+  }
+
+  /* Reset layout containers for proper print pagination */
+  html, body, main, 
+  body > div,
+  body > div > div,
+  main > div,
+  div.min-h-screen, 
+  div.flex-1, 
+  div.flex-col, 
+  div.pl-0.lg\:pl-\[var\(--sidebar-width\)\] {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+    position: static !important;
+  }
+
   body {
     background-color: #ffffff !important;
     color: #000000 !important;
     font-family: 'Sarabun', sans-serif !important;
+    font-size: 11px !important;
   }
-  
+
+  /* Reset sidebar offset */
+  .lg\:pl-\[var\(--sidebar-width\)\] {
+    padding-left: 0 !important;
+  }
+
+  /* Visibility control */
   .no-print {
     display: none !important;
   }
-  
+
   .print-only {
     display: block !important;
   }
-  
+
   .print-card {
     border: 1px solid #e2e8f0 !important;
     background: #ffffff !important;
@@ -97,4 +127,439 @@ body {
     color: #000000 !important;
     page-break-inside: avoid;
   }
+
+  /* ── Page breaks ── */
+  .print-page-break {
+    page-break-before: always;
+  }
+
+  .print-avoid-break {
+    page-break-inside: avoid;
+  }
+
+  /* ── Print Report Container ── */
+  .print-report {
+    font-size: 11px;
+    line-height: 1.5;
+    color: #000000;
+  }
+
+  .print-page {
+    /* padding-bottom: 12px; */
+  }
+
+  /* ── Company Header ── */
+  .print-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #1e293b;
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+  }
+
+  .print-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .print-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .print-brand-accent {
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    color: #30c0d0;
+    display: block;
+  }
+
+  .print-brand-name {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: #1e293b;
+    margin-top: -3px;
+  }
+
+  .print-header-right {
+    text-align: right;
+  }
+
+  .print-report-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .print-report-subtitle {
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 2px;
+  }
+
+  /* ── Section titles ── */
+  .print-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e293b;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+  }
+
+  .print-section {
+    margin-bottom: 16px;
+  }
+
+  /* ── Layout grids ── */
+  .print-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* ── Info tables (key-value) ── */
+  .print-info-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+
+  .print-info-table tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .print-td-label {
+    border: 1px solid #cbd5e1;
+    padding: 4px 8px;
+    font-size: 10px;
+    color: #64748b;
+    width: 40%;
+  }
+
+  .print-td-value {
+    border: 1px solid #cbd5e1;
+    padding: 4px 8px;
+    font-size: 10px;
+    color: #1e293b;
+    font-weight: 500;
+  }
+
+  .print-td-badge {
+    border: 1px solid #cbd5e1;
+    padding: 4px 8px;
+    text-align: center;
+    width: 64px;
+    font-size: 10px;
+  }
+
+  .print-mono {
+    font-family: 'Courier New', monospace;
+  }
+
+  /* ── Stats grid ── */
+  .print-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    text-align: center;
+  }
+
+  .print-stat-box {
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 8px 4px;
+  }
+
+  .print-stat-pass { border-color: #22c55e; }
+  .print-stat-fail { border-color: #ef4444; }
+  .print-stat-repaired { border-color: #f59e0b; }
+  .print-stat-na { border-color: #cbd5e1; }
+
+  .print-stat-number {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .print-stat-label {
+    font-size: 9px;
+    margin-top: 2px;
+  }
+
+  /* ── Battery header ── */
+  .print-battery-header {
+    border: 1px solid #cbd5e1;
+    padding: 4px 8px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  /* ── Checklist table ── */
+  .print-checklist-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+
+  .print-checklist-table thead {
+    display: table-header-group;
+  }
+
+  .print-checklist-table tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .print-checklist-table th {
+    border: 1px solid #94a3b8;
+    padding: 4px 6px;
+    font-weight: 600;
+    font-size: 9px;
+    color: #334155;
+  }
+
+  .print-checklist-table td {
+    border: 1px solid #cbd5e1;
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  .print-row-fail {
+    /* no background */
+  }
+
+  /* ── Category block ── */
+  .print-category-block {
+    margin-bottom: 12px;
+    page-break-inside: avoid;
+  }
+
+  .print-category-header {
+    font-size: 10px;
+    font-weight: 700;
+    color: #1e293b;
+    border: 1px solid #94a3b8;
+    border-bottom: none;
+    padding: 3px 8px;
+    margin-bottom: 0;
+  }
+
+  /* ── PDPA consent box ── */
+  .print-pdpa-box {
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 16px;
+  }
+
+  .print-pdpa-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+  }
+
+  .print-pdpa-text {
+    font-size: 9px;
+    color: #475569;
+    line-height: 1.6;
+  }
+
+  .print-pdpa-check {
+    font-size: 9px;
+    color: #1e293b;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+
+  /* ── Signatures ── */
+  .print-signatures-section {
+    margin-top: 24px;
+  }
+
+  .print-signatures-grid {
+    display: grid;
+    gap: 24px;
+  }
+
+  .print-sig-3col {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .print-sig-2col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .print-sig-block {
+    text-align: center;
+  }
+
+  .print-sig-canvas {
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    height: 80px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+  }
+
+  .print-sig-img {
+    max-height: 64px;
+    max-width: 100%;
+    object-fit: contain;
+  }
+
+  .print-sig-placeholder {
+    font-size: 9px;
+    color: #94a3b8;
+  }
+
+  .print-sig-label {
+    font-size: 10px;
+    color: #475569;
+    border-top: 1px solid #64748b;
+    padding-top: 4px;
+  }
+
+  /* ── Footer ── */
+  .print-footer {
+    margin-top: 32px;
+    padding-top: 10px;
+    border-top: 1px solid #94a3b8;
+    text-align: center;
+    font-size: 8px;
+    color: #94a3b8;
+  }
 }
+
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Center Sonner toast horizontally inside the main content area (accounting for the 260px sidebar on large screens) */
+@media (min-width: 1024px) {
+  [data-sonner-toaster] {
+    left: calc(50% + 130px) !important;
+    transform: translateX(-50%) !important;
+  }
+}
+
+/* Ensure toaster container is centered on mobile and tablet */
+@media (max-width: 1023px) {
+  [data-sonner-toaster] {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    transform: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+}
+
+/* Ant Design Message Style Overrides for Sonner */
+li[data-sonner-toast] {
+  background: #ffffff !important;
+  color: rgba(0, 0, 0, 0.88) !important;
+  border: 1px solid #f0f0f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+  padding: 10px 16px !important;
+  font-family: var(--font-sans) !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: auto !important;
+  min-width: 150px !important;
+  max-width: calc(100vw - 32px) !important;
+  margin: 8px auto !important;
+}
+
+@media (min-width: 640px) {
+  li[data-sonner-toast] {
+    max-width: 450px !important;
+  }
+}
+
+/* Align and style content */
+li[data-sonner-toast] [data-content] {
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+li[data-sonner-toast] [data-title] {
+  color: rgba(0, 0, 0, 0.88) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+}
+
+/* Hide description if empty or style it if needed */
+li[data-sonner-toast] [data-description] {
+  color: rgba(0, 0, 0, 0.45) !important;
+  font-size: 12px !important;
+}
+
+/* Customize SVG icons to match Antd Colors */
+li[data-sonner-toast] [data-icon] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-right: 4px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Success Type */
+li[data-sonner-toast][data-type="success"] [data-icon] svg {
+  color: #52c41a !important; /* Antd Success Green */
+}
+
+/* Error Type */
+li[data-sonner-toast][data-type="error"] [data-icon] svg {
+  color: #ff4d4f !important; /* Antd Error Red */
+}
+
+/* Warning Type */
+li[data-sonner-toast][data-type="warning"] [data-icon] svg {
+  color: #faad14 !important; /* Antd Warning Orange */
+}
+
+/* Info Type */
+li[data-sonner-toast][data-type="info"] [data-icon] svg {
+  color: #1677ff !important; /* Antd Info Blue */
+}
+
+/* Hide default close button to look exactly like Antd message */
+li[data-sonner-toast] [data-close-button] {
+  display: none !important;
+}
+
+/* Hide spin buttons for input[type="number"] */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+

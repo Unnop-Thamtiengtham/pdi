@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import ChecklistForm from './ChecklistForm';
+import PdiPrintReport from './PdiPrintReport';
 import SignatureCapture from './SignatureCapture';
 import PhotoUpload from './PhotoUpload';
 import { FileText, ShieldAlert, Sparkles, CheckCircle2, UserCheck, AlertTriangle, ArrowLeft, Printer, Play } from 'lucide-react';
@@ -55,6 +56,10 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
     async function loadData() {
       if (isDbConnected && initialJob) {
         setJob(initialJob);
+        setCustomerSig(initialJob.customerSig || null);
+        setInspectorSig(initialJob.inspectorSig || null);
+        setSupervisorSig(initialJob.supervisorSig || null);
+        setPdpaConsent(initialJob.pdpaConsent || false);
         // Fetch template
         try {
           const res = await fetch(`/api/checklist/${initialJob.vehicle.modelCode}?type=${initialJob.pdiType}`);
@@ -169,7 +174,6 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
         batteryTestResult: batteryPayload,
       });
       window.dispatchEvent(new Event('pdi-job-updated'));
-      toast.success('บันทึกความคืบหน้าแล้ว');
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || 'ไม่สามารถบันทึกแบบร่างได้');
@@ -177,6 +181,13 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
   };
 
   const handleSubmitResults = async (resultsPayload: any[], batteryPayload: any, defectsPayload: any[]) => {
+    // Check if there are any FAIL results or open/in-progress defects
+    const hasFailResults = resultsPayload.some(r => r.result === 'FAIL');
+    const hasUnresolvedDefects = defectsPayload.some(d => d.status === 'OPEN' || d.status === 'IN_REPAIR');
+    const isFailed = hasFailResults || hasUnresolvedDefects;
+    
+    const nextStatus = isFailed ? 'DEFECT_FOUND' : 'PENDING_APPROVAL';
+
     try {
       if (isDbConnected) {
         const res = await fetch('/api/pdi-jobs', {
@@ -187,7 +198,7 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
             results: resultsPayload,
             batteryData: batteryPayload,
             defects: defectsPayload,
-            status: 'PENDING_APPROVAL',
+            status: nextStatus,
           }),
         });
         if (!res.ok) {
@@ -197,37 +208,72 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
       }
       setJob({
         ...job,
-        status: 'PENDING_APPROVAL',
+        status: nextStatus,
         checklistItems: resultsPayload,
         defects: defectsPayload,
         batteryTestResult: batteryPayload,
       });
       window.dispatchEvent(new Event('pdi-job-updated'));
-      toast.success('ส่งรายงานผลการตรวจสภาพเรียบร้อยแล้ว');
-      router.push('/');
+      
+      if (isFailed) {
+        toast.success('พบจุดบกพร่อง', { description: 'ส่งรถไปปรับสภาพซ่อมเรียบร้อยแล้ว' });
+        router.push('/pdi/repairs');
+      } else {
+        toast.success('ส่งผลงานตรวจสำเร็จ', { description: 'ส่งให้ Supervisor พิจารณาเรียบร้อยแล้ว' });
+        router.push('/');
+      }
+      router.refresh();
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || 'ไม่สามารถส่งบันทึกผลการตรวจได้');
     }
   };
 
+  // Helper to upload base64 drawing to S3
+  const uploadBase64Image = async (base64Data: string, fileName: string): Promise<string> => {
+    const res = await fetch(base64Data);
+    const blob = await res.blob();
+    const formData = new FormData();
+    formData.append('file', blob, fileName);
+    
+    const uploadRes = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    if (!uploadRes.ok) {
+      throw new Error('ไม่สามารถอัปโหลดรูปภาพลายเซ็นไปยัง S3 ได้');
+    }
+    const data = await uploadRes.json();
+    return data.fileUrl;
+  };
+
   // Supervisor Approval Action
   const handleSupervisorDecision = async (decision: 'APPROVED' | 'REJECTED') => {
-    if (decision === 'APPROVED' && job.pdiType === 'PRE_DELIVERY') {
-      if (!pdpaConsent || !customerSig || !inspectorSig || !supervisorSig) {
-        toast.warning('สำหรับงาน Pre-delivery: กรุณายินยอมเงื่อนไข PDPA และลงลายมือชื่อให้ครบถ้วน (ลูกค้า, ช่างตรวจ, ผู้จัดการ QC)');
-        return;
-      }
-    }
-
     if (decision === 'APPROVED' && !supervisorSig) {
-      toast.warning('กรุณาลงลายมือชื่อเพื่อเซ็นอนุมัติรายงานผลการตรวจสภาพรถ');
+      toast.warning('กรุณาลงลายมือชื่อ', { description: 'กรุณาเซ็นชื่อเพื่ออนุมัติรายงานผลการตรวจสภาพรถ' });
       return;
     }
 
     const currentUserId = session?.user?.id || 'mock-supervisor-id';
 
+    let uploadedCustomerSig = customerSig;
+    let uploadedInspectorSig = inspectorSig;
+    let uploadedSupervisorSig = supervisorSig;
+
     try {
+      if (decision === 'APPROVED') {
+        toast.info('กำลังอัปโหลดรูปภาพลายเซ็นไปยัง S3...');
+        if (customerSig && customerSig.startsWith('data:image/')) {
+          uploadedCustomerSig = await uploadBase64Image(customerSig, `customer_sig_${job.id}.png`);
+        }
+        if (inspectorSig && inspectorSig.startsWith('data:image/')) {
+          uploadedInspectorSig = await uploadBase64Image(inspectorSig, `inspector_sig_${job.id}.png`);
+        }
+        if (supervisorSig && supervisorSig.startsWith('data:image/')) {
+          uploadedSupervisorSig = await uploadBase64Image(supervisorSig, `supervisor_sig_${job.id}.png`);
+        }
+      }
+
       if (isDbConnected) {
         const res = await fetch('/api/pdi-jobs', {
           method: 'PATCH',
@@ -236,6 +282,10 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
             jobId: job.id,
             status: decision,
             approverId: currentUserId,
+            customerSig: uploadedCustomerSig,
+            inspectorSig: uploadedInspectorSig,
+            supervisorSig: uploadedSupervisorSig,
+            pdpaConsent: pdpaConsent,
           }),
         });
         if (!res.ok) {
@@ -253,9 +303,14 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
         ...job,
         status: decision,
         approver: { name: session?.user?.name || 'ธีรพล QC' },
+        customerSig: uploadedCustomerSig,
+        inspectorSig: uploadedInspectorSig,
+        supervisorSig: uploadedSupervisorSig,
+        pdpaConsent: pdpaConsent,
       });
       window.dispatchEvent(new Event('pdi-job-updated'));
       router.push('/');
+      router.refresh();
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || 'เกิดข้อผิดพลาดในการส่งการอนุมัติ');
@@ -270,210 +325,140 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
   const isInspector = userRole === 'INSPECTOR' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
   const isQC = userRole === 'SUPERVISOR' || userRole === 'BRANCH_MANAGER' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
   
-  const readOnly = job.status === 'APPROVED' || (job.status === 'PENDING_APPROVAL' && !isQC);
+  const readOnly = job.status === 'APPROVED' || job.status === 'PENDING_APPROVAL';
 
   return (
     <div className="space-y-6">
-      {/* Print Friendly Header (Only visible in Print preview) */}
-      <div className="hidden print:block space-y-4">
-        <div className="flex items-center justify-between border-b-2 border-slate-900 pb-4">
-          <div className="flex items-center gap-3">
-            <svg className="w-10 h-10" viewBox="0 0 24 24">
-              <path d="M12 3.5a8.5 8.5 0 1 1-5 15.3M12 20.5a8.5 8.5 0 0 1-5-1.6" stroke="#5f6368" strokeWidth="2.5" fill="none" />
-              <path d="M8.5 15L12 9l3.5 6" stroke="#30c0d0" strokeWidth="2.5" fill="none" />
-            </svg>
-            <div>
-              <span className="text-xs font-black tracking-widest text-[#30c0d0]">GOLD</span>
-              <h1 className="text-sm font-bold tracking-wider text-slate-800 -mt-1">INTEGRATE</h1>
-            </div>
-          </div>
-          <div className="text-right">
-            <h2 className="text-lg font-bold text-slate-900">รายงานใบงานการตรวจสอบรถ (PDI Report)</h2>
-            <p className="text-xs text-slate-500">เลขที่ใบสั่งงาน: {job.jobNumber}</p>
-          </div>
-        </div>
-      </div>
+      {/* Full Print Report (Only visible in Print preview) */}
+      <PdiPrintReport
+        job={job}
+        templateItems={templateItems}
+        signatures={{
+          customer: customerSig,
+          inspector: inspectorSig,
+          supervisor: supervisorSig,
+        }}
+      />
 
       {/* Main workspace layout */}
-      {job.status === 'PENDING' ? (
-        <Card className="max-w-lg mx-auto text-center p-8 space-y-6 mt-12 border border-slate-200 shadow-sm">
-          <div className="w-16 h-16 rounded-full bg-brand-teal/10 border border-brand-teal/20 flex items-center justify-center text-brand-teal mx-auto animate-pulse">
-            <FileText className="w-8 h-8" />
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-lg font-bold text-slate-800">พร้อมตรวจสภาพรถยนต์ไฟฟ้า</h3>
-            <p className="text-xs text-slate-500">
-              รถยนต์ไฟฟ้า เลขตัวถัง <span className="font-mono text-slate-800 font-semibold">{job.vehicleVin}</span> ({job.vehicle?.modelName})
-              ถูกจ่ายงานเข้ามาแล้ว กดปุ่มด้านล่างเพื่อเปลี่ยนสถานะเป็นกำลังตรวจ (In Progress)
-            </p>
-          </div>
-          <div className="flex justify-center gap-3 pt-2">
-            <Link href="/">
-              <Button variant="secondary" size="sm">ย้อนกลับ</Button>
-            </Link>
-            <Button onClick={handleStartJob} className="gap-1.5" size="sm">
-              <Play className="w-4 h-4 text-slate-950 fill-current" />
-              <span>เริ่มปฏิบัติงานตรวจรถ</span>
-            </Button>
-          </div>
-        </Card>
-      ) : (
-        <>
-          {/* Main Workspace content */}
-          <ChecklistForm
-            jobId={job.id}
-            modelCode={job.vehicle?.modelCode || 'AION_V'}
-            templateItems={templateItems}
-            initialResults={job.checklistItems}
-            initialBatteryData={job.batteryTestResult || {}}
-            initialDefects={job.defects}
-            onSave={handleSaveResults}
-            onSubmit={handleSubmitResults}
-            readOnly={readOnly}
-          />
+      <div className="print:hidden space-y-6">
+        {job.status === 'PENDING' ? (
+          <Card className="max-w-lg mx-auto text-center p-8 space-y-6 mt-12 border border-slate-200 shadow-sm">
+            <div className="w-16 h-16 rounded-full bg-brand-teal/10 border border-brand-teal/20 flex items-center justify-center text-brand-teal mx-auto animate-pulse">
+              <FileText className="w-8 h-8" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-slate-800">พร้อมตรวจสภาพรถยนต์ไฟฟ้า</h3>
+              <p className="text-xs text-slate-500">
+                รถยนต์ไฟฟ้า เลขตัวถัง <span className="font-mono text-slate-800 font-semibold">{job.vehicleVin}</span> ({job.vehicle?.modelName})
+                ถูกจ่ายงานเข้ามาแล้ว กดปุ่มด้านล่างเพื่อเปลี่ยนสถานะเป็นกำลังตรวจ (In Progress)
+              </p>
+            </div>
+            <div className="flex justify-center gap-3 pt-2">
+              <Link href="/">
+                <Button variant="secondary" size="sm">ย้อนกลับ</Button>
+              </Link>
+              <Button onClick={handleStartJob} className="gap-1.5" size="sm">
+                <Play className="w-4 h-4 text-slate-950 fill-current" />
+                <span>เริ่มปฏิบัติงานตรวจรถ</span>
+              </Button>
+            </div>
+          </Card>
+        ) : (
+          <>
+            {/* Main Workspace content */}
+            <ChecklistForm
+              jobId={job.id}
+              modelCode={job.vehicle?.modelCode || 'AION_V'}
+              pdiType={job.pdiType}
+              templateItems={templateItems}
+              initialResults={job.checklistItems}
+              initialBatteryData={job.batteryTestResult || {}}
+              initialDefects={job.defects}
+              onSave={handleSaveResults}
+              onSubmit={handleSubmitResults}
+              readOnly={readOnly}
+            />
 
-          {/* Handover & PDPA Consent Section (Only for PRE_DELIVERY PDI) */}
-          {job.pdiType === 'PRE_DELIVERY' && (
-            <Card className="border border-slate-200 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-base font-semibold flex items-center gap-1.5">
-                  <UserCheck className="w-5 h-5 text-brand-teal" />
-                  <span>เอกสารส่งมอบ & ความยินยอม PDPA (Handover Form & PDPA Consent)</span>
-                </CardTitle>
-                <p className="text-xs text-slate-500">แบบฟอร์มตามนโยบายจัดเก็บข้อมูลและยินยอมข้อมูลลูกค้าประจำปีของ GAC Thailand</p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* PDPA Statement */}
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-3">
-                  <div className="flex items-start gap-2.5">
-                    <input
-                      id="pdpa"
-                      type="checkbox"
-                      disabled={readOnly}
-                      checked={pdpaConsent || job.status === 'APPROVED'}
-                      onChange={(e) => setPdpaConsent(e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 bg-white text-brand-teal focus:ring-brand-teal cursor-pointer"
-                    />
-                    <label htmlFor="pdpa" className="text-xs text-slate-700 leading-relaxed cursor-pointer select-none">
-                      <strong>การรับรองความยินยอมการเก็บรักษาข้อมูลส่วนบุคคล (GAC PDPA Policy)</strong><br />
-                      ข้าพเจ้านินยอมให้บริษัทจัดเก็บข้อมูล รายละเอียดตัวตน เบอร์โทรศัพท์ และข้อมูลการตรวจรถคันนี้เป็นระยะเวลา 
-                      <strong> 10 ปี (10 Years Retention Period)</strong> นับตั้งแต่วันส่งมอบ เพื่อประโยชน์ในการตรวจสอบประวัติรถยนต์ไฟฟ้า 
-                      การรับประกันแบตเตอรี่ และการติดต่อเพื่อพัฒนาบริการซอฟต์แวร์ OTA ในอนาคต
-                    </label>
-                  </div>
-                </div>
-
-                {/* Handover Specifications & Handover canvas */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-slate-500">ลายมือชื่อลูกค้า (Customer Signature)</Label>
-                    <SignatureCapture
-                      value={customerSig}
-                      onChange={setCustomerSig}
-                      readOnly={readOnly}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-slate-500">ลายมือชื่อช่างผู้ตรวจ (Inspector Signature)</Label>
-                    <SignatureCapture
-                      value={inspectorSig}
-                      onChange={setInspectorSig}
-                      readOnly={readOnly}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-slate-500">ลายมือชื่อหัวหน้างาน (QC/Supervisor Signature)</Label>
-                    <SignatureCapture
-                      value={supervisorSig}
-                      onChange={setSupervisorSig}
-                      readOnly={readOnly || job.status !== 'PENDING_APPROVAL'}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Supervisor Approval Block (Only visible when status is PENDING_APPROVAL and user is supervisor) */}
-          {job.status === 'PENDING_APPROVAL' && (
-            <Card className="border border-warning/20 bg-warning/5 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-sm font-semibold text-warning flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 animate-pulse" />
-                  <span>QC Supervisor Review Workspace</span>
-                </CardTitle>
-                <p className="text-xs text-slate-500">ตรวจสอบผลงานตรวจสอบและพิจารณาตัดสินอนุมัติหรือปฏิเสธกลับไปให้ตรวจใหม่</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Regular Supervisor Sign-off Canvas (If not PRE_DELIVERY) */}
-                {job.pdiType !== 'PRE_DELIVERY' && (
+            {/* Supervisor Approval Block (Only visible when status is PENDING_APPROVAL and user is supervisor) */}
+            {job.status === 'PENDING_APPROVAL' && (
+              <Card className="border border-warning/20 bg-warning/5 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold text-warning flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 animate-pulse" />
+                    <span>QC Supervisor Review Workspace</span>
+                  </CardTitle>
+                  <p className="text-xs text-slate-500">ตรวจสอบผลงานตรวจสอบและพิจารณาตัดสินอนุมัติหรือปฏิเสธกลับไปให้ตรวจใหม่</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Supervisor Sign-off Canvas */}
                   <div className="max-w-md space-y-2">
                     <Label className="text-xs text-slate-500">ลายมือชื่อผู้อนุมัติ (Supervisor Signature) *</Label>
                     <SignatureCapture
                       value={supervisorSig}
                       onChange={setSupervisorSig}
-                      readOnly={false}
+                      readOnly={job.status !== 'PENDING_APPROVAL' || !isQC}
                     />
                   </div>
-                )}
 
-                <div className="flex gap-3 pt-2">
-                  {isQC ? (
-                    <>
-                      <Button
-                        type="button"
-                        variant="danger"
-                        onClick={() => handleSupervisorDecision('REJECTED')}
-                        className="flex-1 sm:flex-none"
-                      >
-                        ปฏิเสธการตรวจ (Reject)
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => handleSupervisorDecision('APPROVED')}
-                        className="flex-1 sm:flex-none gap-1.5"
-                      >
-                        <CheckCircle2 className="w-4 h-4 text-slate-950 fill-current" />
-                        อนุมัติผ่านสภาพรถ (Approve)
-                      </Button>
-                    </>
-                  ) : (
-                    <div className="text-xs text-slate-500 flex items-center gap-1">
-                      <ShieldAlert className="w-4 h-4 text-warning" />
-                      <span>สถานะ: รอ QC/Supervisor เข้ามาทำการลงลายมือชื่ออนุมัติผลการตรวจนี้</span>
+                  <div className="flex gap-3 pt-2">
+                    {isQC ? (
+                      <>
+                        <Button
+                          type="button"
+                          variant="danger"
+                          onClick={() => handleSupervisorDecision('REJECTED')}
+                          className="flex-1 sm:flex-none"
+                        >
+                          ปฏิเสธการตรวจ (Reject)
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={() => handleSupervisorDecision('APPROVED')}
+                          className="flex-1 sm:flex-none gap-1.5"
+                        >
+                          <CheckCircle2 className="w-4 h-4 text-slate-950 fill-current" />
+                          อนุมัติผ่านสภาพรถ (Approve)
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="text-xs text-slate-500 flex items-center gap-1">
+                        <ShieldAlert className="w-4 h-4 text-warning" />
+                        <span>สถานะ: รอ QC/Supervisor เข้ามาทำการลงลายมือชื่ออนุมัติผลการตรวจนี้</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Print Report Action (Only visible when APPROVED) */}
+            {job.status === 'APPROVED' && (
+              <Card className="border border-success/20 bg-success/5 shadow-sm no-print">
+                <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-success/15 border border-success/30 flex items-center justify-center text-success">
+                      <CheckCircle2 className="w-5 h-5" />
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Print Report Action (Only visible when APPROVED) */}
-          {job.status === 'APPROVED' && (
-            <Card className="border border-success/20 bg-success/5 shadow-sm no-print">
-              <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-success/15 border border-success/30 flex items-center justify-center text-success">
-                    <CheckCircle2 className="w-5 h-5" />
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800">อนุมัติเรียบร้อย (PDI Approved)</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">ผลการตรวจสมบูรณ์ผ่านเกณฑ์ คุณสามารถสั่งพิมพ์เอกสารรายงานสภาพรถและแบตเตอรี่ได้ทันที</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800">อนุมัติเรียบร้อย (PDI Approved)</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">ผลการตรวจสมบูรณ์ผ่านเกณฑ์ คุณสามารถสั่งพิมพ์เอกสารรายงานสภาพรถและแบตเตอรี่ได้ทันที</p>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => window.print()}
-                  variant="outline"
-                  className="gap-1.5 text-xs font-semibold border-brand-teal text-brand-teal hover:bg-brand-teal/10"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>พิมพ์รายงาน PDI / พิมพ์ Job Order</span>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </>
-      )}
+                  <Button
+                    onClick={() => window.print()}
+                    variant="outline"
+                    className="gap-1.5 text-xs font-semibold border-brand-teal text-brand-teal hover:bg-brand-teal/10"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>พิมพ์รายงาน PDI / พิมพ์ Job Order</span>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

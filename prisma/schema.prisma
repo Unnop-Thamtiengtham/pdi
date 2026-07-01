@@ -94,6 +94,8 @@ model User {
   uploadedDocuments JobDocument[] @relation("DocumentUploader")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([branchId])
 }
 
 // ──────────────────────────────────────
@@ -122,6 +124,8 @@ model Vehicle {
   pdiJobs         PdiJob[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
+  @@index([branchId])
 }
 
 // ──────────────────────────────────────
