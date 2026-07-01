@@ -55,6 +55,16 @@ enum DocumentType {
   PDPA_CONSENT
 }
 
+enum VehicleStatus {
+  IN_STOCK
+  DELIVERED
+}
+
+enum DefectSeverity {
+  NORMAL
+  CRITICAL
+}
+
 // ──────────────────────────────────────
 // USERS & BRANCHES
 // ──────────────────────────────────────
@@ -81,6 +91,7 @@ model User {
   isActive      Boolean   @default(true)
   pdiJobs       PdiJob[]  @relation("AssignedInspector")
   approvals     PdiJob[]  @relation("Approver")
+  uploadedDocuments JobDocument[] @relation("DocumentUploader")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -94,7 +105,7 @@ model Vehicle {
   vin             String    @unique           // Primary key ทุก process
   engineNumber    String?
   modelCode       String                     // เช่น "AION_V", "AION_UT", "HYPTEC_HT"
-  modelName       String                     // เช่น "AION V", "HYPTEC HT 620 Premium"
+  modelName       String                     // เช่น "AION V", "HYPTEC HT"
   colorCode       String?
   colorName       String?
   exteriorColor   String?                    // ลักษณะสีภายนอก
@@ -107,7 +118,7 @@ model Vehicle {
   floorplan       String?                    // zone / floorplan
   arrivedAt       DateTime                   // วันที่รถลงเรือ / เข้า stock
   incomingDeadline DateTime                  // arrivedAt + 24h (สำหรับ Incoming PDI SLA)
-  currentStatus   String    @default("IN_STOCK")
+  currentStatus   VehicleStatus @default(IN_STOCK)
   pdiJobs         PdiJob[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -122,11 +133,11 @@ model PdiJob {
   jobNumber       String      @unique       // JO-YYYYMMDD-XXXX
   pdiType         PdiType
   status          PdiStatus   @default(PENDING)
-  vehicle         Vehicle     @relation(fields: [vehicleVin], references: [vin])
+  vehicle         Vehicle     @relation(fields: [vehicleVin], references: [vin], onDelete: Cascade)
   vehicleVin      String
-  inspector       User?       @relation("AssignedInspector", fields: [inspectorId], references: [id])
+  inspector       User?       @relation("AssignedInspector", fields: [inspectorId], references: [id], onDelete: SetNull)
   inspectorId     String?
-  approver        User?       @relation("Approver", fields: [approverId], references: [id])
+  approver        User?       @relation("Approver", fields: [approverId], references: [id], onDelete: SetNull)
   approverId      String?
 
   // สำหรับ Long-term: interval
@@ -143,14 +154,28 @@ model PdiJob {
   startedAt       DateTime?
   completedAt     DateTime?
   approvedAt      DateTime?
+  sentToRepairAt  DateTime?
+  repairLocation  String?
+  repairNotes     String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+
+  // Signatures & PDPA consent
+  customerSig     String?
+  inspectorSig    String?
+  supervisorSig   String?
+  pdpaConsent     Boolean?    @default(false)
 
   // Relations
   checklistItems  ChecklistResult[]
   defects         Defect[]
   documents       JobDocument[]
+  batteryTest     BatteryTestResult?
   notes           String?
+
+  @@index([vehicleVin])
+  @@index([inspectorId])
+  @@index([approverId])
 }
 
 // ──────────────────────────────────────
@@ -186,6 +211,8 @@ model ChecklistItem {
   numericMax    Float?                             // ค่าสูงสุด
   notes         String?                            // คำอธิบายเพิ่มเติม
   results       ChecklistResult[]
+
+  @@index([templateId])
 }
 
 // ──────────────────────────────────────
@@ -194,7 +221,7 @@ model ChecklistItem {
 
 model ChecklistResult {
   id            String          @id @default(cuid())
-  job           PdiJob          @relation(fields: [jobId], references: [id])
+  job           PdiJob          @relation(fields: [jobId], references: [id], onDelete: Cascade)
   jobId         String
   item          ChecklistItem   @relation(fields: [itemId], references: [id])
   itemId        String
@@ -214,19 +241,21 @@ model ChecklistResult {
 
 model Defect {
   id            String        @id @default(cuid())
-  job           PdiJob        @relation(fields: [jobId], references: [id])
+  job           PdiJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
   jobId         String
   defectNo      Int           // ลำดับ 1, 2, 3...
   checklistItemCode String?   // อ้างอิง item ที่พบปัญหา (optional)
   description   String        // รายละเอียดปัญหา
   cause         String?       // สาเหตุ
   solution      String?       // วิธีแก้ไข
-  severity      String        @default("NORMAL") // NORMAL, CRITICAL
+  severity      DefectSeverity @default(NORMAL)
   status        DefectStatus  @default(OPEN)
   photoUrl      String?
   resolvedAt    DateTime?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+
+  @@index([jobId])
 }
 
 // ──────────────────────────────────────
@@ -235,15 +264,18 @@ model Defect {
 
 model JobDocument {
   id            String        @id @default(cuid())
-  job           PdiJob        @relation(fields: [jobId], references: [id])
+  job           PdiJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
   jobId         String
   docType       DocumentType
   fileName      String
   fileUrl       String        // path หรือ S3 URL
   fileSize      Int?          // bytes
   uploadedBy    String?       // userId
+  uploadedByUser User?       @relation("DocumentUploader", fields: [uploadedBy], references: [id])
   uploadedAt    DateTime      @default(now())
   isVerified    Boolean       @default(false)
+
+  @@index([jobId])
 }
 
 // ──────────────────────────────────────
@@ -253,6 +285,7 @@ model JobDocument {
 model BatteryTestResult {
   id              String    @id @default(cuid())
   jobId           String    @unique
+  job             PdiJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
   // Main battery (ทุกรุ่น)
   mainVoltage     Float?    // V (≥ 12.6V)
   mainSoh         Float?    // % (≥ 80%)
@@ -267,5 +300,7 @@ model BatteryTestResult {
   tirePressure    Float?    // psi (35-39 psi)
   // Report image URL (Midtronics printout)
   reportPhotoUrl  String?
+  // Terminal check (PASS/FAIL)
+  terminalCheck   String?
   testedAt        DateTime  @default(now())
 }
