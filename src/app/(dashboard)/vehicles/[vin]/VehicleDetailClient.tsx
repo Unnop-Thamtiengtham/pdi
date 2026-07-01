@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Calendar, UserCheck, Shield, Clipboard, MapPin, BarChart2, Car } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, UserCheck, Shield, Clipboard, MapPin, BarChart2, Car, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { formatDateTime, formatLocalDate, getPdiRouteSlug } from '@/lib/utils';
@@ -53,6 +53,10 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
         }
   );
 
+  const hasPassedIncoming = (vehicle.pdiJobs || []).some(
+    (j: any) => j.pdiType === 'INCOMING' && j.status === 'APPROVED'
+  );
+
   // Manual Trigger Modals States
   const [isLtmOpen, setIsLtmOpen] = useState(false);
   const [ltmInterval, setLtmInterval] = useState('30');
@@ -69,6 +73,10 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
   // Manual Long-term Job Submit
   const handleTriggerLtm = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasPassedIncoming) {
+      toast.error('ไม่สามารถดำเนินการได้', { description: 'รถคันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI)' });
+      return;
+    }
     if (!ltmScheduledDate) {
       toast.warning('กรุณาระบุวันที่กำหนดตรวจ');
       return;
@@ -120,7 +128,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
       }
 
       window.dispatchEvent(new Event('pdi-job-updated'));
-      toast.success(`สร้างงานตรวจบำรุงรักษาระยะยาว ${ltmInterval} วัน เรียบร้อยแล้ว`);
+      toast.success('สร้างงาน Long-term สำเร็จ', { description: `สร้างงานตรวจบำรุงรักษาระยะยาว ${ltmInterval} วัน เรียบร้อยแล้ว` });
       setIsLtmOpen(false);
       setLtmScheduledDate('');
     } catch (err: any) {
@@ -134,8 +142,12 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
   // Manual Pre-delivery Job Submit
   const handleTriggerPd = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasPassedIncoming) {
+      toast.error('ไม่สามารถดำเนินการได้', { description: 'รถคันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI)' });
+      return;
+    }
     if (!targetDeliveryDate || !salesName || !customerName || !customerPhone) {
-      toast.warning('กรุณากรอกข้อมูลให้ครบถ้วนเพื่อรองรับการตรวจก่อนส่งมอบและ PDPA');
+      toast.warning('กรอกข้อมูลไม่ครบถ้วน', { description: 'กรุณากรอกรายละเอียดเพื่อรองรับการตรวจก่อนส่งมอบและ PDPA' });
       return;
     }
 
@@ -189,7 +201,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
       }
 
       window.dispatchEvent(new Event('pdi-job-updated'));
-      toast.success('สร้างงานตรวจสภาพเตรียมส่งมอบลูกค้า (Pre-delivery PDI) เรียบร้อยแล้ว');
+      toast.success('สร้างงาน Pre-delivery สำเร็จ', { description: 'สร้างงานตรวจเตรียมส่งมอบลูกค้าเรียบร้อยแล้ว' });
       setIsPdOpen(false);
       setTargetDeliveryDate('');
       setSalesName('');
@@ -296,14 +308,49 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
         {/* Right Action & PDI history Timeline Column */}
         <div className="lg:col-span-2 space-y-6">
           {/* Quick manual triggers block */}
-          <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-wrap gap-3">
+          <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col gap-3">
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="gap-1.5 text-xs font-semibold"
+                onClick={() => {
+                  if (!hasPassedIncoming) {
+                    toast.error('ไม่สามารถเปิดงานตรวจได้', { description: 'รถคันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI)' });
+                  } else {
+                    setIsLtmOpen(true);
+                  }
+                }}
+              >
+                <Calendar className="w-4 h-4 text-slate-500" />
+                <span>สร้างใบงาน Long-term Maintenance</span>
+              </Button>
+
+              <Button
+                variant="primary"
+                size="sm"
+                className="gap-1.5 text-xs font-semibold"
+                onClick={() => {
+                  if (!hasPassedIncoming) {
+                    toast.error('ไม่สามารถเปิดงานตรวจได้', { description: 'รถคันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI)' });
+                  } else {
+                    setIsPdOpen(true);
+                  }
+                }}
+              >
+                <UserCheck className="w-4 h-4 text-slate-950" />
+                <span>สร้างใบงาน Pre-delivery PDI (ส่งมอบ)</span>
+              </Button>
+            </div>
+
+            {!hasPassedIncoming && (
+              <p className="text-[11px] text-red-600 flex items-center gap-1.5 font-medium bg-red-50 p-2.5 rounded-lg border border-red-100">
+                <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                <span>รถยนต์คันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI) ทำให้ไม่สามารถเปิดสั่งงานตรวจประเภทอื่น ๆ ได้</span>
+              </p>
+            )}
+
             <Dialog open={isLtmOpen} onOpenChange={setIsLtmOpen}>
-              <DialogTrigger asChild>
-                <Button variant="secondary" size="sm" className="gap-1.5 text-xs font-semibold">
-                  <Calendar className="w-4 h-4 text-slate-500" />
-                  <span>สร้างใบงาน Long-term Maintenance</span>
-                </Button>
-              </DialogTrigger>
               <DialogContent className="max-w-md">
                 <form onSubmit={handleTriggerLtm}>
                   <DialogHeader>
@@ -345,12 +392,6 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
             </Dialog>
 
             <Dialog open={isPdOpen} onOpenChange={setIsPdOpen}>
-              <DialogTrigger asChild>
-                <Button variant="primary" size="sm" className="gap-1.5 text-xs font-semibold">
-                  <UserCheck className="w-4 h-4 text-slate-950" />
-                  <span>สร้างใบงาน Pre-delivery PDI (ส่งมอบ)</span>
-                </Button>
-              </DialogTrigger>
               <DialogContent className="max-w-md">
                 <form onSubmit={handleTriggerPd}>
                   <DialogHeader>
@@ -427,14 +468,14 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
             <CardContent className="p-0">
               <div className="overflow-x-auto w-full">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="bg-slate-50/75 border-b border-slate-100">
                     <TableRow>
-                      <TableHead>เลขสั่งงาน (Job No.)</TableHead>
-                      <TableHead>ประเภท (PDI Type)</TableHead>
-                      <TableHead>สถานะ (Status)</TableHead>
-                      <TableHead>ช่างตรวจ (Inspector)</TableHead>
-                      <TableHead>วันที่สั่งสร้าง (Created)</TableHead>
-                      <TableHead className="text-right">เข้าดำเนินการ</TableHead>
+                      <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขสั่งงาน<br/><span className="text-[10px] text-slate-400 font-normal">(Job No.)</span></TableHead>
+                      <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ประเภท<br/><span className="text-[10px] text-slate-400 font-normal">(PDI Type)</span></TableHead>
+                      <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">สถานะ<br/><span className="text-[10px] text-slate-400 font-normal">(Status)</span></TableHead>
+                      <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ช่างตรวจ<br/><span className="text-[10px] text-slate-400 font-normal">(Inspector)</span></TableHead>
+                      <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">วันที่สั่งสร้าง<br/><span className="text-[10px] text-slate-400 font-normal">(Created At)</span></TableHead>
+                      <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">เข้าดำเนินการ<br/><span className="text-[10px] text-slate-400 font-normal">(Action)</span></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -446,24 +487,25 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                       </TableRow>
                     ) : (
                       vehicle.pdiJobs.map((job: any) => (
-                        <TableRow key={job.id}>
-                          <TableCell className="font-mono text-xs text-slate-800 select-all">{job.jobNumber}</TableCell>
-                          <TableCell>
+                        <TableRow key={job.id} className="hover:bg-slate-50/50 transition-colors">
+                          <TableCell className="font-mono text-xs text-slate-800 select-all py-4">{job.jobNumber}</TableCell>
+                          <TableCell className="py-4">
                             <Badge variant="outline" className="text-xs">
                               {job.pdiType}
                               {job.ltmInterval ? ` (${job.ltmInterval}วัน)` : ''}
                             </Badge>
                           </TableCell>
-                          <TableCell className="whitespace-nowrap">
+                          <TableCell className="text-center whitespace-nowrap py-4">
                             {job.status === 'PENDING' && <Badge variant="default">รอตรวจ</Badge>}
                             {job.status === 'IN_PROGRESS' && <Badge variant="info">กำลังตรวจ</Badge>}
+                            {job.status === 'DEFECT_FOUND' && <Badge variant="danger">พบจุดชำรุด</Badge>}
                             {job.status === 'PENDING_APPROVAL' && <Badge variant="warning">รอ QC</Badge>}
                             {job.status === 'APPROVED' && <Badge variant="success">ผ่านตรวจ</Badge>}
                             {job.status === 'REJECTED' && <Badge variant="danger">ถูก Reject</Badge>}
                           </TableCell>
-                          <TableCell className="text-xs">{job.inspector?.name || '-'}</TableCell>
-                          <TableCell className="text-xs">{new Date(job.createdAt).toLocaleDateString('th-TH')}</TableCell>
-                          <TableCell className="text-right whitespace-nowrap">
+                          <TableCell className="text-xs py-4">{job.inspector?.name || '-'}</TableCell>
+                          <TableCell className="text-xs py-4">{new Date(job.createdAt).toLocaleDateString('th-TH')}</TableCell>
+                          <TableCell className="text-center whitespace-nowrap py-4">
                             <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
                               <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5 whitespace-nowrap">
                                 {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ตรวจรถ'}
