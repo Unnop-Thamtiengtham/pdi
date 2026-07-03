@@ -249,7 +249,7 @@ async function main() {
   console.log('🚗 Created 6 sample vehicles.');
 
   // 5. Create Checklist Templates for all models and all types
-  const models = ['AION_V', 'AION_V5', 'AION_UT', 'AION_YP', 'AION_YP5', 'AION_ES', 'HYPTEC_HT', 'HYPTEC_SSR', 'GAC_M8'];
+  const models = ['AION_V', 'AION_V5', 'AION_UT', 'AION_YP', 'AION_YP5', 'AION_ES', 'HYPTEC_HT', 'HYPTEC_HT8', 'HYPTEC_SSR', 'GAC_M8'];
   const types = [PdiType.INCOMING, PdiType.LONG_TERM, PdiType.PRE_DELIVERY];
 
   for (const modelCode of models) {
@@ -294,6 +294,305 @@ async function main() {
           // Category: สิ้นสุดการตรวจสอบ (order 19)
           { category: 'สิ้นสุดการตรวจสอบ', categoryOrder: 19, itemCode: 'LT_024', itemName: 'เสร็จสิ้นการตรวจสอบ', itemOrder: 1 }
         );
+      } else if (modelCode === 'AION_V' || modelCode === 'AION_V5') {
+        // ========== AION_V / AION_V5 Dedicated Checklist ==========
+        itemsData.push(
+          // 1. ลักษณะภายนอกและสี
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_001', itemName: 'ประตู', itemOrder: 1 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_002', itemName: 'ฝากระโปรงหน้า/หลัง', itemOrder: 2 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_003', itemName: 'กันชนหน้า/หลัง', itemOrder: 3 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_004', itemName: 'แก้มบังโคลน', itemOrder: 4 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_005', itemName: 'กระจกมองข้าง', itemOrder: 5 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_006', itemName: 'อุปกรณ์ภายใน', itemOrder: 6 },
+
+          // 2. ไฟส่องสว่าง
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_001', itemName: 'ไฟหน้า', itemOrder: 1 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_002', itemName: 'ไฟท้าย', itemOrder: 2 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_003', itemName: 'ไฟเลี้ยว', itemOrder: 3 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_004', itemName: 'ไฟส่องสว่างในเวลากลางวัน (DRL)', itemOrder: 4 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_005', itemName: 'ไฟส่องป้ายทะเบียน', itemOrder: 5 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_006', itemName: 'ไฟถอยหลัง', itemOrder: 6 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_007', itemName: 'ไฟตัดหมอก', itemOrder: 7 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_008', itemName: 'ไฟอ่านหนังสือ', itemOrder: 8 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_009', itemName: 'ไฟภายในห้องโดยสาร', itemOrder: 9 },
+
+          // 3. กระจกและที่ปัดน้ำฝน
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_001', itemName: 'ฟังก์ชันป้องกันการหนีบ', itemOrder: 1 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_002', itemName: 'ฟังก์ชันปรับกระจกขึ้น/ลง', itemOrder: 2 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_003', itemName: 'ฟังก์ชันล้างกระจก/ที่ปัดน้ำฝน', itemOrder: 3 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_004', itemName: 'ฟังก์ชันม่านบังแดด', itemOrder: 4 },
+
+          // 4. ระบบปรับอากาศ
+          { category: 'ระบบปรับอากาศ', categoryOrder: 4, itemCode: 'AC_001', itemName: 'ทดสอบการทำความเย็นและความร้อน', itemOrder: 1 },
+          { category: 'ระบบปรับอากาศ', categoryOrder: 4, itemCode: 'AC_002', itemName: 'การปรับความแรงลมและทิศทางลม', itemOrder: 2 },
+
+          // 5. ระบบเครื่องเสียงและความบันเทิง
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_001', itemName: 'การทำงานของกล้องมองภาพรอบทิศทาง', itemOrder: 1 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_002', itemName: 'การทำงานของระบบเครื่องเสียง', itemOrder: 2 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_003', itemName: 'ฟังก์ชันอินเทอร์เน็ตและเครือข่าย', itemOrder: 3 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_004', itemName: 'การทำงานระบบสั่งงานด้วยเสียง', itemOrder: 4 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_005', itemName: 'การทำงานของระบบบลูทูธ (Bluetooth)', itemOrder: 5 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_006', itemName: 'ฟังก์ชันการนำทาง', itemOrder: 6 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_007', itemName: 'ฟังก์ชันความบันเทิง', itemOrder: 7 },
+
+          // 6. การตรวจสอบระดับของเหลว
+          { category: 'การตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_001', itemName: 'น้ำยาหล่อเย็น', itemOrder: 1 },
+          { category: 'การตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_002', itemName: 'น้ำมันเบรก', itemOrder: 2 },
+          { category: 'การตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_003', itemName: 'น้ำยาทำความสะอาดกระจก', itemOrder: 3 },
+
+          // 7. ระบบช่วงล่าง
+          { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_001', itemName: 'ลักษณะภายนอกแบตเตอรี่ HV', itemOrder: 1 },
+          { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_002', itemName: 'ท่อและการเชื่อมต่อของท่อ', itemOrder: 2 },
+
+          // 8. การเบรกและการบังคับเลี้ยว
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_001', itemName: 'ฟังก์ชันเบรก', itemOrder: 1 },
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_002', itemName: 'ฟังก์ชันบังคับเลี้ยว', itemOrder: 2 },
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_003', itemName: 'ประสิทธิภาพการขับขี่', itemOrder: 3 },
+
+          // 9. การปลดล็อกฝาปิดช่องชาร์จ
+          { category: 'การปลดล็อกฝาปิดช่องชาร์จ', categoryOrder: 9, itemCode: 'CHG_001', itemName: 'ปุ่มกดบนกุญแจ', itemOrder: 1 },
+          { category: 'การปลดล็อกฝาปิดช่องชาร์จ', categoryOrder: 9, itemCode: 'CHG_002', itemName: 'ปุ่มกดบนหน้าจอกลาง', itemOrder: 2 },
+          { category: 'การปลดล็อกฝาปิดช่องชาร์จ', categoryOrder: 9, itemCode: 'CHG_003', itemName: 'ปุ่มเปิดฝาปิดช่องชาร์จ', itemOrder: 3 },
+
+          // 10. ตรวจสอบแบตเตอรี่ 12V (Dual Battery)
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_001', itemName: 'ค่าแรงดันไฟฟ้าแบตเตอรี่ (หลัก) [เกณฑ์ ≥ 12.6V]', itemOrder: 1, hasNumeric: true, numericUnit: 'V', numericMin: 12.6 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_002', itemName: 'อายุขัยสุขภาพแบตเตอรี่ SOH (หลัก) [เกณฑ์ ≥ 80%]', itemOrder: 2, hasNumeric: true, numericUnit: '%', numericMin: 80 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_003', itemName: 'ค่าแรงดันไฟฟ้าแบตเตอรี่ (รอง) [เกณฑ์ ≥ 12.6V]', itemOrder: 3, hasNumeric: true, numericUnit: 'V', numericMin: 12.6 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_004', itemName: 'อายุขัยสุขภาพแบตเตอรี่ SOH (รอง) [เกณฑ์ ≥ 80%]', itemOrder: 4, hasNumeric: true, numericUnit: '%', numericMin: 80 },
+
+          // 11. การตรวจสอบไฟเตือน
+          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'OTA_001', itemName: 'ตรวจสอบและทำการลบรหัสความผิดปกติ (DTC)', itemOrder: 1 },
+          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'OTA_002', itemName: 'ตรวจสอบและอัปเดตเวอร์ชันซอฟต์แวร์หน้าจอกลาง', itemOrder: 2 },
+        );
+      } else if (modelCode === 'AION_YP' || modelCode === 'AION_YP5') {
+        // ========== AION_YP / AION_YP5 Dedicated Checklist ==========
+        itemsData.push(
+          // 1. ลักษณะภายนอกและสี
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_001', itemName: 'ประตู', itemOrder: 1 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_002', itemName: 'ฝากระโปรงหน้า/ฝากระโปรงหลัง', itemOrder: 2 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_003', itemName: 'กันชนหน้าและกันชนหลัง', itemOrder: 3 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_004', itemName: 'สเกิร์ตข้าง', itemOrder: 4 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_005', itemName: 'บังโคลน, ล้อแม็ก', itemOrder: 5 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_006', itemName: 'รูปลักษณ์ภายใน', itemOrder: 6 },
+
+          // 2. ไฟส่องสว่าง
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_001', itemName: 'ไฟส่องสว่างในเวลากลางวัน (DRL)', itemOrder: 1 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_002', itemName: 'ไฟหน้าต่ำ', itemOrder: 2 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_003', itemName: 'ไฟหน้าสูง', itemOrder: 3 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_004', itemName: 'ไฟฉุกเฉิน', itemOrder: 4 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_005', itemName: 'ไฟตัดหมอกหน้า-หลัง', itemOrder: 5 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_006', itemName: 'ไฟเบรก', itemOrder: 6 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_007', itemName: 'ไฟถอยหลัง', itemOrder: 7 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_008', itemName: 'ไฟเลี้ยว', itemOrder: 8 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_009', itemName: 'ไฟภายในห้องโดยสาร', itemOrder: 9 },
+
+          // 3. กระจกและที่ปัดน้ำฝน
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_001', itemName: 'กระจกทำงานปกติ/ระบบกันหนีบ', itemOrder: 1 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_002', itemName: 'การทำงานของที่ปัดน้ำฝน', itemOrder: 2 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_003', itemName: 'การทำงานของที่ฉีดกระจก', itemOrder: 3 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_004', itemName: 'ซันรูฟ / ม่านบังแดด*', itemOrder: 4 },
+
+          // 4. ระบบปรับอากาศ
+          { category: 'ระบบปรับอากาศ', categoryOrder: 4, itemCode: 'AC_001', itemName: 'ทดสอบการทำความเย็นและความร้อน', itemOrder: 1 },
+          { category: 'ระบบปรับอากาศ', categoryOrder: 4, itemCode: 'AC_002', itemName: 'ทิศทางลมตามหน้าจอรถ', itemOrder: 2 },
+
+          // 5. ระบบเครื่องเสียงและความบันเทิง
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_001', itemName: 'ฟังก์ชันการนำทาง', itemOrder: 1 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_002', itemName: 'การทำงานของระบบเครื่องเสียง', itemOrder: 2 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_003', itemName: 'การทำงานของระบบบลูทูธ (Bluetooth)', itemOrder: 3 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_004', itemName: 'ฟังก์ชันอินเทอร์เน็ตและเครือข่าย', itemOrder: 4 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_005', itemName: 'การทำงานระบบสั่งงานด้วยเสียง', itemOrder: 5 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_006', itemName: 'การทำงานระบบชาร์จมือถือไร้สาย*', itemOrder: 6 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_007', itemName: 'การทำงานของระบบกล้องรอบคัน', itemOrder: 7 },
+
+          // 6. การตรวจสอบระดับของเหลว
+          { category: 'การตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_001', itemName: 'น้ำยาหล่อเย็น', itemOrder: 1 },
+          { category: 'การตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_002', itemName: 'น้ำมันเบรก', itemOrder: 2 },
+          { category: 'การตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_003', itemName: 'น้ำยาทำความสะอาดกระจก', itemOrder: 3 },
+
+          // 7. ระบบช่วงล่าง
+          { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_001', itemName: 'ระดับไฟแบตเตอรี่มากกว่า 50%', itemOrder: 1, hasNumeric: true, numericUnit: '%', numericMin: 50 },
+          { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_002', itemName: 'จุดเชื่อมต่อของท่อต่างๆ', itemOrder: 2 },
+          { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_003', itemName: 'การขันยึดน็อต/สกรูในตำแหน่งสำคัญ เช่น ขั้วแบตเตอรี่ 12V', itemOrder: 3 },
+
+          // 8. การเบรกและการบังคับเลี้ยว
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_001', itemName: 'การทำงานของระบบเบรก', itemOrder: 1 },
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_002', itemName: 'การทำงานของปั๊มเบรกสุญญากาศ/หม้อลมเบรก', itemOrder: 2 },
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_003', itemName: 'การทำงานของพวงมาลัย ไม่กินซ้ายหรือกินขวา', itemOrder: 3 },
+
+          // 9. การปลดล็อกฝาปิดช่องชาร์จ
+          { category: 'การปลดล็อกฝาปิดช่องชาร์จ', categoryOrder: 9, itemCode: 'CHG_001', itemName: 'ปุ่มปลดล็อกบนรีโมท', itemOrder: 1 },
+          { category: 'การปลดล็อกฝาปิดช่องชาร์จ', categoryOrder: 9, itemCode: 'CHG_002', itemName: 'สวิตช์ชาร์จไฟ', itemOrder: 2 },
+          { category: 'การปลดล็อกฝาปิดช่องชาร์จ', categoryOrder: 9, itemCode: 'CHG_003', itemName: 'สายเคเบิลปลดล็อกฉุกเฉิน', itemOrder: 3 },
+
+          // 10. ตรวจสอบแบตเตอรี่ 12V
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_001', itemName: 'ค่าแรงดันไฟฟ้าแบตเตอรี่ (หลัก) [เกณฑ์ ≥ 12.6V]', itemOrder: 1, hasNumeric: true, numericUnit: 'V', numericMin: 12.6 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_002', itemName: 'อายุขัยสุขภาพแบตเตอรี่ SOH (หลัก) [เกณฑ์ ≥ 80%]', itemOrder: 2, hasNumeric: true, numericUnit: '%', numericMin: 80 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_006', itemName: 'ค่ากระแสสตาร์ทเย็น CCA (หลัก) [เกณฑ์ ≥ 400A]', itemOrder: 3, hasNumeric: true, numericUnit: 'A', numericMin: 400 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_007', itemName: 'ค่าระดับพลังงาน SOC (หลัก) [เกณฑ์ = 100%]', itemOrder: 4, hasNumeric: true, numericUnit: '%', numericMin: 100, numericMax: 100 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_008', itemName: 'ตรวจสอบแรงดันลมยาง [เกณฑ์ 35 - 39 psi]', itemOrder: 5, hasNumeric: true, numericUnit: 'psi', numericMin: 35, numericMax: 39 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_005', itemName: 'ขั้วลบแบตเตอรี่ขันแน่นหนาและแข็งแรง', itemOrder: 6 },
+
+          // 11. การตรวจสอบไฟเตือน
+          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'WRN_001', itemName: 'ไม่พบไฟแสดงการทำงานผิดปกติบนหน้าจอรถ', itemOrder: 1 },
+
+          // 12. การวินิจฉัยและการอัปเกรด
+          { category: 'การวินิจฉัยและการอัปเกรด', categoryOrder: 12, itemCode: 'OTA_001', itemName: 'ลบรหัสปัญหาโดยใช้ VDCI', itemOrder: 1 },
+          { category: 'การวินิจฉัยและการอัปเกรด', categoryOrder: 12, itemCode: 'OTA_002', itemName: 'ตรวจสอบและอัปเดตเวอร์ชันซอฟต์แวร์หน้าจอกลาง', itemOrder: 2 },
+        );
+      } else if (modelCode === 'AION_UT') {
+        // ========== AION_UT Dedicated Checklist ==========
+        itemsData.push(
+          // 1. ลักษณะภายนอกและสี
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_001', itemName: 'ประตู', itemOrder: 1 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_002', itemName: 'ฝากระโปรงหน้า/หลัง', itemOrder: 2 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_004', itemName: 'กันชนหน้าและกันชนหลัง', itemOrder: 3 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_005', itemName: 'บังโคลน', itemOrder: 4 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_006', itemName: 'กระจกมองข้าง', itemOrder: 5 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_007', itemName: 'อุปกรณ์ภายใน', itemOrder: 6 },
+
+          // 2. ไฟส่องสว่าง
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_001', itemName: 'ไฟหน้า', itemOrder: 1 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_002', itemName: 'ไฟท้าย', itemOrder: 2 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_003', itemName: 'ไฟเลี้ยว', itemOrder: 3 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_004', itemName: 'ไฟส่องสว่างในเวลากลางวัน (DRL)', itemOrder: 4 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_005', itemName: 'ไฟส่องป้ายทะเบียน', itemOrder: 5 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_006', itemName: 'ไฟถอยหลัง', itemOrder: 6 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_007', itemName: 'ไฟตัดหมอกหน้า-หลัง', itemOrder: 7 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_008', itemName: 'ไฟอ่านหนังสือ', itemOrder: 8 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_009', itemName: 'ไฟภายในห้องโดยสาร', itemOrder: 9 },
+
+          // 3. กระจกและที่ปัดน้ำฝน
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_001', itemName: 'ฟังก์ชันปรับกระจกขึ้น/ลง และระบบกันหนีบ', itemOrder: 1 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_002', itemName: 'การทำงานของก้านปัดน้ำฝน', itemOrder: 2 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_003', itemName: 'ฟังก์ชันทำความสะอาดกระจก', itemOrder: 3 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_004', itemName: 'ซันรูฟ / ม่านบังแดด*', itemOrder: 4 },
+
+          // 4. ระบบปรับอากาศ
+          { category: 'ระบบปรับอากาศ', categoryOrder: 4, itemCode: 'AC_001', itemName: 'ทดสอบการทำความเย็นและความร้อน', itemOrder: 1 },
+          { category: 'ระบบปรับอากาศ', categoryOrder: 4, itemCode: 'AC_002', itemName: 'การปรับความแรงลมและทิศทางลม', itemOrder: 2 },
+
+          // 5. ระบบเครื่องเสียงและความบันเทิง
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_001', itemName: 'การทำงานของกล้องมองภาพรอบทิศทาง', itemOrder: 1 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_002', itemName: 'การทำงานของระบบเครื่องเสียง', itemOrder: 2 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_003', itemName: 'ฟังก์ชันอินเทอร์เน็ตและเครือข่าย', itemOrder: 3 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_004', itemName: 'การทำงานระบบสั่งงานด้วยเสียง', itemOrder: 4 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_005', itemName: 'การทำงานของระบบบลูทูธ (Bluetooth)', itemOrder: 5 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_006', itemName: 'ฟังก์ชันการนำทาง', itemOrder: 6 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_007', itemName: 'ฟังก์ชันความบันเทิง', itemOrder: 7 },
+
+          // 6. การตรวจสอบระดับของเหลว
+          { category: 'การตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_001', itemName: 'น้ำยาหล่อเย็น', itemOrder: 1 },
+          { category: 'การตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_002', itemName: 'น้ำมันเบรก', itemOrder: 2 },
+          { category: 'การตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_003', itemName: 'น้ำยาทำความสะอาดกระจก', itemOrder: 3 },
+
+          // 7. ระบบช่วงล่าง
+          { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_001', itemName: 'ลักษณะภายนอกของแบตเตอรี่ขับเคลื่อน', itemOrder: 1 },
+          { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_002', itemName: 'ท่อและการเชื่อมต่อของท่อต่างๆ', itemOrder: 2 },
+          { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_003', itemName: 'การขันยึดน็อต/สกรูในตำแหน่งสำคัญ', itemOrder: 3 },
+
+          // 8. การเบรกและการบังคับเลี้ยว
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_001', itemName: 'การทำงานของระบบเบรก', itemOrder: 1 },
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_002', itemName: 'การบังคับเลี้ยว', itemOrder: 2 },
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_003', itemName: 'ประสิทธิภาพการขับขี่', itemOrder: 3 },
+
+          // 9. การปลดล็อกฝาปิดช่องชาร์จ
+          { category: 'การปลดล็อกฝาปิดช่องชาร์จ', categoryOrder: 9, itemCode: 'CHG_001', itemName: 'ปลดล็อกด้วยแอปพลิเคชัน', itemOrder: 1 },
+          { category: 'การปลดล็อกฝาปิดช่องชาร์จ', categoryOrder: 9, itemCode: 'CHG_002', itemName: 'ปลดล็อกด้วยการกดฝาปิดช่องชาร์จ', itemOrder: 2 },
+          { category: 'การปลดล็อกฝาปิดช่องชาร์จ', categoryOrder: 9, itemCode: 'CHG_003', itemName: 'ปลดล็อกด้วยสายดึง', itemOrder: 3 },
+
+          // 10. การตรวจสอบแบตเตอรี่ 12V
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_001', itemName: 'ค่าแรงดันไฟฟ้า ≥ 12.6V', itemOrder: 1, hasNumeric: true, numericUnit: 'V', numericMin: 12.6 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_002', itemName: 'อายุ/สุขภาพแบตเตอรี่ ≥ 80%', itemOrder: 2, hasNumeric: true, numericUnit: '%', numericMin: 80 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_003', itemName: 'ขั้วลบแบตเตอรี่ขันแน่น ไม่หลุดหลวม', itemOrder: 3 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_004', itemName: 'แนบรายงานผลการทดสอบแบตเตอรี่', itemOrder: 4, hasPhoto: true },
+
+          // 11. การตรวจสอบไฟเตือน
+          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'WRN_001', itemName: 'หน้าปัดไม่มีไฟเตือนความผิดปกติ', itemOrder: 1 },
+
+          // 12. การวินิจฉัยและการอัปเกรด
+          { category: 'การวินิจฉัยและการอัปเกรด', categoryOrder: 12, itemCode: 'OTA_001', itemName: 'ตรวจสอบและลบรหัสความผิดปกติ', itemOrder: 1 },
+          { category: 'การวินิจฉัยและการอัปเกรด', categoryOrder: 12, itemCode: 'OTA_002', itemName: 'ตรวจสอบและอัปเดตเวอร์ชันซอฟต์แวร์หน้าจอกลาง', itemOrder: 2 },
+        );
+      } else if (modelCode === 'HYPTEC_HT' || modelCode === 'HYPTEC_HT8') {
+        // ========== HYPTEC_HT / HYPTEC_HT8 Dedicated Checklist ==========
+        itemsData.push(
+          // 1. ลักษณะภายนอกและสี
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_001', itemName: 'ประตู / ประตู Gull Wing*', itemOrder: 1, hasPhoto: true },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_002', itemName: 'ฝากระโปรงหน้า/หลัง', itemOrder: 2 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_003', itemName: 'กันชนหน้าและกันชนหลัง', itemOrder: 3 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_004', itemName: 'บังโคลน', itemOrder: 4 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_005', itemName: 'สเกิร์ตด้านข้าง', itemOrder: 5 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_006', itemName: 'กระจกมองข้าง', itemOrder: 6 },
+          { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_007', itemName: 'ลักษณะภายนอกของอุปกรณ์ภายใน', itemOrder: 7 },
+
+          // 2. ไฟส่องสว่าง
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_001', itemName: 'ไฟหน้า', itemOrder: 1 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_002', itemName: 'ไฟอเนกประสงค์ด้านหลัง A', itemOrder: 2 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_003', itemName: 'ไฟอเนกประสงค์ด้านหลัง B', itemOrder: 3 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_004', itemName: 'ไฟส่องสว่างในเวลากลางวัน (DRL)', itemOrder: 4 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_005', itemName: 'ไฟตัดหมอกหน้า-หลัง', itemOrder: 5 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_006', itemName: 'ไฟถอยหลัง', itemOrder: 6 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_007', itemName: 'ไฟฉุกเฉิน', itemOrder: 7 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_008', itemName: 'ไฟส่องป้ายทะเบียน', itemOrder: 8 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_009', itemName: 'ไฟภายในห้องโดยสาร', itemOrder: 9 },
+
+          // 3. กระจกและที่ปัดน้ำฝน
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_001', itemName: 'การทำงานระบบป้องกันการหนีบ', itemOrder: 1 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_002', itemName: 'การทำงานปรับกระจกขึ้น/ลง', itemOrder: 2 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_003', itemName: 'การทำงานของที่ปัดน้ำฝน', itemOrder: 3 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_004', itemName: 'การทำงานของที่ฉีดกระจก', itemOrder: 4 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_005', itemName: 'ซันรูฟ / ม่านบังแดด*', itemOrder: 5 },
+
+          // 4. ระบบปรับอากาศ
+          { category: 'ระบบปรับอากาศ', categoryOrder: 4, itemCode: 'AC_001', itemName: 'ทดสอบการทำความเย็นและความร้อน', itemOrder: 1 },
+          { category: 'ระบบปรับอากาศ', categoryOrder: 4, itemCode: 'AC_002', itemName: 'การปรับความแรงลมและทิศทางลม', itemOrder: 2 },
+
+          // 5. ระบบเครื่องเสียงและความบันเทิง
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_001', itemName: 'ระบบกล้องมองภาพรอบทิศทาง', itemOrder: 1 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_002', itemName: 'การทำงานระบบชาร์จมือถือไร้สาย', itemOrder: 2 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_003', itemName: 'ฟังก์ชันอินเทอร์เน็ตและเครือข่าย', itemOrder: 3 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_004', itemName: 'ฟังก์ชันการนำทาง', itemOrder: 4 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_005', itemName: 'การทำงานของระบบบลูทูธ (Bluetooth)', itemOrder: 5 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_006', itemName: 'การทำงานระบบสั่งงานด้วยเสียง', itemOrder: 6 },
+          { category: 'ระบบเครื่องเสียงและความบันเทิง', categoryOrder: 5, itemCode: 'ENT_007', itemName: 'ฟังก์ชันความบันเทิง', itemOrder: 7 },
+
+          // 6. การตรวจสอบระดับของเหลว
+          { category: 'การตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_001', itemName: 'น้ำยาหล่อเย็น', itemOrder: 1 },
+          { category: 'การตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_002', itemName: 'น้ำมันเบรก', itemOrder: 2 },
+          { category: 'การตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_003', itemName: 'น้ำยาทำความสะอาดกระจก', itemOrder: 3 },
+
+          // 7. ระบบช่วงล่าง
+          { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_001', itemName: 'ลักษณะภายนอกของแบตเตอรี่ไฟฟ้าแรงดันสูง', itemOrder: 1 },
+          { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_002', itemName: 'จุดเชื่อมต่อของท่อต่างๆ', itemOrder: 2 },
+          { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_003', itemName: 'การขันยึดน็อต/สกรูในตำแหน่งสำคัญ', itemOrder: 3 },
+
+          // 8. การเบรกและการบังคับเลี้ยว
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_001', itemName: 'การทำงานของระบบเบรก', itemOrder: 1 },
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_002', itemName: 'ฟังก์ชันบังคับเลี้ยว', itemOrder: 2 },
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_003', itemName: 'ประสิทธิภาพการขับขี่', itemOrder: 3 },
+
+          // 9. การปลดล็อกฝาปิดช่องชาร์จ
+          { category: 'การปลดล็อกฝาปิดช่องชาร์จ', categoryOrder: 9, itemCode: 'CHG_001', itemName: 'ปุ่มกดบนกุญแจรีโมท', itemOrder: 1 },
+          { category: 'การปลดล็อกฝาปิดช่องชาร์จ', categoryOrder: 9, itemCode: 'CHG_002', itemName: 'ปุ่มเสมือนที่คอนโซลกลาง', itemOrder: 2 },
+          { category: 'การปลดล็อกฝาปิดช่องชาร์จ', categoryOrder: 9, itemCode: 'CHG_003', itemName: 'การปลดล็อกโดยการกดฝาปิดช่องชาร์จ', itemOrder: 3 },
+
+          // 10. การตรวจสอบแบตเตอรี่ 12V
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_005', itemName: 'ตรวจสอบสถานะสุขภาพแบตเตอรี่ (ขณะปิดระบบ Power)', itemOrder: 1 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_001', itemName: 'แรงดันไฟฟ้าแบตเตอรี่หลัก ≥ 12.6V', itemOrder: 2, hasNumeric: true, numericUnit: 'V', numericMin: 12.6 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_003', itemName: 'แรงดันไฟฟ้าแบตเตอรี่รอง ≥ 12.6V', itemOrder: 3, hasNumeric: true, numericUnit: 'V', numericMin: 12.6 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_002', itemName: 'อายุการใช้งานแบตเตอรี่หลัก ≥ 80%', itemOrder: 4, hasNumeric: true, numericUnit: '%', numericMin: 80 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_004', itemName: 'อายุการใช้งานแบตเตอรี่รอง ≥ 80%', itemOrder: 5, hasNumeric: true, numericUnit: '%', numericMin: 80 },
+          { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_006', itemName: 'แนบรายงานผลการทดสอบแบตเตอรี่', itemOrder: 6, hasPhoto: true },
+
+          // 11. การตรวจสอบไฟเตือน
+          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'WRN_001', itemName: 'หน้าปัดแสดงผลปกติ', itemOrder: 1 },
+          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'WRN_002', itemName: 'ไม่มีไฟเตือนผิดปกติ', itemOrder: 2 },
+
+          // 12. การวินิจฉัยและการอัปเกรด
+          { category: 'การวินิจฉัยและการอัปเกรด', categoryOrder: 12, itemCode: 'OTA_001', itemName: 'ตรวจสอบและลบรหัสปัญหา (DTC)', itemOrder: 1 },
+          { category: 'การวินิจฉัยและการอัปเกรด', categoryOrder: 12, itemCode: 'OTA_002', itemName: 'ตรวจสอบการอัปเกรด OTA เป็นเวอร์ชันล่าสุด', itemOrder: 2 },
+        );
       } else {
         // Category 1: Exterior
         itemsData.push(
@@ -311,7 +610,7 @@ async function main() {
       }
 
       // Model Rule: HYPTEC_HT has Gullwing Doors
-      if (modelCode === 'HYPTEC_HT') {
+      if (modelCode === 'HYPTEC_HT' || modelCode === 'HYPTEC_HT8') {
         itemsData.push(
           {
             category: 'ลักษณะภายนอกและสี',
@@ -343,12 +642,12 @@ async function main() {
           { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_001', itemName: 'ไฟหน้า', itemOrder: 1 },
           { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_002', itemName: 'ไฟท้าย', itemOrder: 2 },
           { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_003', itemName: 'ไฟเลี้ยวและไฟฉุกเฉิน', itemOrder: 3 },
-          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_004', itemName: 'ไฟ DRL (Daytime Running Light)', itemOrder: 4 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_004', itemName: 'ไฟส่องสว่างในเวลากลางวัน DRL (Daytime Running Light)', itemOrder: 4 },
           { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_005', itemName: 'ไฟส่องป้ายทะเบียน', itemOrder: 5 },
           { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_006', itemName: 'ไฟถอยหลัง', itemOrder: 6 },
           { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_007', itemName: 'ไฟตัดหมอกหน้า-หลัง (Fog Light)', itemOrder: 7 },
-          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_008', itemName: 'ไฟในห้องโดยสาร', itemOrder: 8 },
-          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_009', itemName: 'ไฟอ่านหนังสือ (Reading Light)', itemOrder: 9 }
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_008', itemName: 'ไฟอ่านหนังสือ (Reading Light)', itemOrder: 8 },
+          { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_009', itemName: 'ไฟภายในห้องโดยสาร', itemOrder: 9 }
         );
       } else if (modelCode === 'HYPTEC_HT') {
         itemsData.push(
@@ -390,12 +689,12 @@ async function main() {
         );
       } else {
         itemsData.push(
-          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_001', itemName: 'ระบบปรับกระจกไฟฟ้า / ระบบกันหนีบ', itemOrder: 1 },
-          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_002', itemName: 'การทำงานของที่ปัดน้ำฝนหน้า', itemOrder: 2 },
-          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_003', itemName: 'ฟังก์ชันฉีดน้ำทำความสะอาดกระจก', itemOrder: 3 },
-          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_004', itemName: 'การทำงานของ Sunroof', itemOrder: 4 }
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_001', itemName: 'ฟังก์ชันป้องกันการหนีบ', itemOrder: 1 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_002', itemName: 'ฟังก์ชันปรับกระจกขึ้น-ลง', itemOrder: 2 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_003', itemName: 'ฟังก์ชันฉีดน้ำทำความสะอาดกระจก-ที่ปัดน้ำฝน', itemOrder: 3 },
+          { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_004', itemName: 'ฟังก์ชันม่านบังแดด (sunroof)', itemOrder: 4 }
         );
-        if (modelCode !== 'AION_YP' && modelCode !== 'AION_YP5') {
+        if (modelCode !== 'AION_YP' && modelCode !== 'AION_YP5' && modelCode !== 'AION_V' && modelCode !== 'AION_V5') {
           itemsData.push(
             { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_005', itemName: 'ฟังก์ชันม่านบังแดด (Sun Shade)', itemOrder: 5 }
           );
@@ -410,12 +709,12 @@ async function main() {
 
       // Category 5: Infotainment
       itemsData.push(
-        { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_001', itemName: 'กล้องมองภาพรอบทิศทาง 360 องศา', itemOrder: 1 },
-        { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_002', itemName: 'ระบบเสียงและลำโพง', itemOrder: 2 },
-        { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_003', itemName: 'ฟังก์ชันเชื่อมต่อบลูทูธและโทรศัพท์', itemOrder: 3 },
-        { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_004', itemName: 'ระบบนำทาง (Navigation)', itemOrder: 4 },
-        { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_005', itemName: 'ฟังก์ชันอินเตอร์เน็ตและเครือข่าย', itemOrder: 5 },
-        { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_006', itemName: 'ระบบสั่งงานด้วยเสียง (Voice Control)', itemOrder: 6 }
+        { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_001', itemName: 'ฟังก์ชันกล้องมองภาพรอบทิศทาง 360 องศา', itemOrder: 1 },
+        { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_002', itemName: 'การทำงานของระบบเครื่องเสียง', itemOrder: 2 },
+        { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_003', itemName: 'ฟังก์ชันอินเทอร์เน็ตและเครือข่าย', itemOrder: 3 },
+        { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_004', itemName: 'การทำงานของระบบสั่งการด้วยเสียง (Voice Control)', itemOrder: 4 },
+        { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_005', itemName: 'การทำงานของระบบบลูทูธ (Bluetooth)', itemOrder: 5 },
+        { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_006', itemName: 'ฟังก์ชันการนำทาง (Navigator)', itemOrder: 6 }
       );
       if (modelCode !== 'AION_V' && modelCode !== 'AION_V5' && modelCode !== 'AION_UT') {
         itemsData.push(
@@ -436,7 +735,7 @@ async function main() {
       itemsData.push(
         { category: 'ตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_001', itemName: 'ระดับน้ำยาหล่อเย็นอินเวอร์เตอร์/มอเตอร์', itemOrder: 1 },
         { category: 'ตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_002', itemName: 'ระดับน้ำมันเบรก', itemOrder: 2 },
-        { category: 'ตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_003', itemName: 'ระดับน้ำฉีดกระจก', itemOrder: 3 }
+        { category: 'ตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_003', itemName: 'ระดับน้ำยาทำความสะอาดกระจก', itemOrder: 3 }
       );
 
       // Category 7: Chassis
@@ -450,17 +749,20 @@ async function main() {
         );
       }
       itemsData.push(
-        { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_002', itemName: 'ท่อส่งน้ำยาหล่อเย็นแบตเตอรี่และการรั่วซึม', itemOrder: 2 },
-        { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_003', itemName: 'การขันยึดน็อตและโครงสร้างช่วงล่าง', itemOrder: 3 }
+        { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_002', itemName: 'ท่อและการเชื่อมต่อของท่อ', itemOrder: 2 }
       );
+      if (modelCode !== 'AION_V' && modelCode !== 'AION_V5') {
+        itemsData.push(
+          { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_003', itemName: 'การขันยึดน็อตและโครงสร้างช่วงล่าง', itemOrder: 3 }
+        );
+      }
 
       // Category 8: Brake
       if (modelCode === 'AION_V' || modelCode === 'AION_V5') {
         itemsData.push(
-          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_001', itemName: 'ฟังก์ชันห้ามล้อและเบรกมือไฟฟ้า', itemOrder: 1 },
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_001', itemName: 'ประสิทธิภาพการเบรก (Brake Performance)', itemOrder: 1 },
           { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_002', itemName: 'การตอบสนองของพวงมาลัยและการเลี้ยว', itemOrder: 2 },
-          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_003', itemName: 'ประสิทธิภาพการเบรก (Brake Performance)', itemOrder: 3 },
-          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_004', itemName: 'ทดสอบขับ (Test Drive)', itemOrder: 4 }
+          { category: 'การเบรกและการบังคับเลี้ยว', categoryOrder: 8, itemCode: 'BRK_003', itemName: 'ประสิทธิภาพการขับขี่ (Test Drive)', itemOrder: 3 }
         );
       } else {
         itemsData.push(
@@ -473,7 +775,7 @@ async function main() {
       }
 
       // Category 9: Battery 12V (Model-Specific Battery Test Rules)
-      if (modelCode === 'AION_V' || modelCode === 'AION_V5' || modelCode === 'HYPTEC_HT') {
+      if (modelCode === 'AION_V' || modelCode === 'AION_V5' || modelCode === 'HYPTEC_HT' || modelCode === 'HYPTEC_HT8') {
         // Dual Battery setup
         itemsData.push(
           {
@@ -515,15 +817,18 @@ async function main() {
             hasNumeric: true,
             numericUnit: '%',
             numericMin: 80,
-          },
-          {
+          }
+        );
+        // BAT_005 only for HYPTEC_HT (excluded from AION_V/V5)
+        if (modelCode === 'HYPTEC_HT' || modelCode === 'HYPTEC_HT8') {
+          itemsData.push({
             category: 'ตรวจสอบแบตเตอรี่ 12V',
             categoryOrder: 9,
             itemCode: 'BAT_005',
             itemName: 'ขั้วลบแบตเตอรี่ขันแน่นหนาและแข็งแรง',
             itemOrder: 5,
-          }
-        );
+          });
+        }
       } else if (modelCode === 'AION_YP' || modelCode === 'AION_YP5') {
         // AION Y Plus: SOH, CCA, SOC, Tire pressure
         itemsData.push(
@@ -723,7 +1028,7 @@ async function main() {
     }
   }
 
-  console.log('📝 Created checklist templates for all 9 models across 3 PDI types.');
+  console.log('📝 Created checklist templates for all 10 models across 3 PDI types.');
   console.log('✅ Database seeding finished successfully.');
 }
 

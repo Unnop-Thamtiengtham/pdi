@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -14,47 +14,30 @@ interface DashboardClientProps {
   isDbConnected: boolean;
 }
 
-// Custom hook for ticking countdown timer
-function useCountdown(deadline: string | Date | null) {
-  const [timeLeft, setTimeLeft] = useState<string>('');
-  const [isUrgent, setIsUrgent] = useState(false);
+// Pure computation — no hooks, no state, no intervals
+function computeCountdown(deadline: string | Date | null, now: number) {
+  if (!deadline) return { timeLeft: '', isUrgent: false };
 
-  useEffect(() => {
-    if (!deadline) return;
+  const difference = new Date(deadline).getTime() - now;
 
-    const interval = setInterval(() => {
-      const difference = new Date(deadline).getTime() - new Date().getTime();
-      
-      if (difference <= 0) {
-        setTimeLeft('EXPIRED');
-        setIsUrgent(true);
-        clearInterval(interval);
-        return;
-      }
+  if (difference <= 0) {
+    return { timeLeft: 'EXPIRED', isUrgent: true };
+  }
 
-      const hours = Math.floor(difference / (1000 * 60 * 60));
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+  const hours = Math.floor(difference / (1000 * 60 * 60));
+  const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-      setTimeLeft(`${hours}ชั่วโมง ${minutes}นาที ${seconds}วิ`);
-      
-      // Urgent if less than 2 hours remaining
-      if (hours < 2) {
-        setIsUrgent(true);
-      } else {
-        setIsUrgent(false);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [deadline]);
-
-  return { timeLeft, isUrgent };
+  return {
+    timeLeft: `${hours}ชั่วโมง ${minutes}นาที ${seconds}วิ`,
+    isUrgent: hours < 2,
+  };
 }
 
-function SlaTimerRow({ job }: { job: any }) {
+// SlaTimerRow now receives `now` from parent — no internal interval
+function SlaTimerRow({ job, now }: { job: any; now: number }) {
   const deadline = job.scheduledDate || job.vehicle?.incomingDeadline;
-  const { timeLeft, isUrgent } = useCountdown(deadline);
+  const { timeLeft, isUrgent } = computeCountdown(deadline, now);
 
   if (timeLeft === 'EXPIRED') {
     return (
@@ -74,102 +57,123 @@ function SlaTimerRow({ job }: { job: any }) {
   );
 }
 
+// Mock data moved to module scope — created once, not on every render
+const MOCK_JOBS = [
+  {
+    id: 'mock-1',
+    jobNumber: 'JO-INC-20260609-001',
+    pdiType: 'INCOMING',
+    status: 'PENDING',
+    vehicleVin: 'LNAT4AB34T5G05011',
+    vehicle: {
+      vin: 'LNAT4AB34T5G05011',
+      modelName: 'AION V',
+      colorName: 'Space Gray',
+      floorplan: 'Zone A',
+      incomingDeadline: new Date(Date.now() + 1.5 * 60 * 60 * 1000).toISOString(),
+      branch: { name: 'มีนบุรี' },
+    },
+    inspector: null,
+    createdAt: new Date(Date.now() - 22 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'mock-2',
+    jobNumber: 'JO-INC-20260609-002',
+    pdiType: 'INCOMING',
+    status: 'PENDING_APPROVAL',
+    vehicleVin: 'LNAT4AB34T5G05022',
+    vehicle: {
+      vin: 'LNAT4AB34T5G05022',
+      modelName: 'HYPTEC HT',
+      colorName: 'Rose Gold',
+      floorplan: 'Zone B',
+      incomingDeadline: new Date(Date.now() + 20 * 60 * 60 * 1000).toISOString(),
+      branch: { name: 'มีนบุรี' },
+    },
+    inspector: { name: 'สมชาย ช่างตรวจ' },
+    createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'mock-3',
+    jobNumber: 'JO-PD-20260609-003',
+    pdiType: 'PRE_DELIVERY',
+    status: 'IN_PROGRESS',
+    vehicleVin: 'LNAT4AB34T5G05033',
+    vehicle: {
+      vin: 'LNAT4AB34T5G05033',
+      modelName: 'AION Y Plus',
+      colorName: 'Lucky Gold',
+      floorplan: 'Handover Bay 1',
+      incomingDeadline: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+      branch: { name: 'มีนบุรี' },
+    },
+    inspector: { name: 'สมชาย ช่างตรวจ' },
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'mock-4',
+    jobNumber: 'JO-LTM-20260609-004',
+    pdiType: 'LONG_TERM',
+    status: 'APPROVED',
+    vehicleVin: 'LNAT4AB34T5G05044',
+    vehicle: {
+      vin: 'LNAT4AB34T5G05044',
+      modelName: 'GAC M8',
+      colorName: 'Crystal White',
+      floorplan: 'Stock Lot C',
+      incomingDeadline: new Date(Date.now() + 120 * 60 * 60 * 1000).toISOString(),
+      branch: { name: 'มีนบุรี' },
+    },
+    inspector: { name: 'สมชาย ช่างตรวจ' },
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
 export default function DashboardClient({ initialJobs, isDbConnected }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<'ALL' | 'INCOMING' | 'LONG_TERM' | 'PRE_DELIVERY'>('ALL');
 
-  // Hardcoded premium mock data for fallback
-  const mockJobs = [
-    {
-      id: 'mock-1',
-      jobNumber: 'JO-INC-20260609-001',
-      pdiType: 'INCOMING',
-      status: 'PENDING',
-      vehicleVin: 'LNAT4AB34T5G05011',
-      vehicle: {
-        vin: 'LNAT4AB34T5G05011',
-        modelName: 'AION V',
-        colorName: 'Space Gray',
-        floorplan: 'Zone A',
-        incomingDeadline: new Date(Date.now() + 1.5 * 60 * 60 * 1000).toISOString(), // 1.5 hours left
-        branch: { name: 'มีนบุรี' },
-      },
-      inspector: null,
-      createdAt: new Date(Date.now() - 22 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'mock-2',
-      jobNumber: 'JO-INC-20260609-002',
-      pdiType: 'INCOMING',
-      status: 'PENDING_APPROVAL',
-      vehicleVin: 'LNAT4AB34T5G05022',
-      vehicle: {
-        vin: 'LNAT4AB34T5G05022',
-        modelName: 'HYPTEC HT',
-        colorName: 'Rose Gold',
-        floorplan: 'Zone B',
-        incomingDeadline: new Date(Date.now() + 20 * 60 * 60 * 1000).toISOString(), // 20 hours left
-        branch: { name: 'มีนบุรี' },
-      },
-      inspector: { name: 'สมชาย ช่างตรวจ' },
-      createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'mock-3',
-      jobNumber: 'JO-PD-20260609-003',
-      pdiType: 'PRE_DELIVERY',
-      status: 'IN_PROGRESS',
-      vehicleVin: 'LNAT4AB34T5G05033',
-      vehicle: {
-        vin: 'LNAT4AB34T5G05033',
-        modelName: 'AION Y Plus',
-        colorName: 'Lucky Gold',
-        floorplan: 'Handover Bay 1',
-        incomingDeadline: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
-        branch: { name: 'มีนบุรี' },
-      },
-      inspector: { name: 'สมชาย ช่างตรวจ' },
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 'mock-4',
-      jobNumber: 'JO-LTM-20260609-004',
-      pdiType: 'LONG_TERM',
-      status: 'APPROVED',
-      vehicleVin: 'LNAT4AB34T5G05044',
-      vehicle: {
-        vin: 'LNAT4AB34T5G05044',
-        modelName: 'GAC M8',
-        colorName: 'Crystal White',
-        floorplan: 'Stock Lot C',
-        incomingDeadline: new Date(Date.now() + 120 * 60 * 60 * 1000).toISOString(),
-        branch: { name: 'มีนบุรี' },
-      },
-      inspector: { name: 'สมชาย ช่างตรวจ' },
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ];
+  // Single timer tick shared across all SLA countdown rows
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
-  const jobs = isDbConnected ? initialJobs : mockJobs;
+  const jobs = isDbConnected ? initialJobs : MOCK_JOBS;
 
-  // Statistics calculation
-  const totalJobsCount = jobs.length;
-  const pendingCount = jobs.filter(j => j.status === 'PENDING').length;
-  const inProgressCount = jobs.filter(j => j.status === 'IN_PROGRESS').length;
-  const pendingApprovalCount = jobs.filter(j => j.status === 'PENDING_APPROVAL').length;
-  const approvedCount = jobs.filter(j => j.status === 'APPROVED').length;
+  // Single-pass statistics + filtering (replaces 5 separate .filter() calls)
+  const { pendingCount, inProgressCount, pendingApprovalCount, approvedCount, filteredJobs, urgentJobs } = useMemo(() => {
+    let pending = 0, inProgress = 0, pendingApproval = 0, approved = 0;
+    const filtered: any[] = [];
+    const urgent: any[] = [];
 
-  // Filter jobs based on active tab
-  const filteredJobs = jobs.filter(j => {
-    if (activeTab === 'ALL') return true;
-    return j.pdiType === activeTab;
-  });
+    for (const j of jobs) {
+      // Count stats
+      if (j.status === 'PENDING') pending++;
+      else if (j.status === 'IN_PROGRESS') inProgress++;
+      else if (j.status === 'PENDING_APPROVAL') pendingApproval++;
+      else if (j.status === 'APPROVED') approved++;
 
-  // Filter urgent SLA alerts (Incoming PDI pending/in progress with less than 24 hours total)
-  const urgentJobs = jobs.filter(j => {
-    if (j.pdiType !== 'INCOMING') return false;
-    if (j.status === 'APPROVED' || j.status === 'REJECTED') return false;
-    return true; // Any unresolved incoming job
-  });
+      // Tab filter
+      if (activeTab === 'ALL' || j.pdiType === activeTab) {
+        filtered.push(j);
+      }
+
+      // Urgent SLA alerts
+      if (j.pdiType === 'INCOMING' && j.status !== 'APPROVED' && j.status !== 'REJECTED') {
+        urgent.push(j);
+      }
+    }
+
+    return {
+      pendingCount: pending,
+      inProgressCount: inProgress,
+      pendingApprovalCount: pendingApproval,
+      approvedCount: approved,
+      filteredJobs: filtered,
+      urgentJobs: urgent,
+    };
+  }, [jobs, activeTab]);
 
   return (
     <div className="space-y-8">
@@ -275,7 +279,7 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
                   <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] text-slate-500 font-medium">เหลือเวลาตรวจ:</span>
-                      <SlaTimerRow job={job} />
+                      <SlaTimerRow job={job} now={now} />
                     </div>
 
                     <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>

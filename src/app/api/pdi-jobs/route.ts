@@ -168,7 +168,7 @@ export async function PATCH(req: NextRequest) {
 
     // 1. Save Checklist Results
     if (results && Array.isArray(results)) {
-      await Promise.all(
+      await prisma.$transaction(
         results.map((r: any) =>
           prisma.checklistResult.upsert({
             where: {
@@ -233,19 +233,30 @@ export async function PATCH(req: NextRequest) {
 
     // 3. Save Defects
     if (defects && Array.isArray(defects)) {
+      // Find vehicleVin of the job to link to created defects
+      const existingJob = await prisma.pdiJob.findUnique({
+        where: { id: jobId },
+        select: { vehicleVin: true },
+      });
+      if (!existingJob) {
+        return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+      }
+      const vehicleVin = existingJob.vehicleVin;
+
       // Delete old defects and recreate
       await prisma.defect.deleteMany({ where: { jobId } });
       if (defects.length > 0) {
         await prisma.defect.createMany({
           data: defects.map((d: any, index: number) => ({
             jobId,
+            vehicleVin, // Link defect directly to vehicle
             defectNo: index + 1,
             checklistItemCode: d.checklistItemCode || null,
             description: d.description,
             cause: d.cause || null,
             solution: d.solution || null,
             severity: d.severity || 'NORMAL',
-            status: d.status as DefectStatus || DefectStatus.OPEN,
+            status: (d.status as DefectStatus) || ('OPEN' as DefectStatus),
             photoUrl: d.photoUrl || null,
             resolvedAt: d.status === 'RESOLVED' || d.status === 'CLOSED' ? new Date() : null,
           })),
@@ -353,9 +364,9 @@ export async function PATCH(req: NextRequest) {
 
     // Side effect: update vehicle status
     if (status === 'APPROVED') {
-      let nextVehicleStatus: VehicleStatus = VehicleStatus.IN_STOCK;
+      let nextVehicleStatus: VehicleStatus = 'IN_STOCK';
       if (job.pdiType === 'PRE_DELIVERY') {
-        nextVehicleStatus = VehicleStatus.DELIVERED;
+        nextVehicleStatus = 'DELIVERED';
       }
       await prisma.vehicle.update({
         where: { vin: job.vehicleVin },

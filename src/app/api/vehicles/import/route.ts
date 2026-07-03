@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
       'AION_YP5',
       'AION_ES',
       'HYPTEC_HT',
+      'HYPTEC_HT8',
       'HYPTEC_SSR',
       'GAC_M8'
     ]);
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
       }
       const mCode = String(v.modelCode).trim();
       if (!validModelCodes.has(mCode)) {
-        errors.push(`แถวที่ ${rowNum}: รหัสรุ่นรถ "${v.modelCode}" ไม่ถูกต้อง (เลือกได้เฉพาะ: AION_V, AION_V5, AION_UT, AION_YP, AION_YP5, AION_ES, HYPTEC_HT, HYPTEC_SSR, GAC_M8)`);
+        errors.push(`แถวที่ ${rowNum}: รหัสรุ่นรถ "${v.modelCode}" ไม่ถูกต้อง (เลือกได้เฉพาะ: AION_V, AION_V5, AION_UT, AION_YP, AION_YP5, AION_ES, HYPTEC_HT, HYPTEC_HT8, HYPTEC_SSR, GAC_M8)`);
         continue;
       }
 

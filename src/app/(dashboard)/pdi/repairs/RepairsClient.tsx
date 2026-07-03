@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Wrench, Search, ShieldAlert, Calendar, MapPin, ClipboardList, CheckCircle } from 'lucide-react';
+import { Wrench, Search, ShieldAlert, ClipboardList, CheckCircle, Printer } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -46,6 +46,9 @@ export default function RepairsClient({ initialJobs, isDbConnected }: RepairsCli
   const [confirmJob, setConfirmJob] = useState<any | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmSubmitting, setConfirmSubmitting] = useState(false);
+
+  // Print state
+  const [printJob, setPrintJob] = useState<any | null>(null);
 
   // Fallback mock data when DB is not connected
   const getMockJobs = () => {
@@ -210,6 +213,13 @@ export default function RepairsClient({ initialJobs, isDbConnected }: RepairsCli
     }
   };
 
+  const handlePrint = (job: any) => {
+    setPrintJob(job);
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  };
+
   const handleCompleteRepair = (job: any) => {
     setConfirmJob(job);
     setIsConfirmOpen(true);
@@ -256,7 +266,8 @@ export default function RepairsClient({ initialJobs, isDbConnected }: RepairsCli
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6 print-hidden">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -297,106 +308,73 @@ export default function RepairsClient({ initialJobs, isDbConnected }: RepairsCli
             <Table>
               <TableHeader className="bg-slate-50/75 border-b border-slate-100">
                 <TableRow>
-                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขที่งาน<br/><span className="text-[10px] text-slate-400 font-normal">(Job No.)</span></TableHead>
-                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">รุ่นรถ<br/><span className="text-[10px] text-slate-400 font-normal">(Model)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขที่งาน / ประเภท<br/><span className="text-[10px] text-slate-400 font-normal">(Job No. / Type)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ข้อมูลรถยนต์<br/><span className="text-[10px] text-slate-400 font-normal">(Model / VIN)</span></TableHead>
                   <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">สาขา<br/><span className="text-[10px] text-slate-400 font-normal">(Branch)</span></TableHead>
-                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขตัวถัง<br/><span className="text-[10px] text-slate-400 font-normal">(VIN)</span></TableHead>
-                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ประเภท<br/><span className="text-[10px] text-slate-400 font-normal">(PDI Type)</span></TableHead>
                   <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ช่างตรวจ<br/><span className="text-[10px] text-slate-400 font-normal">(Inspector)</span></TableHead>
                   <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">จุดบกพร่อง<br/><span className="text-[10px] text-slate-400 font-normal">(Defects)</span></TableHead>
-                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ข้อมูลส่งซ่อม<br/><span className="text-[10px] text-slate-400 font-normal">(Repair Info)</span></TableHead>
-                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">อัปเดตล่าสุด<br/><span className="text-[10px] text-slate-400 font-normal">(Last Updated)</span></TableHead>
-                  <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">สถานะ<br/><span className="text-[10px] text-slate-400 font-normal">(Status)</span></TableHead>
                   <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">จัดการ<br/><span className="text-[10px] text-slate-400 font-normal">(Action)</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredJobs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-12 text-slate-500">
+                    <TableCell colSpan={6} className="text-center py-12 text-slate-500">
                       ไม่มีงานที่ตรวจพบจุดชำรุดค้างซ่อมในขณะนี้
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredJobs.map((job) => (
                     <TableRow key={job.id} className="hover:bg-slate-50/50 transition-colors">
-                      <TableCell className="font-mono text-xs font-semibold text-slate-800 py-4">
-                        {job.jobNumber}
-                      </TableCell>
-                      <TableCell className="text-xs font-semibold py-4">
-                        {job.vehicle?.modelName || 'ไม่พบรุ่นรถ'}
-                      </TableCell>
-                      <TableCell className="text-xs py-4">
-                        {job.vehicle?.branch?.name || '-'}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-slate-600 font-medium py-4 select-all">
-                        {job.vehicleVin}
+                      <TableCell className="py-4">
+                        <div className="flex flex-col gap-1.5">
+                          <span className="font-mono text-xs font-semibold text-slate-800">
+                            {job.jobNumber}
+                          </span>
+                          <div>
+                            {getPdiTypeBadge(job.pdiType)}
+                          </div>
+                        </div>
                       </TableCell>
                       <TableCell className="py-4">
-                        {getPdiTypeBadge(job.pdiType)}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-bold text-slate-800">
+                            {job.vehicle?.modelName || 'ไม่พบรุ่นรถ'}
+                          </span>
+                          <span className="font-mono text-[10px] text-slate-500 font-semibold select-all leading-none">
+                            {job.vehicleVin}
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-xs py-4">
+                      <TableCell className="text-xs py-4 text-slate-700 font-medium">
+                        {job.vehicle?.branch?.name || '-'}
+                      </TableCell>
+                      <TableCell className="text-xs py-4 text-slate-650 font-medium">
                         {job.inspector?.name || '-'}
                       </TableCell>
                       <TableCell className="text-center py-4">
-                        <span className="inline-flex items-center justify-center font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs min-w-6">
+                        <span className="inline-flex items-center justify-center font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs min-w-6">
                           {job.defects?.length || 0}
                         </span>
                       </TableCell>
-                      
-                      {/* Repair Info Column */}
-                      <TableCell className="text-xs py-4">
-                        {job.sentToRepairAt ? (
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-semibold text-slate-700 flex items-center gap-1">
-                              <Calendar className="w-3 h-3 text-slate-400" />
-                              {new Date(job.sentToRepairAt).toLocaleDateString('th-TH', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </span>
-                            <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1 max-w-[160px] truncate" title={job.repairLocation}>
-                              <MapPin className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                              {job.repairLocation}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] font-medium text-slate-400 italic">ยังไม่ส่งซ่อม</span>
-                        )}
-                      </TableCell>
 
-                      <TableCell className="text-xs font-mono text-slate-500 py-4">
-                        {job.updatedAt 
-                          ? new Date(job.updatedAt).toLocaleString('th-TH') 
-                          : '-'
-                        }
-                      </TableCell>
-                      <TableCell className="text-center py-4">
-                        {job.sentToRepairAt ? (
-                          <Badge className="text-[10px] font-semibold px-2.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 whitespace-nowrap">
-                            กำลังปรับสภาพ/ซ่อม
-                          </Badge>
-                        ) : job.status === 'DEFECT_FOUND' ? (
-                          <Badge className="text-[10px] font-semibold px-2.5 py-0.5 bg-rose-50 border border-rose-200 text-rose-700 whitespace-nowrap">
-                            พบจุดชำรุด (รอส่งซ่อม)
-                          </Badge>
-                        ) : (
-                          <Badge className="text-[10px] font-semibold px-2.5 py-0.5 bg-red-50 border border-red-200 text-red-700 whitespace-nowrap">
-                            ถูก Reject (รอส่งซ่อม)
-                          </Badge>
-                        )}
-                      </TableCell>
                       <TableCell className="text-center py-4">
                         <div className="flex justify-center items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            title="พิมพ์ใบสั่งซ่อม"
+                            className="h-8 w-8 p-0 border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
+                            onClick={() => handlePrint(job)}
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                          </Button>
                           {job.sentToRepairAt ? (
                             <>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-8 gap-1.5 text-[11px] font-semibold border-amber-200 text-amber-700 bg-amber-50/10 hover:bg-amber-50 hover:text-amber-800 whitespace-nowrap transition-colors"
+                                className="h-8 gap-1.5 text-[11px] font-semibold border-orange-200 text-orange-700 bg-orange-50/10 hover:bg-orange-50 hover:text-orange-800 whitespace-nowrap transition-colors"
                                 onClick={() => handleOpenRepairModal(job)}
                               >
                                 <Wrench className="w-3.5 h-3.5" />
@@ -628,6 +606,125 @@ export default function RepairsClient({ initialJobs, isDbConnected }: RepairsCli
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+
+      {/* PRINT TEMPLATE — compact single-page A4 layout (outside print:hidden wrapper) */}
+      {printJob && (
+        <div className="hidden print:block bg-white px-2 py-1 text-black w-full text-[11px] leading-snug">
+          {/* Header */}
+          <div className="flex justify-between items-end border-b-2 border-slate-900 pb-2">
+            <div>
+              <h1 className="text-lg font-bold tracking-tight text-slate-950 leading-tight">ใบสั่งงานซ่อม / ปรับสภาพรถยนต์</h1>
+              <p className="text-[9px] text-slate-500 font-semibold">PDI REPAIR WORK ORDER</p>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-mono font-bold text-slate-900 leading-tight">{printJob.jobNumber}</div>
+              <div className="text-[10px] text-slate-500 font-medium">VIN: <span className="font-mono font-bold text-slate-800">{printJob.vehicleVin}</span></div>
+            </div>
+          </div>
+
+          {/* Job Details Grid — 4 columns, compact */}
+          <div className="grid grid-cols-4 gap-x-4 gap-y-1.5 border border-slate-300 rounded p-2.5 mt-3 text-[10px]">
+            <div>
+              <span className="font-semibold text-slate-500 block leading-tight">รุ่นรถ (Model)</span>
+              <span className="font-bold text-slate-800">{printJob.vehicle?.modelName || '-'}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-slate-500 block leading-tight">สีภายนอก (Color)</span>
+              <span className="font-semibold text-slate-800">{printJob.vehicle?.colorName || '-'}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-slate-500 block leading-tight">สาขา (Branch)</span>
+              <span className="font-semibold text-slate-800">{printJob.vehicle?.branch?.name || '-'}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-slate-500 block leading-tight">ประเภท PDI</span>
+              <span className="font-bold text-slate-800">{printJob.pdiType}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-slate-500 block leading-tight">ผู้ตรวจสอบ (Inspector)</span>
+              <span className="font-semibold text-slate-800">{printJob.inspector?.name || '-'}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-slate-500 block leading-tight">วันที่ส่งซ่อม</span>
+              <span className="font-bold text-slate-800">{printJob.sentToRepairAt ? new Date(printJob.sentToRepairAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'ยังไม่ได้ระบุ'}</span>
+            </div>
+            <div className="col-span-2">
+              <span className="font-semibold text-slate-500 block leading-tight">สถานที่ส่งซ่อม</span>
+              <span className="font-bold text-slate-800">{printJob.repairLocation || 'ยังไม่ได้ระบุ'}</span>
+            </div>
+          </div>
+
+          {/* Defects Table */}
+          <div className="mt-3">
+            <h3 className="text-[11px] font-bold text-slate-900 border-b border-slate-300 pb-1 flex items-center gap-1.5">
+              <ClipboardList className="w-3.5 h-3.5 text-slate-700" />
+              รายการจุดบกพร่องที่ต้องซ่อมแซม ({printJob.defects?.length || 0} รายการ)
+            </h3>
+            <table className="w-full mt-2 border-collapse text-[10px]">
+              <thead>
+                <tr className="bg-slate-100 border-b border-slate-300">
+                  <th className="text-center font-bold text-slate-700 py-1.5 px-2 border border-slate-300 w-8">ลำดับ</th>
+                  <th className="text-left font-bold text-slate-700 py-1.5 px-2 border border-slate-300">รายละเอียดจุดบกพร่อง</th>
+                  <th className="text-center font-bold text-slate-700 py-1.5 px-2 border border-slate-300 w-20">สถานะ</th>
+                  <th className="text-left font-bold text-slate-700 py-1.5 px-2 border border-slate-300">บันทึกการแก้ไขของช่าง</th>
+                </tr>
+              </thead>
+              <tbody>
+                {printJob.defects && printJob.defects.length > 0 ? (
+                  printJob.defects.map((defect: any, idx: number) => (
+                    <tr key={defect.id || idx} className="border-b border-slate-200">
+                      <td className="text-center py-1.5 px-2 border border-slate-200 font-semibold">{defect.defectNo || (idx + 1)}</td>
+                      <td className="py-1.5 px-2 border border-slate-200 font-medium text-slate-800">{defect.description}</td>
+                      <td className="text-center py-1.5 px-2 border border-slate-200">
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-orange-100 text-orange-800 border border-orange-200">
+                          {defect.status === 'OPEN' ? 'รอแก้ไข' : defect.status === 'IN_REPAIR' ? 'กำลังซ่อม' : defect.status}
+                        </span>
+                      </td>
+                      <td className="py-1.5 px-2 border border-slate-200 text-slate-400 italic">
+                        ........................................................
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="text-center py-4 text-slate-400">ไม่พบข้อมูลจุดบกพร่อง</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Repair Notes */}
+          {printJob.repairNotes && (
+            <div className="mt-3 border border-slate-300 rounded p-2 text-[10px]">
+              <span className="font-semibold text-slate-500 block mb-0.5">หมายเหตุ / คำสั่งเพิ่มเติมจาก PDI Supervisor</span>
+              <p className="text-slate-800 font-medium leading-snug">{printJob.repairNotes}</p>
+            </div>
+          )}
+
+          {/* Sign-off — compact 2 columns */}
+          <div className="grid grid-cols-2 gap-6 border-t border-slate-300 pt-5 mt-6 text-[10px]">
+            <div className="space-y-2">
+              <h4 className="font-bold text-slate-900 border-b pb-1">ผู้ดำเนินการซ่อมแซม (Technician)</h4>
+              <p>ลงชื่อช่างผู้ซ่อม: ........................................................</p>
+              <p>วันที่ซ่อมเสร็จ: ...... / ...... / .......... เวลา: .............. น.</p>
+              <p className="text-[8px] text-slate-400 italic">* กรอกบันทึกการแก้ไขในตารางด้านบนและลงชื่อหลังซ่อมเสร็จ</p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-bold text-slate-900 border-b pb-1">ผู้ตรวจสอบงานซ่อม (Supervisor)</h4>
+              <p>ลงชื่อผู้ตรวจรับงาน: ....................................................</p>
+              <p>วันที่ตรวจรับ: ...... / ...... / .......... เวลา: .............. น.</p>
+              <p className="text-[8px] text-slate-400 italic">* ตรวจสอบความถูกต้องก่อนปิดงานซ่อมในระบบ</p>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center text-[8px] text-slate-400 font-semibold border-t pt-2 mt-6">
+            เอกสารใบสั่งงานซ่อม PDI — พิมพ์เมื่อ {new Date().toLocaleDateString('th-TH')} {new Date().toLocaleTimeString('th-TH')} น.
+          </div>
+        </div>
+      )}
+    </>
   );
 }

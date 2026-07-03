@@ -99,7 +99,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       )}
 
       <aside className={cn(
-        "w-[var(--sidebar-width)] h-screen border-r border-slate-800/80 bg-[#0B0F19] flex flex-col fixed left-0 top-0 z-40 no-print transition-transform duration-300 ease-in-out lg:translate-x-0",
+        "w-[var(--sidebar-width)] h-screen border-r border-slate-800/80 bg-[#0B0F19] flex flex-col fixed left-0 top-0 z-40 print:hidden transition-transform duration-300 ease-in-out lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Brand Logo Header */}

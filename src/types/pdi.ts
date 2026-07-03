@@ -9,6 +9,7 @@ export type ModelCode =
   | 'AION_YP5'
   | 'AION_ES'
   | 'HYPTEC_HT'
+  | 'HYPTEC_HT8'
   | 'HYPTEC_SSR'
   | 'GAC_M8'
 
@@ -20,6 +21,7 @@ export const MODEL_NAMES: Record<ModelCode, string> = {
   AION_YP5: 'AION Y Plus 5',
   AION_ES: 'AION ES',
   HYPTEC_HT: 'HYPTEC HT',
+  HYPTEC_HT8: 'HYPTEC HT 8',
   HYPTEC_SSR: 'HYPTEC SSR',
   GAC_M8: 'GAC M8',
 }
@@ -28,18 +30,18 @@ export const MODEL_NAMES: Record<ModelCode, string> = {
 // CHECKLIST CATEGORIES (ทุกรุ่นมีครบ ยกเว้นที่ mark NA)
 // ──────────────────────────────────────
 export const CHECKLIST_CATEGORIES = [
-  { code: 'EXTERIOR',    name: 'ลักษณะภายนอกและสี',           order: 1 },
-  { code: 'LIGHTING',    name: 'ไฟส่องสว่าง',                  order: 2 },
-  { code: 'GLASS',       name: 'กระจกและที่ปัดน้ำฝน',          order: 3 },
-  { code: 'AC',          name: 'ระบบปรับอากาศ',                order: 4 },
-  { code: 'INFOTAINMENT',name: 'ระบบความบันเทิง',              order: 5 },
-  { code: 'FLUIDS',      name: 'ตรวจสอบระดับของเหลว',          order: 6 },
-  { code: 'CHASSIS',     name: 'ระบบช่วงล่าง',                 order: 7 },
-  { code: 'BRAKE',       name: 'การเบรกและการบังคับเลี้ยว',    order: 8 },
-  { code: 'BATTERY_12V', name: 'ตรวจสอบแบตเตอรี่ 12V',         order: 9 },
-  { code: 'WARNING',     name: 'ตรวจสอบไฟเตือน',               order: 10 },
-  { code: 'OTA',         name: 'วินิจฉัยและอัปเดตซอฟต์แวร์',   order: 11 },
-  { code: 'CHARGEPORT',  name: 'การปลดล็อกฝาปิดช่องชาร์จ',    order: 12 },
+  { code: 'EXTERIOR',    name: 'ลักษณะภายนอกและสี',               order: 1 },
+  { code: 'LIGHTING',    name: 'ไฟส่องสว่าง',                      order: 2 },
+  { code: 'GLASS',       name: 'กระจกและที่ปัดน้ำฝน',              order: 3 },
+  { code: 'AC',          name: 'ระบบปรับอากาศ',                    order: 4 },
+  { code: 'INFOTAINMENT',name: 'ระบบเครื่องเสียงและความบันเทิง',    order: 5 },
+  { code: 'FLUIDS',      name: 'การตรวจสอบระดับของเหลว',            order: 6 },
+  { code: 'CHASSIS',     name: 'ระบบช่วงล่าง',                     order: 7 },
+  { code: 'BRAKE',       name: 'การเบรกและการบังคับเลี้ยว',        order: 8 },
+  { code: 'CHARGEPORT',  name: 'การปลดล็อกฝาปิดช่องชาร์จ',        order: 9 },
+  { code: 'BATTERY_12V', name: 'ตรวจสอบแบตเตอรี่ 12V',             order: 10 },
+  { code: 'WARNING',     name: 'การตรวจสอบไฟเตือน',                order: 11 },
+  { code: 'OTA',         name: 'การวินิจฉัยและการอัปเกรด',          order: 12 },
   { code: 'MAINTENANCE', name: 'บำรุงรักษาประจำ (Maintenance)',   order: 13 },
   { code: 'DOCUMENTS',          name: 'ตรวจสอบเอกสารที่เกี่ยวข้องกับรถ',    order: 14 },
   { code: 'VEHICLE_CONDITION',  name: 'ตรวจสอบสภาพรถภายนอกและภายใน',       order: 15 },
@@ -71,6 +73,7 @@ export const MODEL_RULES: Record<ModelCode, ModelRuleSet> = {
   AION_YP5:    { hasDualBattery: false, hasCCA: true,  hasSocCheck: true,  hasTirePressure: true,  hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 50  },
   AION_ES:     { hasDualBattery: false, hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
   HYPTEC_HT:   { hasDualBattery: true,  hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: true,  hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
+  HYPTEC_HT8:  { hasDualBattery: true,  hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: true,  hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
   HYPTEC_SSR:  { hasDualBattery: false, hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
   GAC_M8:      { hasDualBattery: false, hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: false, hasOTA: false, hasPhev: true,  hvBatteryMin: 0   },
 }

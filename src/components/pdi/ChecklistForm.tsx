@@ -136,16 +136,28 @@ export default function ChecklistForm({
     setResults(resMap);
   }, [templateItems, initialResults]);
 
-  // Group items by category (matched with category names)
-  const getCategoryName = (code: string) => {
-    const found = CHECKLIST_CATEGORIES.find(c => c.code === code);
-    return found ? found.name : code;
+  // Map categoryOrder → code, falling back to the category name from the item itself
+  const getCategoryCode = (item: ChecklistItem) => {
+    // First try matching by exact category name
+    const byName = CHECKLIST_CATEGORIES.find(cat => cat.name === item.category);
+    if (byName) return byName.code;
+    // Then try matching by categoryOrder
+    const byOrder = CHECKLIST_CATEGORIES.find(cat => cat.order === item.categoryOrder);
+    if (byOrder) return byOrder.code;
+    // Final fallback: use categoryOrder as a unique key
+    return `CAT_${item.categoryOrder}`;
   };
 
-  const categories = Array.from(new Set(templateItems.map(i => {
-    const matched = CHECKLIST_CATEGORIES.find(cat => cat.name === i.category);
-    return matched ? matched.code : 'EXTERIOR';
-  })));
+  // Group items by category using categoryOrder for reliable matching
+  const getCategoryName = (code: string) => {
+    const found = CHECKLIST_CATEGORIES.find(c => c.code === code);
+    if (found) return found.name;
+    // For dynamic CAT_N codes, find the category name from template items
+    const item = templateItems.find(i => getCategoryCode(i) === code);
+    return item ? item.category : code;
+  };
+
+  const categories = Array.from(new Set(templateItems.map(i => getCategoryCode(i))));
 
   // Select first available category if activeCategory is not in the categories list (e.g. for LONG_TERM jobs)
   useEffect(() => {
@@ -154,10 +166,7 @@ export default function ChecklistForm({
     }
   }, [categories, activeCategory]);
 
-  const filteredItems = templateItems.filter(item => {
-    const matched = CHECKLIST_CATEGORIES.find(cat => cat.name === item.category);
-    return (matched ? matched.code : 'EXTERIOR') === activeCategory;
-  });
+  const filteredItems = templateItems.filter(item => getCategoryCode(item) === activeCategory);
 
   const handleResultChange = (itemId: string, itemCode: string, checkResult: 'PASS' | 'FAIL' | 'REPAIRED' | 'NA') => {
     if (readOnly) return;
@@ -193,52 +202,51 @@ export default function ChecklistForm({
 
   // Sync battery details into the results list where applicable
   useEffect(() => {
-    // Sync battery fields to checklist items with matching codes
-    // BAT_001 -> mainVoltage, BAT_002 -> mainSoh, BAT_003 -> secVoltage, BAT_004 -> secSoh, BAT_006 -> mainCca, BAT_007 -> mainSoc, BAT_008 -> tirePressure
-    const updatedResults = { ...results };
-    let changed = false;
+    // Use functional update to avoid stale closure + infinite loop with `results` in deps
+    setResults(prev => {
+      const updatedResults = { ...prev };
+      let changed = false;
 
-    const syncField = (code: string, val: number | null | undefined) => {
-      const item = templateItems.find(i => i.itemCode === code);
-      if (item && updatedResults[item.id] && updatedResults[item.id].numericValue !== val) {
-        updatedResults[item.id] = {
-          ...updatedResults[item.id],
-          numericValue: val,
-          result: val !== null && val !== undefined ? (val >= (item.numericMin ?? 0) ? 'PASS' : 'FAIL') : 'PASS'
-        };
-        changed = true;
-      }
-    };
-
-    syncField('BAT_001', batteryData.mainVoltage);
-    syncField('BAT_002', batteryData.mainSoh);
-    syncField('BAT_003', batteryData.secVoltage);
-    syncField('BAT_004', batteryData.secSoh);
-    syncField('BAT_006', batteryData.mainCca);
-    syncField('BAT_007', batteryData.mainSoc);
-    syncField('BAT_008', batteryData.tirePressure);
-
-    // For AION_UT: BAT_004 is HV battery level, not secSoh
-    const bat004hv = templateItems.find(i => i.itemCode === 'BAT_004' && i.itemName?.includes('HV'));
-    if (bat004hv) {
-      syncField('BAT_004', batteryData.hvBatteryLevel);
-    }
-
-    // Sync terminalCheck (PASS/FAIL) to the non-numeric battery terminal check item (BAT_003 or BAT_005)
-    if (batteryData.terminalCheck) {
-      const batTerm = templateItems.find(i => (i.itemCode === 'BAT_003' || i.itemCode === 'BAT_005') && !i.hasNumeric);
-      if (batTerm && updatedResults[batTerm.id]) {
-        const newResult = batteryData.terminalCheck === 'N/A' ? 'NA' : batteryData.terminalCheck as 'PASS' | 'FAIL' | 'REPAIRED';
-        if (updatedResults[batTerm.id].result !== newResult) {
-          updatedResults[batTerm.id] = { ...updatedResults[batTerm.id], result: newResult };
+      const syncField = (code: string, val: number | null | undefined) => {
+        const item = templateItems.find(i => i.itemCode === code);
+        if (item && updatedResults[item.id] && updatedResults[item.id].numericValue !== val) {
+          updatedResults[item.id] = {
+            ...updatedResults[item.id],
+            numericValue: val,
+            result: val !== null && val !== undefined ? (val >= (item.numericMin ?? 0) ? 'PASS' : 'FAIL') : 'PASS'
+          };
           changed = true;
         }
-      }
-    }
+      };
 
-    if (changed) {
-      setResults(updatedResults);
-    }
+      syncField('BAT_001', batteryData.mainVoltage);
+      syncField('BAT_002', batteryData.mainSoh);
+      syncField('BAT_003', batteryData.secVoltage);
+      syncField('BAT_004', batteryData.secSoh);
+      syncField('BAT_006', batteryData.mainCca);
+      syncField('BAT_007', batteryData.mainSoc);
+      syncField('BAT_008', batteryData.tirePressure);
+
+      // For AION_UT: BAT_004 is HV battery level, not secSoh
+      const bat004hv = templateItems.find(i => i.itemCode === 'BAT_004' && i.itemName?.includes('HV'));
+      if (bat004hv) {
+        syncField('BAT_004', batteryData.hvBatteryLevel);
+      }
+
+      // Sync terminalCheck (PASS/FAIL) to the non-numeric battery terminal check item (BAT_003 or BAT_005)
+      if (batteryData.terminalCheck) {
+        const batTerm = templateItems.find(i => (i.itemCode === 'BAT_003' || i.itemCode === 'BAT_005') && !i.hasNumeric);
+        if (batTerm && updatedResults[batTerm.id]) {
+          const newResult = batteryData.terminalCheck === 'N/A' ? 'NA' : batteryData.terminalCheck as 'PASS' | 'FAIL' | 'REPAIRED';
+          if (updatedResults[batTerm.id].result !== newResult) {
+            updatedResults[batTerm.id] = { ...updatedResults[batTerm.id], result: newResult };
+            changed = true;
+          }
+        }
+      }
+
+      return changed ? updatedResults : prev;
+    });
   }, [batteryData, templateItems]);
 
   const handleSaveDraft = async () => {
@@ -356,10 +364,7 @@ export default function ChecklistForm({
           <div className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible whitespace-nowrap lg:whitespace-normal gap-2 lg:gap-1 pb-2 lg:pb-0 scrollbar-none">
             {categories.map((catCode) => {
               const isActive = activeCategory === catCode;
-              const catItems = templateItems.filter(i => {
-                const matched = CHECKLIST_CATEGORIES.find(c => c.name === i.category);
-                return (matched ? matched.code : 'EXTERIOR') === catCode;
-              });
+              const catItems = templateItems.filter(i => getCategoryCode(i) === catCode);
               
               // Count PASS/REPAIRED/NA items in this category
               const passInCat = catItems.filter(i => results[i.id]?.result === 'PASS' || results[i.id]?.result === 'REPAIRED' || results[i.id]?.result === 'NA').length;

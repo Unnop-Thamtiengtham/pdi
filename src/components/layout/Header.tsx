@@ -49,17 +49,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
   useEffect(() => {
     async function fetchNotifications() {
       try {
-        // Fetch PDI jobs to extract pending/in progress SLA jobs
-        const res = await fetch('/api/pdi-jobs');
+        // Use lightweight notification endpoint (only selects minimal fields)
+        const res = await fetch('/api/notifications/count');
         if (res.ok) {
-          const jobs = await res.json();
-          // Filter incoming jobs that are PENDING or IN_PROGRESS (unresolved SLA)
-          const unresolved = jobs.filter((j: any) => {
-            if (j.pdiType !== 'INCOMING') return false;
-            return j.status === 'PENDING' || j.status === 'IN_PROGRESS';
-          });
-          setUrgentJobs(unresolved);
-          setUnreadCount(unresolved.length);
+          const data = await res.json();
+          setUrgentJobs(data.jobs);
+          setUnreadCount(data.count);
         }
       } catch (err) {
         console.error('Failed to fetch notifications:', err);
@@ -84,7 +79,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
   }, [pathname]);
 
   return (
-    <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-20 w-full no-print">
+    <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-20 w-full print:hidden">
       {/* Title */}
       <div className="flex items-center gap-2 md:gap-3">
         {onMenuClick && (

@@ -17,9 +17,9 @@ export default function DashboardLayout({
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main panel (right side) */}
-      <div className="flex-1 flex flex-col pl-0 lg:pl-[var(--sidebar-width)] min-w-0">
+      <div className="flex-1 flex flex-col pl-0 lg:pl-[var(--sidebar-width)] print:pl-0 min-w-0">
         <Header onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 print:p-0 print:overflow-visible overflow-y-auto">
           {children}
         </main>
       </div>

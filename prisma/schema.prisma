@@ -122,6 +122,7 @@ model Vehicle {
   incomingDeadline DateTime                  // arrivedAt + 24h (สำหรับ Incoming PDI SLA)
   currentStatus   VehicleStatus @default(IN_STOCK)
   pdiJobs         PdiJob[]
+  defects         Defect[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -247,6 +248,8 @@ model Defect {
   id            String        @id @default(cuid())
   job           PdiJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
   jobId         String
+  vehicle       Vehicle       @relation(fields: [vehicleVin], references: [vin], onDelete: Cascade)
+  vehicleVin    String
   defectNo      Int           // ลำดับ 1, 2, 3...
   checklistItemCode String?   // อ้างอิง item ที่พบปัญหา (optional)
   description   String        // รายละเอียดปัญหา
@@ -260,6 +263,7 @@ model Defect {
   updatedAt     DateTime      @updatedAt
 
   @@index([jobId])
+  @@index([vehicleVin])
 }
 
 // ──────────────────────────────────────

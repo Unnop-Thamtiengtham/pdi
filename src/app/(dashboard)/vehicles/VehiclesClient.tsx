@@ -296,6 +296,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
       { code: 'AION_YP5', name: 'AION Y Plus 5' },
       { code: 'AION_ES', name: 'AION ES' },
       { code: 'HYPTEC_HT', name: 'HYPTEC HT' },
+      { code: 'HYPTEC_HT8', name: 'HYPTEC HT 8' },
       { code: 'HYPTEC_SSR', name: 'HYPTEC SSR' },
       { code: 'GAC_M8', name: 'GAC M8' },
     ];
@@ -358,7 +359,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
         }));
 
         const clientErrors: string[] = [];
-        const validModelCodes = ['AION_V', 'AION_V5', 'AION_UT', 'AION_YP', 'AION_YP5', 'AION_ES', 'HYPTEC_HT', 'HYPTEC_SSR', 'GAC_M8'];
+        const validModelCodes = ['AION_V', 'AION_V5', 'AION_UT', 'AION_YP', 'AION_YP5', 'AION_ES', 'HYPTEC_HT', 'HYPTEC_HT8', 'HYPTEC_SSR', 'GAC_M8'];
         const branchCodesInDb = branches.map(b => b.code.toUpperCase());
         const existingVinsInDb = new Set(vehicles.map(v => v.vin.toUpperCase()));
         const seenVins = new Set<string>();
@@ -382,7 +383,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
           if (!row.modelCode) {
             clientErrors.push(`แถวที่ ${rowNum}: ไม่มีรหัสรุ่นรถ (modelCode)`);
           } else if (!validModelCodes.includes(String(row.modelCode).trim())) {
-            clientErrors.push(`แถวที่ ${rowNum}: รหัสรุ่น "${row.modelCode}" ไม่ถูกต้อง (เลือกได้เฉพาะ: AION_V, AION_V5, AION_UT, AION_YP, AION_YP5, AION_ES, HYPTEC_HT, HYPTEC_SSR, GAC_M8)`);
+            clientErrors.push(`แถวที่ ${rowNum}: รหัสรุ่น "${row.modelCode}" ไม่ถูกต้อง (เลือกได้เฉพาะ: AION_V, AION_V5, AION_UT, AION_YP, AION_YP5, AION_ES, HYPTEC_HT, HYPTEC_HT8, HYPTEC_SSR, GAC_M8)`);
           }
 
           if (!row.colorName) {
@@ -491,6 +492,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
     AION_YP5: 'AION Y Plus 5',
     AION_ES: 'AION ES',
     HYPTEC_HT: 'HYPTEC HT',
+    HYPTEC_HT8: 'HYPTEC HT 8',
     HYPTEC_SSR: 'HYPTEC SSR',
     GAC_M8: 'GAC M8',
   };
@@ -979,7 +981,8 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                         <TableCell className="text-center py-4">
                           {latestJob ? (
                             <span className="text-[10px] font-semibold">
-                              {latestJob.pdiType}: {' '}
+                              {latestJob.pdiType}:
+                              <br />
                               {isRepairing ? (
                                 <span className="text-amber-600">กำลังปรับสภาพซ่อม</span>
                               ) : (

@@ -563,3 +563,46 @@ input[type="number"] {
   appearance: textfield;
 }
 
+/* ========== Print Styles ========== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+
+  html, body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: white !important;
+    font-size: 11px !important;
+  }
+
+  /* Force white background everywhere */
+  *, *::before, *::after {
+    background-color: white !important;
+    box-shadow: none !important;
+  }
+
+  /* Hide screen-only content */
+  .print-hidden {
+    display: none !important;
+  }
+
+  /* Hide sidebar and header */
+  nav, header, aside {
+    display: none !important;
+  }
+
+  /* Reset layout wrappers for clean print */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Remove sidebar offset */
+  .lg\:pl-\[var\(--sidebar-width\)\] {
+    padding-left: 0 !important;
+  }
+}
+
