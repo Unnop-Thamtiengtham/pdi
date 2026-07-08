@@ -79,6 +79,8 @@ export async function POST(req: NextRequest) {
       scheduledDate,
       targetDeliveryDate,
       salesName,
+      salesPhone,
+      salesBranch,
       customerName,
       customerPhone,
     } = body;
@@ -127,6 +129,8 @@ export async function POST(req: NextRequest) {
         scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
         targetDeliveryDate: targetDeliveryDate ? new Date(targetDeliveryDate) : null,
         salesName,
+        salesPhone,
+        salesBranch,
         customerName,
         customerPhone,
       },
@@ -257,7 +261,7 @@ export async function PATCH(req: NextRequest) {
             solution: d.solution || null,
             severity: d.severity || 'NORMAL',
             status: (d.status as DefectStatus) || ('OPEN' as DefectStatus),
-            photoUrl: d.photoUrl || null,
+            photoUrls: d.photoUrls || (d.photoUrl ? [d.photoUrl] : []),
             resolvedAt: d.status === 'RESOLVED' || d.status === 'CLOSED' ? new Date() : null,
           })),
         });

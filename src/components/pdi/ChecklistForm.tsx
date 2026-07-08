@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { ModelCode, MODEL_RULES, CHECKLIST_CATEGORIES } from '@/types/pdi';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ModelCode, MODEL_RULES, MODEL_NAMES, CHECKLIST_CATEGORIES } from '@/types/pdi';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Check, X, RefreshCw, AlertCircle, Save, Send, ShieldAlert, ArrowLeft } from 'lucide-react';
 import BatterySection from './BatterySection';
 import DefectPanel from './DefectPanel';
+import ChecklistItemRow from './ChecklistItemRow';
+import DeliveryDocuments from './DeliveryDocuments';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -43,7 +45,8 @@ interface Defect {
   description: string;
   severity: string;
   status: string;
-  photoUrl?: string | null;
+  photoUrls?: string[];
+  photoUrl?: string | null; // Legacy support
 }
 
 interface BatteryData {
@@ -63,10 +66,14 @@ interface ChecklistFormProps {
   jobId: string;
   modelCode: ModelCode;
   pdiType?: string;
+  vehicleVin: string;
+  jobNumber: string;
+  isApproved?: boolean;
   templateItems: ChecklistItem[];
   initialResults?: ChecklistResult[];
   initialBatteryData?: BatteryData;
   initialDefects?: Defect[];
+  initialDocuments?: any[];
   onSave: (results: ChecklistResult[], battery: BatteryData, defects: Defect[]) => Promise<void>;
   onSubmit: (results: ChecklistResult[], battery: BatteryData, defects: Defect[]) => Promise<void>;
   readOnly?: boolean;
@@ -76,10 +83,14 @@ export default function ChecklistForm({
   jobId,
   modelCode,
   pdiType = 'INCOMING',
+  vehicleVin,
+  jobNumber,
+  isApproved = false,
   templateItems,
   initialResults = [],
   initialBatteryData = {},
   initialDefects = [],
+  initialDocuments = [],
   onSave,
   onSubmit,
   readOnly = false,
@@ -168,86 +179,122 @@ export default function ChecklistForm({
 
   const filteredItems = templateItems.filter(item => getCategoryCode(item) === activeCategory);
 
-  const handleResultChange = (itemId: string, itemCode: string, checkResult: 'PASS' | 'FAIL' | 'REPAIRED' | 'NA') => {
+  const handleResultChange = useCallback((itemId: string, itemCode: string, checkResult: 'PASS' | 'FAIL' | 'REPAIRED' | 'NA') => {
     if (readOnly) return;
     
-    const current = results[itemId] || { itemId, itemCode, result: 'PASS' };
-    const updated = { ...current, result: checkResult };
-    
-    setResults(prev => ({
-      ...prev,
-      [itemId]: updated
-    }));
+    setResults(prev => {
+      const current = prev[itemId] || { itemId, itemCode, result: 'PASS' };
+      const updated = { ...current, result: checkResult };
+      return {
+        ...prev,
+        [itemId]: updated
+      };
+    });
 
     // Business Rule: If result = FAIL, auto add/open a template defect
     if (checkResult === 'FAIL') {
       const item = templateItems.find(i => i.id === itemId);
       const itemName = item ? item.itemName : '';
       
-      // Check if already in defects
-      const exists = defects.some(d => d.checklistItemCode === itemCode);
-      if (!exists) {
-        setDefects(prev => [
-          ...prev,
-          {
-            checklistItemCode: itemCode,
-            description: `พบปัญหาบริเวณ: ${itemName}`,
-            severity: 'NORMAL',
-            status: 'OPEN',
-          }
-        ]);
-      }
+      setDefects(prev => {
+        const exists = prev.some(d => d.checklistItemCode === itemCode);
+        if (!exists) {
+          return [
+            ...prev,
+            {
+              checklistItemCode: itemCode,
+              description: `พบปัญหาบริเวณ: ${itemName}`,
+              severity: 'NORMAL',
+              status: 'OPEN',
+            }
+          ];
+        }
+        return prev;
+      });
     }
-  };
+  }, [readOnly, templateItems]);
 
-  // Sync battery details into the results list where applicable
-  useEffect(() => {
-    // Use functional update to avoid stale closure + infinite loop with `results` in deps
+  const handleNumericChange = useCallback((itemId: string, item: ChecklistItem, val: number | null) => {
+    if (readOnly) return;
+
     setResults(prev => {
-      const updatedResults = { ...prev };
-      let changed = false;
-
-      const syncField = (code: string, val: number | null | undefined) => {
-        const item = templateItems.find(i => i.itemCode === code);
-        if (item && updatedResults[item.id] && updatedResults[item.id].numericValue !== val) {
-          updatedResults[item.id] = {
-            ...updatedResults[item.id],
-            numericValue: val,
-            result: val !== null && val !== undefined ? (val >= (item.numericMin ?? 0) ? 'PASS' : 'FAIL') : 'PASS'
-          };
-          changed = true;
-        }
+      const res = prev[itemId] || { itemId, itemCode: item.itemCode, result: 'PASS' };
+      const updated = {
+        ...res,
+        numericValue: val,
       };
-
-      syncField('BAT_001', batteryData.mainVoltage);
-      syncField('BAT_002', batteryData.mainSoh);
-      syncField('BAT_003', batteryData.secVoltage);
-      syncField('BAT_004', batteryData.secSoh);
-      syncField('BAT_006', batteryData.mainCca);
-      syncField('BAT_007', batteryData.mainSoc);
-      syncField('BAT_008', batteryData.tirePressure);
-
-      // For AION_UT: BAT_004 is HV battery level, not secSoh
-      const bat004hv = templateItems.find(i => i.itemCode === 'BAT_004' && i.itemName?.includes('HV'));
-      if (bat004hv) {
-        syncField('BAT_004', batteryData.hvBatteryLevel);
+      
+      // Auto-evaluate PASS/FAIL based on threshold
+      if (val !== null && !isNaN(val)) {
+        const passMin = item.numericMin == null || val >= item.numericMin;
+        const passMax = item.numericMax == null || val <= item.numericMax;
+        updated.result = (passMin && passMax) ? 'PASS' : 'FAIL';
+      } else {
+        updated.result = 'PASS';
       }
 
-      // Sync terminalCheck (PASS/FAIL) to the non-numeric battery terminal check item (BAT_003 or BAT_005)
-      if (batteryData.terminalCheck) {
-        const batTerm = templateItems.find(i => (i.itemCode === 'BAT_003' || i.itemCode === 'BAT_005') && !i.hasNumeric);
-        if (batTerm && updatedResults[batTerm.id]) {
-          const newResult = batteryData.terminalCheck === 'N/A' ? 'NA' : batteryData.terminalCheck as 'PASS' | 'FAIL' | 'REPAIRED';
-          if (updatedResults[batTerm.id].result !== newResult) {
-            updatedResults[batTerm.id] = { ...updatedResults[batTerm.id], result: newResult };
-            changed = true;
+      return {
+        ...prev,
+        [itemId]: updated
+      };
+    });
+  }, [readOnly]);
+
+  const handleBatteryChange = useCallback((updater: any) => {
+    setBatteryData(prev => {
+      const nextBattery = typeof updater === 'function' ? updater(prev) : updater;
+      
+      // Update results in real-time for battery items
+      setResults(prevResults => {
+        const updatedResults = { ...prevResults };
+        let changed = false;
+
+        const syncField = (code: string, val: number | null | undefined) => {
+          const item = templateItems.find(i => i.itemCode === code);
+          if (item && updatedResults[item.id]) {
+            const currentVal = updatedResults[item.id].numericValue;
+            if (currentVal !== val) {
+              const expectedResult = val !== null && val !== undefined ? (val >= (item.numericMin ?? 0) ? 'PASS' : 'FAIL') : 'PASS';
+              updatedResults[item.id] = {
+                ...updatedResults[item.id],
+                numericValue: val,
+                result: expectedResult
+              };
+              changed = true;
+            }
+          }
+        };
+
+        syncField('BAT_001', nextBattery.mainVoltage);
+        syncField('BAT_002', nextBattery.mainSoh);
+        syncField('BAT_003', nextBattery.secVoltage);
+        syncField('BAT_004', nextBattery.secSoh);
+        syncField('BAT_006', nextBattery.mainCca);
+        syncField('BAT_007', nextBattery.mainSoc);
+        syncField('BAT_008', nextBattery.tirePressure);
+
+        const bat004hv = templateItems.find(i => i.itemCode === 'BAT_004' && i.itemName?.includes('HV'));
+        if (bat004hv) {
+          syncField('BAT_004', nextBattery.hvBatteryLevel);
+        }
+
+        if (nextBattery.terminalCheck) {
+          const batTerm = templateItems.find(i => (i.itemCode === 'BAT_003' || i.itemCode === 'BAT_005') && !i.hasNumeric);
+          if (batTerm && updatedResults[batTerm.id]) {
+            const newResult = nextBattery.terminalCheck === 'N/A' ? 'NA' : nextBattery.terminalCheck as any;
+            if (updatedResults[batTerm.id].result !== newResult) {
+              updatedResults[batTerm.id] = { ...updatedResults[batTerm.id], result: newResult };
+              changed = true;
+            }
           }
         }
-      }
 
-      return changed ? updatedResults : prev;
+        return changed ? updatedResults : prevResults;
+      });
+
+      return nextBattery;
     });
-  }, [batteryData, templateItems]);
+  }, [templateItems]);
 
   const handleSaveDraft = async () => {
     setSaving(true);
@@ -309,7 +356,7 @@ export default function ChecklistForm({
           <div>
             <span className="text-xs font-semibold text-slate-500 uppercase">PDI Inspection Form</span>
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              ตรวจสอบรถรุ่น {modelCode.replace('_', ' ')}
+              ตรวจสอบรถรุ่น {MODEL_NAMES[modelCode] || modelCode.replace('_', ' ')}
             </h2>
           </div>
         </div>
@@ -402,7 +449,7 @@ export default function ChecklistForm({
             <BatterySection
               modelCode={modelCode}
               value={batteryData}
-              onChange={setBatteryData}
+              onChange={handleBatteryChange}
               readOnly={readOnly}
             />
           ) : (
@@ -415,125 +462,15 @@ export default function ChecklistForm({
               <CardContent className="divide-y divide-slate-100">
                 {filteredItems.map((item) => {
                   const res = results[item.id] || { itemId: item.id, itemCode: item.itemCode, result: 'PASS' };
-                  
                   return (
-                    <div key={item.id} className={`py-4 first:pt-0 last:pb-0 flex justify-between gap-4 ${item.hasNumeric ? 'flex-row items-center' : 'flex-col md:flex-row md:items-center'}`}>
-                      <div className="space-y-1 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-brand-teal font-semibold">{item.itemCode}</span>
-                          <h4 className="text-sm font-medium text-slate-800">{item.itemName}</h4>
-                        </div>
-                        {item.notes && <p className="text-xs text-slate-500">{item.notes}</p>}
-                      </div>
-
-                      {/* Result Selectors (hidden for numeric-input items) */}
-                      {!item.hasNumeric && (
-                      <div className="flex flex-wrap items-center gap-2 self-start md:self-auto justify-start md:justify-end">
-                        <button
-                          type="button"
-                          disabled={readOnly}
-                          onClick={() => handleResultChange(item.id, item.itemCode, 'PASS')}
-                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-                            res.result === 'PASS'
-                              ? 'bg-success/15 border-success text-success'
-                              : 'border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
-                          }`}
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>PASS</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={readOnly}
-                          onClick={() => handleResultChange(item.id, item.itemCode, 'FAIL')}
-                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-                            res.result === 'FAIL'
-                              ? 'bg-danger/15 border-danger text-danger'
-                              : 'border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
-                          }`}
-                        >
-                          <X className="w-3.5 h-3.5" />
-                          <span>FAIL</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={readOnly}
-                          onClick={() => handleResultChange(item.id, item.itemCode, 'REPAIRED')}
-                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-                            res.result === 'REPAIRED'
-                              ? 'bg-warning/15 border-warning text-warning'
-                              : 'border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
-                          }`}
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" />
-                          <span>REPAIRED</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={readOnly}
-                          onClick={() => handleResultChange(item.id, item.itemCode, 'NA')}
-                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-                            res.result === 'NA'
-                              ? 'bg-slate-100 border-slate-200 text-slate-600'
-                              : 'border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
-                          }`}
-                        >
-                          <span>N/A</span>
-                        </button>
-                      </div>
-                      )}
-
-                      {/* Numeric Input (for items with hasNumeric) */}
-                      {item.hasNumeric && (
-                        <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-center">
-                          <div className="relative">
-                            <div className="relative">
-                              <input
-                                type="number"
-                                step="any"
-                                disabled={readOnly}
-                                placeholder={`เช่น ${item.numericMin ?? 0}`}
-                                value={res.numericValue ?? ''}
-                                onChange={(e) => {
-                                  const val = e.target.value === '' ? null : parseFloat(e.target.value);
-                                  const updated = {
-                                    ...res,
-                                    numericValue: val,
-                                  };
-                                  // Auto-evaluate PASS/FAIL based on threshold
-                                  if (val !== null && !isNaN(val)) {
-                                    const passMin = item.numericMin == null || val >= item.numericMin;
-                                    const passMax = item.numericMax == null || val <= item.numericMax;
-                                    updated.result = (passMin && passMax) ? 'PASS' : 'FAIL';
-                                  }
-                                  setResults(prev => ({ ...prev, [item.id]: updated }));
-                                }}
-                                className="w-28 px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal transition-all"
-                              />
-                              {item.numericUnit && (
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">
-                                  {item.numericUnit}
-                                </span>
-                              )}
-                            </div>
-                            <p className="absolute left-0 top-full mt-0.5 text-[10px] text-slate-400 whitespace-nowrap">
-                              เกณฑ์ ≥ {item.numericMin ?? 0}{item.numericUnit ?? ''}
-                            </p>
-                          </div>
-                          {/* Auto-result badge */}
-                          {res.numericValue != null && (
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                              res.result === 'PASS' ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'
-                            }`}>
-                              {res.result}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    <ChecklistItemRow
+                      key={item.id}
+                      item={item}
+                      res={res}
+                      readOnly={readOnly}
+                      onResultChange={handleResultChange}
+                      onNumericChange={handleNumericChange}
+                    />
                   );
                 })}
               </CardContent>
@@ -542,12 +479,24 @@ export default function ChecklistForm({
 
           {/* Defects Management Panel */}
           <DefectPanel
+            jobId={jobId}
             defects={defects}
             onChange={setDefects}
             checklistItemCodes={templateItems.map(i => i.itemCode)}
             checklistItems={templateItems.map(i => ({ itemCode: i.itemCode, itemName: i.itemName }))}
             readOnly={readOnly}
           />
+
+          {/* Delivery Documents Section (Only for PRE_DELIVERY PDI when approved) */}
+          {pdiType === 'PRE_DELIVERY' && isApproved && (
+            <DeliveryDocuments
+              jobId={jobId}
+              vin={vehicleVin}
+              jobNumber={jobNumber}
+              initialDocuments={initialDocuments}
+              readOnly={false}
+            />
+          )}
         </div>
       </div>
     </div>

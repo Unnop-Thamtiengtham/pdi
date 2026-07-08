@@ -14,43 +14,49 @@ interface DashboardClientProps {
   isDbConnected: boolean;
 }
 
-// Pure computation — no hooks, no state, no intervals
 function computeCountdown(deadline: string | Date | null, now: number) {
-  if (!deadline) return { timeLeft: '', isUrgent: false };
+  if (!deadline) return { timeLeft: '', isUrgent: false, isExpired: false };
 
   const difference = new Date(deadline).getTime() - now;
+  const isExpired = difference <= 0;
+  const absDiff = Math.abs(difference);
 
-  if (difference <= 0) {
-    return { timeLeft: 'EXPIRED', isUrgent: true };
+  const hours = Math.floor(absDiff / (1000 * 60 * 60));
+  const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((absDiff % (1000 * 60)) / 1000);
+
+  if (isExpired) {
+    return {
+      timeLeft: `เกิน SLA -${hours}ชม. ${minutes}น. ${seconds}วิ`,
+      isUrgent: true,
+      isExpired: true,
+    };
   }
 
-  const hours = Math.floor(difference / (1000 * 60 * 60));
-  const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
   return {
-    timeLeft: `${hours}ชั่วโมง ${minutes}นาที ${seconds}วิ`,
+    timeLeft: `${hours}ชม. ${minutes}น. ${seconds}วิ`,
     isUrgent: hours < 2,
+    isExpired: false,
   };
 }
 
 // SlaTimerRow now receives `now` from parent — no internal interval
 function SlaTimerRow({ job, now }: { job: any; now: number }) {
   const deadline = job.scheduledDate || job.vehicle?.incomingDeadline;
-  const { timeLeft, isUrgent } = computeCountdown(deadline, now);
+  const { timeLeft, isUrgent, isExpired } = computeCountdown(deadline, now);
 
-  if (timeLeft === 'EXPIRED') {
+  if (isExpired) {
     return (
-      <Badge variant="danger" className="animate-pulse">
-        EXPIRED (เกิน SLA)
+      <Badge variant="danger" className="animate-pulse font-mono">
+        {timeLeft}
       </Badge>
     );
   }
 
   return (
     <Badge
-      variant={isUrgent ? 'danger' : 'warning'}
-      className={isUrgent ? 'animate-pulse font-mono' : 'font-mono'}
+      variant={isUrgent ? 'warning' : 'success'}
+      className="font-mono"
     >
       {timeLeft || 'กำลังคำนวณ...'}
     </Badge>

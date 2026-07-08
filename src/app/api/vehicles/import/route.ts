@@ -128,6 +128,7 @@ export async function POST(req: NextRequest) {
         branchId,
         warehouse: v.warehouse ? String(v.warehouse).trim() : null,
         floorplan: v.floorplan ? String(v.floorplan).trim() : null,
+        motorBatteryNumber: v.motorBatteryNumber ? String(v.motorBatteryNumber).trim() : null,
       });
     }
 
@@ -158,6 +159,7 @@ export async function POST(req: NextRequest) {
             branchId: item.branchId,
             warehouse: item.warehouse,
             floorplan: item.floorplan,
+            motorBatteryNumber: item.motorBatteryNumber,
             arrivedAt,
             incomingDeadline,
             currentStatus: 'IN_STOCK',

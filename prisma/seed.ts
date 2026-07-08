@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { PrismaClient, PdiType, CheckResult, UserRole } from '@prisma/client';
+import { PrismaClient, PdiType, CheckResult, UserRole, VehicleStatus } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import * as bcrypt from 'bcryptjs';
@@ -90,8 +90,16 @@ async function main() {
 
   const users = [
     {
+      employeeId: 'EMP-SUPERADMIN',
+      name: 'superadmin',
+      email: 'superadmin@pdi.com',
+      passwordHash,
+      role: UserRole.SUPER_ADMIN,
+      branchId: branchMBR.id,
+    },
+    {
       employeeId: 'EMP-ADMIN',
-      name: 'กิตติพงษ์ แอดมิน',
+      name: 'admin',
       email: 'admin@pdi.com',
       passwordHash,
       role: UserRole.ADMIN,
@@ -99,7 +107,7 @@ async function main() {
     },
     {
       employeeId: 'EMP-INSPECT',
-      name: 'สมชาย ช่างตรวจ',
+      name: 'inspector',
       email: 'inspector@pdi.com',
       passwordHash,
       role: UserRole.INSPECTOR,
@@ -107,19 +115,18 @@ async function main() {
     },
     {
       employeeId: 'EMP-SUPER',
-      name: 'ธีรพล ซุปเปอร์ไวเซอร์',
+      name: 'supervisor',
       email: 'supervisor@pdi.com',
       passwordHash,
       role: UserRole.SUPERVISOR,
       branchId: branchMBR.id,
     },
     {
-      employeeId: 'EMP-MGR',
-      name: 'กิตติศักดิ์ ผู้จัดการสาขา',
-      email: 'manager@pdi.com',
+      employeeId: 'EMP-MASTER',
+      name: 'master',
+      email: 'master@pdi.com',
       passwordHash,
-      role: UserRole.BRANCH_MANAGER,
-      branchId: branchMBR.id,
+      role: UserRole.SUPERVISOR,
     },
   ];
 
@@ -132,8 +139,8 @@ async function main() {
   // 4. Create Vehicles
   const now = new Date();
 
-  await prisma.vehicle.create({
-    data: {
+  const vehiclesData = [
+    {
       vin: 'LNBSCCAK4RD100101',
       modelCode: 'AION_V',
       modelName: 'AION V Plus',
@@ -147,69 +154,10 @@ async function main() {
       floorplan: 'Zone 1',
       arrivedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
       incomingDeadline: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
-      currentStatus: 'IN_STOCK',
+      currentStatus: VehicleStatus.IN_STOCK,
+      motorBatteryNumber: 'TZ220XS-BAT-V-001',
     },
-  });
-
-  await prisma.vehicle.create({
-    data: {
-      vin: 'LNBSCCAK7RD200205',
-      modelCode: 'AION_YP',
-      modelName: 'AION Y Plus',
-      colorCode: 'SG02',
-      colorName: 'Starry Grey',
-      exteriorColor: 'เทาดาว (Starry Grey)',
-      interiorColor: 'ครีม-น้ำตาล (Cream-Brown)',
-      productionYear: 2025,
-      branchId: branchMBR.id,
-      warehouse: 'คลัง A',
-      floorplan: 'Zone 2',
-      arrivedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
-      incomingDeadline: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
-      currentStatus: 'IN_STOCK',
-    },
-  });
-
-  await prisma.vehicle.create({
-    data: {
-      vin: 'LNBHHTCK3RD300310',
-      modelCode: 'HYPTEC_HT',
-      modelName: 'HYPTEC HT',
-      colorCode: 'MB03',
-      colorName: 'Midnight Blue',
-      exteriorColor: 'น้ำเงินเข้ม (Midnight Blue)',
-      interiorColor: 'ดำ-แดง (Black-Red)',
-      productionYear: 2025,
-      branchId: branchKJN.id,
-      warehouse: 'คลัง B',
-      floorplan: 'Zone 1',
-      arrivedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
-      incomingDeadline: new Date(now.getTime()),
-      currentStatus: 'IN_STOCK',
-    },
-  });
-
-  await prisma.vehicle.create({
-    data: {
-      vin: 'LNBSCCAK8RD200305',
-      modelCode: 'AION_YP5',
-      modelName: 'AION Y Plus 5',
-      colorCode: 'BK01',
-      colorName: 'Midnight Black',
-      exteriorColor: 'ดำ (Midnight Black)',
-      interiorColor: 'ดำ-ส้ม (Black-Orange)',
-      productionYear: 2026,
-      branchId: branchMBR.id,
-      warehouse: 'คลัง C',
-      floorplan: 'Zone A',
-      arrivedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
-      incomingDeadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
-      currentStatus: 'IN_STOCK',
-    },
-  });
-
-  await prisma.vehicle.create({
-    data: {
+    {
       vin: 'LNBSCCAK5RD100201',
       modelCode: 'AION_V5',
       modelName: 'AION V 5',
@@ -223,12 +171,61 @@ async function main() {
       floorplan: 'Zone 2',
       arrivedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
       incomingDeadline: new Date(now.getTime()),
-      currentStatus: 'IN_STOCK',
+      currentStatus: VehicleStatus.IN_STOCK,
+      motorBatteryNumber: 'TZ220XS-BAT-V5-005',
     },
-  });
-
-  await prisma.vehicle.create({
-    data: {
+    {
+      vin: 'LNBSCCAK3RD300101',
+      modelCode: 'AION_UT',
+      modelName: 'AION UT',
+      colorCode: 'BL01',
+      colorName: 'Baby Blue',
+      exteriorColor: 'ฟ้าอ่อน (Baby Blue)',
+      interiorColor: 'ขาว-ครีม (White-Cream)',
+      productionYear: 2026,
+      branchId: branchLBD.id,
+      warehouse: 'คลัง A',
+      floorplan: 'Zone UT',
+      arrivedAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
+      incomingDeadline: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
+      currentStatus: VehicleStatus.IN_STOCK,
+      motorBatteryNumber: 'TZ180XS-BAT-UT-007',
+    },
+    {
+      vin: 'LNBSCCAK7RD200205',
+      modelCode: 'AION_YP',
+      modelName: 'AION Y Plus',
+      colorCode: 'SG02',
+      colorName: 'Starry Grey',
+      exteriorColor: 'เทาดาว (Starry Grey)',
+      interiorColor: 'ครีม-น้ำตาล (Cream-Brown)',
+      productionYear: 2025,
+      branchId: branchMBR.id,
+      warehouse: 'คลัง A',
+      floorplan: 'Zone 2',
+      arrivedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+      incomingDeadline: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
+      currentStatus: VehicleStatus.IN_STOCK,
+      motorBatteryNumber: 'TZ220XS-BAT-YP-002',
+    },
+    {
+      vin: 'LNBSCCAK8RD200305',
+      modelCode: 'AION_YP5',
+      modelName: 'AION Y Plus 5',
+      colorCode: 'BK01',
+      colorName: 'Midnight Black',
+      exteriorColor: 'ดำ (Midnight Black)',
+      interiorColor: 'ดำ-ส้ม (Black-Orange)',
+      productionYear: 2026,
+      branchId: branchMBR.id,
+      warehouse: 'คลัง C',
+      floorplan: 'Zone A',
+      arrivedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
+      incomingDeadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+      currentStatus: VehicleStatus.IN_STOCK,
+      motorBatteryNumber: 'TZ220XS-BAT-YP5-004',
+    },
+    {
       vin: 'LNBSCCAK6RD100999',
       modelCode: 'AION_ES',
       modelName: 'AION ES',
@@ -242,11 +239,84 @@ async function main() {
       floorplan: 'Zone 1',
       arrivedAt: new Date(now.getTime()),
       incomingDeadline: new Date(now.getTime() + 24 * 60 * 60 * 1000),
-      currentStatus: 'IN_STOCK',
+      currentStatus: VehicleStatus.IN_STOCK,
+      motorBatteryNumber: 'TZ180XS-BAT-ES-006',
     },
-  });
+    {
+      vin: 'LNBHHTCK3RD300310',
+      modelCode: 'HYPTEC_HT',
+      modelName: 'HYPTEC HT',
+      colorCode: 'MB03',
+      colorName: 'Midnight Blue',
+      exteriorColor: 'น้ำเงินเข้ม (Midnight Blue)',
+      interiorColor: 'ดำ-แดง (Black-Red)',
+      productionYear: 2025,
+      branchId: branchKJN.id,
+      warehouse: 'คลัง B',
+      floorplan: 'Zone 1',
+      arrivedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+      incomingDeadline: new Date(now.getTime()),
+      currentStatus: VehicleStatus.IN_STOCK,
+      motorBatteryNumber: 'TZ230XS-BAT-HT-003',
+    },
+    {
+      vin: 'LNBHHTCK4RD400401',
+      modelCode: 'HYPTEC_HT8',
+      modelName: 'HYPTEC HT 8',
+      colorCode: 'RD01',
+      colorName: 'Ruby Red',
+      exteriorColor: 'แดง (Ruby Red)',
+      interiorColor: 'ดำ-น้ำตาล (Black-Brown)',
+      productionYear: 2026,
+      branchId: branchLBD.id,
+      warehouse: 'คลัง E',
+      floorplan: 'Zone HT8',
+      arrivedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+      incomingDeadline: new Date(now.getTime()),
+      currentStatus: VehicleStatus.IN_STOCK,
+      motorBatteryNumber: 'TZ230XS-BAT-HT8-008',
+    },
+    {
+      vin: 'LNBSSR12345678901',
+      modelCode: 'HYPTEC_SSR',
+      modelName: 'HYPTEC SSR',
+      colorCode: 'YL01',
+      colorName: 'Hyper Yellow',
+      exteriorColor: 'เหลืองสปอร์ต (Hyper Yellow)',
+      interiorColor: 'คาร์บอนดำ (Carbon Black)',
+      productionYear: 2026,
+      branchId: branchMBR.id,
+      warehouse: 'คลังพิเศษ',
+      floorplan: 'Zone Supercar',
+      arrivedAt: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000),
+      incomingDeadline: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+      currentStatus: VehicleStatus.IN_STOCK,
+      motorBatteryNumber: 'TZ250XS-BAT-SSR-009',
+    },
+    {
+      vin: 'LNBM8MHEV98765432',
+      modelCode: 'GAC_M8',
+      modelName: 'GAC M8',
+      colorCode: 'GR01',
+      colorName: 'Graphite Grey',
+      exteriorColor: 'เทาเข้ม (Graphite Grey)',
+      interiorColor: 'แดง-ทอง (Red-Gold)',
+      productionYear: 2026,
+      branchId: branchMBR.id,
+      warehouse: 'คลังโชว์รูม',
+      floorplan: 'Zone VIP',
+      arrivedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
+      incomingDeadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+      currentStatus: VehicleStatus.IN_STOCK,
+      motorBatteryNumber: 'TZ220XS-BAT-M8-010',
+    }
+  ];
 
-  console.log('🚗 Created 6 sample vehicles.');
+  for (const v of vehiclesData) {
+    await prisma.vehicle.create({ data: v });
+  }
+
+  console.log(`🚗 Created ${vehiclesData.length} sample vehicles representing all models.`);
 
   // 5. Create Checklist Templates for all models and all types
   const models = ['AION_V', 'AION_V5', 'AION_UT', 'AION_YP', 'AION_YP5', 'AION_ES', 'HYPTEC_HT', 'HYPTEC_HT8', 'HYPTEC_SSR', 'GAC_M8'];
@@ -364,8 +434,8 @@ async function main() {
           { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'OTA_001', itemName: 'ตรวจสอบและทำการลบรหัสความผิดปกติ (DTC)', itemOrder: 1 },
           { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'OTA_002', itemName: 'ตรวจสอบและอัปเดตเวอร์ชันซอฟต์แวร์หน้าจอกลาง', itemOrder: 2 },
         );
-      } else if (modelCode === 'AION_YP' || modelCode === 'AION_YP5') {
-        // ========== AION_YP / AION_YP5 Dedicated Checklist ==========
+      } else if (modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES') {
+        // ========== AION_YP / AION_YP5 / AION_ES Dedicated Checklist ==========
         itemsData.push(
           // 1. ลักษณะภายนอกและสี
           { category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_001', itemName: 'ประตู', itemOrder: 1 },
@@ -625,7 +695,7 @@ async function main() {
       }
 
       // Category 2: Lighting
-      if (modelCode === 'AION_YP' || modelCode === 'AION_YP5') {
+      if (modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES') {
         itemsData.push(
           { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_001', itemName: 'ระบบไฟเดไทม์ DRL', itemOrder: 1 },
           { category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_002', itemName: 'ไฟหน้าต่ำ', itemOrder: 2 },
@@ -694,7 +764,7 @@ async function main() {
           { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_003', itemName: 'ฟังก์ชันฉีดน้ำทำความสะอาดกระจก-ที่ปัดน้ำฝน', itemOrder: 3 },
           { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_004', itemName: 'ฟังก์ชันม่านบังแดด (sunroof)', itemOrder: 4 }
         );
-        if (modelCode !== 'AION_YP' && modelCode !== 'AION_YP5' && modelCode !== 'AION_V' && modelCode !== 'AION_V5') {
+        if (modelCode !== 'AION_YP' && modelCode !== 'AION_YP5' && modelCode !== 'AION_ES' && modelCode !== 'AION_V' && modelCode !== 'AION_V5') {
           itemsData.push(
             { category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_005', itemName: 'ฟังก์ชันม่านบังแดด (Sun Shade)', itemOrder: 5 }
           );
@@ -725,7 +795,7 @@ async function main() {
         itemsData.push(
           { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_007', itemName: 'ฟังก์ชันความบันเทิง (Entertainment System)', itemOrder: 7 }
         );
-      } else if (modelCode !== 'AION_YP' && modelCode !== 'AION_YP5') {
+      } else if (modelCode !== 'AION_YP' && modelCode !== 'AION_YP5' && modelCode !== 'AION_ES') {
         itemsData.push(
           { category: 'ระบบความบันเทิง', categoryOrder: 5, itemCode: 'ENT_008', itemName: 'ฟังก์ชันความบันเทิง (Entertainment System)', itemOrder: 8 }
         );
@@ -739,7 +809,7 @@ async function main() {
       );
 
       // Category 7: Chassis
-      if (modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_V' || modelCode === 'AION_V5') {
+      if (modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES' || modelCode === 'AION_V' || modelCode === 'AION_V5') {
         itemsData.push(
           { category: 'ระบบช่วงล่าง', categoryOrder: 7, itemCode: 'CHS_001', itemName: 'ลักษณะภายนอกของชุดแบตเตอรี่แรงดันสูง (HV Battery)', itemOrder: 1, hasPhoto: true, hasNumeric: true, numericUnit: '%', numericMin: 50 }
         );
@@ -829,7 +899,7 @@ async function main() {
             itemOrder: 5,
           });
         }
-      } else if (modelCode === 'AION_YP' || modelCode === 'AION_YP5') {
+      } else if (modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES') {
         // AION Y Plus: SOH, CCA, SOC, Tire pressure
         itemsData.push(
           {

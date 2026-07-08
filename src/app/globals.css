@@ -79,8 +79,8 @@ body {
 /* PDF/Print style rules */
 @media print {
   @page {
-    size: A4;
-    margin: 12mm 10mm;
+    size: A4 portrait;
+    margin: 8mm 8mm 8mm 8mm;
   }
 
   /* Reset layout containers for proper print pagination */
@@ -145,7 +145,11 @@ body {
   }
 
   .print-page {
-    /* padding-bottom: 12px; */
+    width: 100% !important;
+    max-width: 100% !important;
+    page-break-after: always;
+    page-break-inside: avoid;
+    box-sizing: border-box;
   }
 
   /* ── Company Header ── */

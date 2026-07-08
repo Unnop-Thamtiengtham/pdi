@@ -12,6 +12,12 @@ export default async function ReportsPage() {
     redirect('/login');
   }
 
+  // Restrict access to roles SUPER_ADMIN and SUPERVISOR
+  const userRole = session.user?.role;
+  if (userRole !== 'SUPER_ADMIN' && userRole !== 'SUPERVISOR') {
+    redirect('/');
+  }
+
   let dbJobs: any[] = [];
   let isDbConnected = true;
 

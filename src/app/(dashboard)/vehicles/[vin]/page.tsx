@@ -19,6 +19,7 @@ export default async function VehicleDetailPage({
   const { vin } = await params;
 
   let vehicle: any = null;
+  let branches: any[] = [];
   let isDbConnected = true;
 
   try {
@@ -33,7 +34,13 @@ export default async function VehicleDetailPage({
             approver: { select: { id: true, name: true } },
           },
         },
+        editLogs: {
+          orderBy: { createdAt: 'desc' },
+        },
       },
+    });
+    branches = await prisma.branch.findMany({
+      orderBy: { code: 'asc' },
     });
   } catch (error) {
     console.warn('Database connection failed in vehicle detail. Using mock data.');
@@ -50,6 +57,7 @@ export default async function VehicleDetailPage({
         initialVehicle={vehicle}
         vin={vin}
         isDbConnected={isDbConnected}
+        branches={branches}
       />
     </div>
   );

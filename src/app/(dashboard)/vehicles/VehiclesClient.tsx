@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -144,6 +145,9 @@ const formatWorksheet = (XLSX: any, ws: any, hasHeader = true, fontName = 'Segoe
 };
 
 export default function VehiclesClient({ initialVehicles, branches, isDbConnected }: VehiclesClientProps) {
+  const { data: session } = useSession();
+  const userRole = session?.user?.role || 'INSPECTOR';
+  const canSendIncoming = userRole === 'SUPER_ADMIN' || userRole === 'SUPERVISOR';
   const [vehicles, setVehicles] = useState(
     isDbConnected
       ? initialVehicles
@@ -163,6 +167,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
             arrivedAt: '2026-06-08T12:00:00.000Z',
             branch: { name: 'Aion มีนบุรี' },
             pdiJobs: [{ id: 'mock-1', pdiType: 'INCOMING', status: 'PENDING' }],
+            motorBatteryNumber: 'TZ220XS-BAT-V-011',
           },
           {
             vin: 'LNAT4AB34T5G05022',
@@ -179,6 +184,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
             arrivedAt: '2026-06-09T08:00:00.000Z',
             branch: { name: 'Aion มีนบุรี' },
             pdiJobs: [{ id: 'mock-2', pdiType: 'INCOMING', status: 'PENDING_APPROVAL' }],
+            motorBatteryNumber: 'TZ230XS-BAT-HT-022',
           },
         ]
   );
@@ -271,16 +277,17 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
     const XLSX = (await import('xlsx-js-style')).default;
     const templateData = [
       {
-        'เลขตัวถัง': 'LNAT4AB34T5G00001',
+        'เลขตัวถัง (VIN)': 'LNAT4AB34T5G00001',
+        'เลขมอเตอร์แบตเตอรี่ (Motor Battery No.)': 'TZ220XS-BAT2026060000001',
         'รหัสรุ่น': 'AION_V',
-        'สีหลัก': 'Space Gray',
-        'สีภายนอก': 'Gray Metallic',
-        'สีภายใน': 'Coal Black',
-        'ปีผลิต': 2026,
-        'วันที่ขายส่ง': '2026-06-23',
-        'โกดัง': 'คลังท่าเรือแหลมฉบัง',
-        'ตำแหน่งจอด': 'Zone A-3',
-        'รหัสสาขา': 'MBR'
+        'สีรถภายนอกหลัก': 'Space Gray',
+        'ลักษณะสีภายนอก': 'Gray Metallic',
+        'โทนตกแต่งภายใน': 'Coal Black',
+        'ปีที่ผลิตรถ': 2026,
+        'วันที่ขายส่งดีลเลอร์ (WSDate)': '2026-06-23',
+        'คลังสินค้าโกดัง': 'คลังท่าเรือแหลมฉบัง',
+        'โซน/ตำแหน่งจอด': 'Zone A-3',
+        'รหัสสาขา (Branch Code)': 'MBR'
       }
     ];
 
@@ -346,16 +353,17 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
         }
 
         const parsedRows = rawRows.map(row => ({
-          vin: row.vin || row['เลขตัวถัง'] || row['VIN'] || '',
+          vin: row.vin || row['เลขตัวถัง (VIN)'] || row['เลขตัวถัง'] || row['VIN'] || '',
           modelCode: row.modelCode || row['รหัสรุ่น'] || row['Model Code'] || '',
-          colorName: row.colorName || row['สีหลัก'] || row['Color'] || '',
-          exteriorColor: row.exteriorColor || row['สีภายนอก'] || row['Exterior Color'] || '',
-          interiorColor: row.interiorColor || row['สีภายใน'] || row['Interior Color'] || '',
-          productionYear: row.productionYear || row['ปีผลิต'] || row['Year'] || '',
-          wsDate: row.wsDate || row['วันที่ขายส่ง'] || row['WSDate'] || '',
-          warehouse: row.warehouse || row['โกดัง'] || row['Warehouse'] || '',
-          floorplan: row.floorplan || row['ตำแหน่งจอด'] || row['Floorplan'] || '',
-          branchCode: row.branchCode || row['รหัสสาขา'] || row['Branch Code'] || '',
+          colorName: row.colorName || row['สีรถภายนอกหลัก'] || row['สีหลัก'] || row['Color'] || '',
+          exteriorColor: row.exteriorColor || row['ลักษณะสีภายนอก'] || row['สีภายนอก'] || row['Exterior Color'] || '',
+          interiorColor: row.interiorColor || row['โทนตกแต่งภายใน'] || row['สีภายใน'] || row['Interior Color'] || '',
+          productionYear: row.productionYear || row['ปีที่ผลิตรถ'] || row['ปีผลิต'] || row['Year'] || '',
+          wsDate: row.wsDate || row['วันที่ขายส่งดีลเลอร์ (WSDate)'] || row['วันที่ขายส่ง'] || row['WSDate'] || '',
+          warehouse: row.warehouse || row['คลังสินค้าโกดัง'] || row['โกดัง'] || row['Warehouse'] || '',
+          floorplan: row.floorplan || row['โซน/ตำแหน่งจอด'] || row['ตำแหน่งจอด'] || row['Floorplan'] || '',
+          branchCode: row.branchCode || row['รหัสสาขา (Branch Code)'] || row['รหัสสาขา'] || row['Branch Code'] || '',
+          motorBatteryNumber: row.motorBatteryNumber || row['เลขมอเตอร์แบตเตอรี่ (Motor Battery No.)'] || row['เลขมอเตอร์แบตเตอรี่'] || row['Motor Battery Number'] || '',
         }));
 
         const clientErrors: string[] = [];
@@ -466,6 +474,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
           interiorColor: v.interiorColor,
           productionYear: parseInt(v.productionYear) || 2026,
           wsDate: new Date(v.wsDate).toISOString(),
+          motorBatteryNumber: v.motorBatteryNumber,
           arrivedAt: new Date().toISOString(),
           currentStatus: 'IN_STOCK',
           branch: { name: branches.find(b => b.code.toUpperCase() === String(v.branchCode).toUpperCase())?.name || 'มีนบุรี' },
@@ -685,7 +694,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
           </Button>
 
           {/* Start Incoming PDI button */}
-          {selectedVins.length > 0 && (
+          {selectedVins.length > 0 && canSendIncoming && (
             <Button
               onClick={handleStartIncoming}
               disabled={actionLoading}
@@ -929,6 +938,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                           {!hasIncomingJob ? (
                             <input
                               type="checkbox"
+                              disabled={!canSendIncoming}
                               checked={selectedVins.includes(veh.vin)}
                               onChange={(e) => {
                                 if (e.target.checked) {
@@ -937,7 +947,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                                   setSelectedVins(selectedVins.filter((id) => id !== veh.vin));
                                 }
                               }}
-                              className="h-4 w-4 rounded border-slate-300 text-brand-teal focus:ring-brand-teal cursor-pointer"
+                              className="h-4 w-4 rounded border-slate-300 text-brand-teal focus:ring-brand-teal cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                             />
                           ) : (
                             <div className="w-4 h-4 mx-auto flex items-center justify-center">
@@ -945,7 +955,14 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="font-mono text-xs text-slate-800 font-medium py-4 select-all">{veh.vin}</TableCell>
+                        <TableCell className="font-mono text-xs text-slate-800 font-medium py-4 select-all">
+                          <div>{veh.vin}</div>
+                          {veh.motorBatteryNumber && (
+                            <div className="text-[10px] text-slate-500 font-sans mt-0.5 font-normal">
+                              มอเตอร์แบตเตอรี่: {veh.motorBatteryNumber}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs font-semibold py-4">{veh.modelName}</TableCell>
                         <TableCell className="text-xs py-4">
                           <div className="text-slate-700">{veh.exteriorColor || veh.colorName || '-'}</div>
@@ -1061,6 +1078,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                     <TableHead className="text-xs">วันที่ WSDate</TableHead>
                     <TableHead className="text-xs">สาขา</TableHead>
                     <TableHead className="text-xs">โกดัง/โซน</TableHead>
+                    <TableHead className="text-xs">เลขมอเตอร์แบตเตอรี่</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1074,6 +1092,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                       <TableCell className="text-xs font-mono">{v.wsDate}</TableCell>
                       <TableCell className="text-xs font-bold text-slate-700">{v.branchCode}</TableCell>
                       <TableCell className="text-xs">{v.warehouse || '-'} / {v.floorplan || '-'}</TableCell>
+                      <TableCell className="text-xs font-mono">{v.motorBatteryNumber || '-'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

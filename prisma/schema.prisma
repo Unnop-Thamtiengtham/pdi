@@ -13,9 +13,8 @@ generator client {
 enum UserRole {
   INSPECTOR       // ช่างตรวจ
   SUPERVISOR      // QC / Supervisor
-  WAREHOUSE       // Warehouse Staff
-  BRANCH_MANAGER  // ผู้จัดการสาขา
   ADMIN           // Admin
+  SUPER_ADMIN     // Super Admin
 }
 
 enum PdiType {
@@ -53,6 +52,7 @@ enum DocumentType {
   VEHICLE_REPORT
   DELIVERY_FORM
   PDPA_CONSENT
+  LIFETIME_WARRANTY
 }
 
 enum VehicleStatus {
@@ -86,8 +86,8 @@ model User {
   email         String?   @unique
   passwordHash  String
   role          UserRole
-  branch        Branch    @relation(fields: [branchId], references: [id])
-  branchId      String
+  branch        Branch?   @relation(fields: [branchId], references: [id])
+  branchId      String?
   isActive      Boolean   @default(true)
   pdiJobs       PdiJob[]  @relation("AssignedInspector")
   approvals     PdiJob[]  @relation("Approver")
@@ -105,7 +105,7 @@ model User {
 model Vehicle {
   id              String    @id @default(cuid())
   vin             String    @unique           // Primary key ทุก process
-  engineNumber    String?
+  motorBatteryNumber String?
   modelCode       String                     // เช่น "AION_V", "AION_UT", "HYPTEC_HT"
   modelName       String                     // เช่น "AION V", "HYPTEC HT"
   colorCode       String?
@@ -123,6 +123,7 @@ model Vehicle {
   currentStatus   VehicleStatus @default(IN_STOCK)
   pdiJobs         PdiJob[]
   defects         Defect[]
+  editLogs        VehicleEditLog[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -138,7 +139,7 @@ model PdiJob {
   jobNumber       String      @unique       // JO-YYYYMMDD-XXXX
   pdiType         PdiType
   status          PdiStatus   @default(PENDING)
-  vehicle         Vehicle     @relation(fields: [vehicleVin], references: [vin], onDelete: Cascade)
+  vehicle         Vehicle     @relation(fields: [vehicleVin], references: [vin], onDelete: Cascade, onUpdate: Cascade)
   vehicleVin      String
   inspector       User?       @relation("AssignedInspector", fields: [inspectorId], references: [id], onDelete: SetNull)
   inspectorId     String?
@@ -152,6 +153,8 @@ model PdiJob {
   // สำหรับ Pre-delivery
   targetDeliveryDate DateTime?              // วันส่งมอบ
   salesName          String?               // ชื่อ Sales
+  salesPhone         String?               // เบอร์โทร Sales
+  salesBranch        String?               // สาขาของ Sales
   customerName       String?               // ชื่อลูกค้า (masked per PDPA)
   customerPhone      String?               // เบอร์โทร (masked)
 
@@ -248,7 +251,7 @@ model Defect {
   id            String        @id @default(cuid())
   job           PdiJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
   jobId         String
-  vehicle       Vehicle       @relation(fields: [vehicleVin], references: [vin], onDelete: Cascade)
+  vehicle       Vehicle       @relation(fields: [vehicleVin], references: [vin], onDelete: Cascade, onUpdate: Cascade)
   vehicleVin    String
   defectNo      Int           // ลำดับ 1, 2, 3...
   checklistItemCode String?   // อ้างอิง item ที่พบปัญหา (optional)
@@ -257,7 +260,7 @@ model Defect {
   solution      String?       // วิธีแก้ไข
   severity      DefectSeverity @default(NORMAL)
   status        DefectStatus  @default(OPEN)
-  photoUrl      String?
+  photoUrls     String[]      @default([])
   resolvedAt    DateTime?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -311,4 +314,19 @@ model BatteryTestResult {
   // Terminal check (PASS/FAIL)
   terminalCheck   String?
   testedAt        DateTime  @default(now())
+}
+
+// ──────────────────────────────────────
+// VEHICLE EDIT LOG (ประวัติแก้ไขข้อมูลรถ)
+// ──────────────────────────────────────
+
+model VehicleEditLog {
+  id             String    @id @default(cuid())
+  vehicleVin     String
+  vehicle        Vehicle   @relation(fields: [vehicleVin], references: [vin], onDelete: Cascade, onUpdate: Cascade)
+  editedBy       String    // เช่น "สมชาย (inspector)" หรือชื่อผู้กดยืนยันแก้ไข
+  changeDetails  String    // รายละเอียดการเปลี่ยนแปลง
+  createdAt      DateTime  @default(now())
+
+  @@index([vehicleVin])
 }

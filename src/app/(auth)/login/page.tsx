@@ -59,14 +59,21 @@ export default function LoginPage() {
           <div className="flex items-center gap-2 mb-2">
             <svg className="w-10 h-10" viewBox="0 0 24 24">
               <path
-                d="M12 3.5a8.5 8.5 0 1 1-5 15.3M12 20.5a8.5 8.5 0 0 1-5-1.6"
+                d="M6 18 A 8.5 8.5 0 1 1 18 18"
                 stroke="#5F6368"
                 strokeWidth="2.5"
                 fill="none"
                 strokeLinecap="round"
               />
               <path
-                d="M8.5 15L12 9l3.5 6"
+                d="M9.5 20.1 A 8.5 8.5 0 0 1 14.5 20.1"
+                stroke="#5F6368"
+                strokeWidth="2.5"
+                fill="none"
+                strokeLinecap="round"
+              />
+              <path
+                d="M7.5 17.5L12 9l4.5 8.5"
                 stroke="#30C0D0"
                 strokeWidth="2.5"
                 fill="none"

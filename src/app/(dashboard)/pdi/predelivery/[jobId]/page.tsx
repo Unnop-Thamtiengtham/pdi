@@ -33,6 +33,7 @@ export default async function PredeliveryPdiJobPage({
           approver: { select: { id: true, name: true } },
           checklistItems: true,
           defects: true,
+          documents: true,
         },
       });
 

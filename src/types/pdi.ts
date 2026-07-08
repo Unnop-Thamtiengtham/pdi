@@ -71,7 +71,7 @@ export const MODEL_RULES: Record<ModelCode, ModelRuleSet> = {
   AION_UT:     { hasDualBattery: false, hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
   AION_YP:     { hasDualBattery: false, hasCCA: true,  hasSocCheck: true,  hasTirePressure: true,  hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 50  },
   AION_YP5:    { hasDualBattery: false, hasCCA: true,  hasSocCheck: true,  hasTirePressure: true,  hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 50  },
-  AION_ES:     { hasDualBattery: false, hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
+  AION_ES:     { hasDualBattery: false, hasCCA: true,  hasSocCheck: true,  hasTirePressure: true,  hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 50  },
   HYPTEC_HT:   { hasDualBattery: true,  hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: true,  hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
   HYPTEC_HT8:  { hasDualBattery: true,  hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: true,  hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
   HYPTEC_SSR:  { hasDualBattery: false, hasCCA: false, hasSocCheck: false, hasTirePressure: false, hasGullwingDoor: false, hasOTA: true,  hasPhev: false, hvBatteryMin: 0   },
@@ -105,5 +105,5 @@ export const SLA_CONFIG = {
 export const REQUIRED_DOCUMENTS: Record<string, string[]> = {
   INCOMING: ['PDI_CHECKLIST', 'BATTERY_REPORT', 'VEHICLE_REPORT'],
   LONG_TERM: ['PDI_CHECKLIST', 'BATTERY_REPORT'],
-  PRE_DELIVERY: ['PDI_CHECKLIST', 'BATTERY_REPORT', 'VEHICLE_REPORT', 'DELIVERY_FORM', 'PDPA_CONSENT'],
+  PRE_DELIVERY: ['PDI_CHECKLIST', 'BATTERY_REPORT', 'VEHICLE_REPORT', 'DELIVERY_FORM', 'PDPA_CONSENT', 'LIFETIME_WARRANTY'],
 }

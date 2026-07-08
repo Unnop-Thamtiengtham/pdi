@@ -12,7 +12,14 @@ export default async function RepairsPage() {
     redirect('/login');
   }
 
+  // Restrict access to roles SUPER_ADMIN and SUPERVISOR
+  const userRole = session.user?.role;
+  if (userRole !== 'SUPER_ADMIN' && userRole !== 'SUPERVISOR') {
+    redirect('/');
+  }
+
   let dbJobs: any[] = [];
+  let dbBranches: any[] = [];
   let isDbConnected = true;
 
   try {
@@ -29,6 +36,10 @@ export default async function RepairsPage() {
       },
       orderBy: { updatedAt: 'desc' },
     });
+
+    dbBranches = await prisma.branch.findMany({
+      orderBy: { name: 'asc' },
+    });
   } catch (error) {
     console.warn('Database connection failed in repairs list. Using mock.');
     isDbConnected = false;
@@ -38,6 +49,7 @@ export default async function RepairsPage() {
     <RepairsClient
       initialJobs={dbJobs}
       isDbConnected={isDbConnected}
+      branches={dbBranches}
     />
   );
 }

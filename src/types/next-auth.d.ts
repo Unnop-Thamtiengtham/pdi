@@ -6,9 +6,9 @@ declare module 'next-auth' {
       id: string;
       role: string;
       employeeId: string;
-      branchId: string;
-      branchCode: string;
-      branchName: string;
+      branchId?: string | null;
+      branchCode?: string | null;
+      branchName?: string | null;
     } & DefaultSession['user'];
   }
 
@@ -16,9 +16,9 @@ declare module 'next-auth' {
     id: string;
     role: string;
     employeeId: string;
-    branchId: string;
-    branchCode: string;
-    branchName: string;
+    branchId?: string | null;
+    branchCode?: string | null;
+    branchName?: string | null;
   }
 }
 
@@ -27,8 +27,8 @@ declare module 'next-auth/jwt' {
     id: string;
     role: string;
     employeeId: string;
-    branchId: string;
-    branchCode: string;
-    branchName: string;
+    branchId?: string | null;
+    branchCode?: string | null;
+    branchName?: string | null;
   }
 }

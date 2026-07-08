@@ -28,6 +28,7 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
   const [job, setJob] = useState<any>(null);
   const [templateItems, setTemplateItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // PDPA/Handover states for Pre-Delivery PDI
   const [pdpaConsent, setPdpaConsent] = useState(false);
@@ -35,74 +36,47 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
   const [inspectorSig, setInspectorSig] = useState<string | null>(null);
   const [supervisorSig, setSupervisorSig] = useState<string | null>(null);
 
-  // Hardcoded mockup data for template checklist items (similar to seeded AION V template)
-  const getMockTemplateItems = () => {
-    return [
-      { id: 'item-1', category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_001', itemName: 'ประตูรอบคันรถ', itemOrder: 1, isMandatory: true, hasPhoto: false, hasNumeric: false },
-      { id: 'item-2', category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_002', itemName: 'ฝากระโปรงหน้า/หลัง', itemOrder: 2, isMandatory: true, hasPhoto: false, hasNumeric: false },
-      { id: 'item-3', category: 'ลักษณะภายนอกและสี', categoryOrder: 1, itemCode: 'EXT_003', itemName: 'กันชนหน้าและหลัง', itemOrder: 3, isMandatory: true, hasPhoto: false, hasNumeric: false },
-      { id: 'item-4', category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_001', itemName: 'ไฟหน้าส่องสว่าง', itemOrder: 1, isMandatory: true, hasPhoto: false, hasNumeric: false },
-      { id: 'item-5', category: 'ไฟส่องสว่าง', categoryOrder: 2, itemCode: 'LGT_002', itemName: 'ไฟเลี้ยวซ้าย/ขวา', itemOrder: 2, isMandatory: true, hasPhoto: false, hasNumeric: false },
-      { id: 'item-6', category: 'กระจกและที่ปัดน้ำฝน', categoryOrder: 3, itemCode: 'GLS_001', itemName: 'ฟังก์ชันกระจกประตูเลื่อนขึ้นลง', itemOrder: 1, isMandatory: true, hasPhoto: false, hasNumeric: false },
-      { id: 'item-7', category: 'ระบบปรับอากาศ', categoryOrder: 4, itemCode: 'AC_001', itemName: 'การทำงานของระบบปรับอากาศในรถ', itemOrder: 1, isMandatory: true, hasPhoto: false, hasNumeric: false },
-      { id: 'item-8', category: 'ตรวจสอบระดับของเหลว', categoryOrder: 6, itemCode: 'FLD_001', itemName: 'ระดับน้ำยาหล่อเย็นมอเตอร์', itemOrder: 1, isMandatory: true, hasPhoto: false, hasNumeric: false },
-      { id: 'item-9', category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 9, itemCode: 'BAT_001', itemName: 'ค่าแรงดันไฟฟ้าแบตเตอรี่หลัก (Voltage)', itemOrder: 1, isMandatory: true, hasPhoto: false, hasNumeric: true, numericUnit: 'V', numericMin: 12.6 },
-      { id: 'item-10', category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 9, itemCode: 'BAT_002', itemName: 'ค่าสุขภาพแบตเตอรี่ SOH', itemOrder: 2, isMandatory: true, hasPhoto: false, hasNumeric: true, numericUnit: '%', numericMin: 80 },
-    ];
-  };
-
   // Load Job and Template
   useEffect(() => {
     async function loadData() {
-      if (isDbConnected && initialJob) {
-        setJob(initialJob);
-        setCustomerSig(initialJob.customerSig || null);
-        setInspectorSig(initialJob.inspectorSig || null);
-        setSupervisorSig(initialJob.supervisorSig || null);
-        setPdpaConsent(initialJob.pdpaConsent || false);
-        // Fetch template
-        try {
-          const res = await fetch(`/api/checklist/${initialJob.vehicle.modelCode}?type=${initialJob.pdiType}`);
-          if (res.ok) {
-            const temp = await res.json();
-            setTemplateItems(temp.items || []);
-          }
-        } catch (err) {
-          console.error(err);
-        }
-      } else {
-        // Mocking setup
-        const mockJob = {
-          id: jobId,
-          jobNumber: jobId.startsWith('mock-inc') ? 'JO-INC-20260609-001' : jobId.startsWith('mock-ltm') ? 'JO-LTM-20260609-001' : 'JO-PD-20260609-001',
-          pdiType: jobId.startsWith('mock-inc') ? 'INCOMING' : jobId.startsWith('mock-ltm') ? 'LONG_TERM' : 'PRE_DELIVERY',
-          status: 'PENDING',
-          vehicleVin: 'LNAT4AB34T5G05011',
-          vehicle: {
-            vin: 'LNAT4AB34T5G05011',
-            modelCode: 'AION_V',
-            modelName: 'AION V',
-            colorName: 'Space Gray',
-            exteriorColor: 'Gray Metallic',
-            interiorColor: 'Coal Black',
-            productionYear: 2026,
-            wsDate: '2026-05-10T00:00:00.000Z',
-            currentStatus: 'IN_STOCK',
-            warehouse: 'Main Dock',
-            floorplan: 'Zone A',
-            arrivedAt: '2026-06-08T12:00:00.000Z',
-            incomingDeadline: new Date(Date.now() + 1.5 * 60 * 60 * 1000).toISOString(),
-            branch: { name: 'มีนบุรี' }
-          },
-          inspector: null,
-          approver: null,
-          checklistItems: [],
-          defects: [],
-          notes: '',
-        };
-        setJob(mockJob);
-        setTemplateItems(getMockTemplateItems());
+      if (!isDbConnected || !initialJob) {
+        setLoadError('ไม่สามารถเชื่อมต่อฐานข้อมูลได้ กรุณารีเฟรชหน้าเว็บ');
+        setLoading(false);
+        return;
       }
+
+      setJob(initialJob);
+      setCustomerSig(initialJob.customerSig || null);
+      setInspectorSig(initialJob.inspectorSig || null);
+      setSupervisorSig(initialJob.supervisorSig || null);
+      setPdpaConsent(initialJob.pdpaConsent || false);
+
+      // Fetch checklist template by vehicle modelCode
+      const modelCode = initialJob.vehicle?.modelCode;
+      if (!modelCode) {
+        setLoadError(`ไม่พบรหัสรุ่นรถ (modelCode) สำหรับ VIN: ${initialJob.vehicleVin}`);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/checklist/${modelCode}?type=${initialJob.pdiType}`);
+        if (res.ok) {
+          const temp = await res.json();
+          if (temp.items && temp.items.length > 0) {
+            setTemplateItems(temp.items);
+          } else {
+            setLoadError(`ไม่พบรายการ checklist สำหรับรุ่น ${modelCode} (${initialJob.pdiType})`);
+          }
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          setLoadError(errData.error || `ไม่พบ template checklist สำหรับรุ่น ${modelCode}`);
+        }
+      } catch (err) {
+        console.error('Failed to fetch checklist template:', err);
+        setLoadError('ไม่สามารถโหลดรายการ checklist ได้ กรุณารีเฟรชหน้าเว็บ');
+      }
+
       setLoading(false);
     }
     loadData();
@@ -235,6 +209,7 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
     const blob = await res.blob();
     const formData = new FormData();
     formData.append('file', blob, fileName);
+    formData.append('folder', 'PDI/signature');
     
     const uploadRes = await fetch('/api/upload', {
       method: 'POST',
@@ -260,9 +235,11 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
     let uploadedInspectorSig = inspectorSig;
     let uploadedSupervisorSig = supervisorSig;
 
+    let toastId: string | number | undefined;
+
     try {
       if (decision === 'APPROVED') {
-        toast.info('กำลังอัปโหลดรูปภาพลายเซ็นไปยัง S3...');
+        toastId = toast.loading('กำลังอัปโหลดรูปภาพลายเซ็นไปยัง S3...');
         if (customerSig && customerSig.startsWith('data:image/')) {
           uploadedCustomerSig = await uploadBase64Image(customerSig, `customer_sig_${job.id}.png`);
         }
@@ -294,6 +271,10 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
         }
       }
 
+      if (toastId) {
+        toast.dismiss(toastId);
+      }
+
       if (decision === 'APPROVED') {
         toast.success('อนุมัติผ่านงานตรวจสภาพสำเร็จ');
       } else {
@@ -312,6 +293,9 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
       router.push('/');
       router.refresh();
     } catch (err: any) {
+      if (toastId) {
+        toast.dismiss(toastId);
+      }
       console.error(err);
       toast.error(err.message || 'เกิดข้อผิดพลาดในการส่งการอนุมัติ');
     }
@@ -321,11 +305,31 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
     return <div className="text-center py-20 text-slate-500">กำลังโหลดพื้นที่ปฏิบัติงาน...</div>;
   }
 
+  if (loadError || !job) {
+    return (
+      <Card className="max-w-lg mx-auto text-center p-8 space-y-4 mt-12 border border-error/20">
+        <AlertTriangle className="w-10 h-10 text-error mx-auto" />
+        <h3 className="text-lg font-bold text-slate-800">ไม่สามารถโหลดข้อมูลได้</h3>
+        <p className="text-sm text-slate-500">{loadError || 'ไม่พบข้อมูลใบงาน'}</p>
+        <div className="flex justify-center gap-3 pt-2">
+          <Link href="/">
+            <Button variant="secondary" size="sm">กลับหน้าหลัก</Button>
+          </Link>
+          <Button size="sm" onClick={() => window.location.reload()}>
+            รีเฟรชหน้าเว็บ
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
   const userRole = session?.user?.role || 'INSPECTOR';
   const isInspector = userRole === 'INSPECTOR' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
-  const isQC = userRole === 'SUPERVISOR' || userRole === 'BRANCH_MANAGER' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+  const isQC = userRole === 'SUPERVISOR' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
   
-  const readOnly = job.status === 'APPROVED' || job.status === 'PENDING_APPROVAL';
+  const isIncomingTickingBlocked = job.pdiType === 'INCOMING' && userRole === 'ADMIN';
+  const isStartJobBlocked = userRole === 'ADMIN';
+  const readOnly = job.status === 'APPROVED' || job.status === 'PENDING_APPROVAL' || isIncomingTickingBlocked;
 
   return (
     <div className="space-y-6">
@@ -354,14 +358,24 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
                 ถูกจ่ายงานเข้ามาแล้ว กดปุ่มด้านล่างเพื่อเปลี่ยนสถานะเป็นกำลังตรวจ (In Progress)
               </p>
             </div>
-            <div className="flex justify-center gap-3 pt-2">
-              <Link href="/">
-                <Button variant="secondary" size="sm">ย้อนกลับ</Button>
-              </Link>
-              <Button onClick={handleStartJob} className="gap-1.5" size="sm">
-                <Play className="w-4 h-4 text-slate-950 fill-current" />
-                <span>เริ่มปฏิบัติงานตรวจรถ</span>
-              </Button>
+            <div className="flex flex-col items-center gap-3 pt-2">
+              <div className="flex justify-center gap-3">
+                <Link href="/">
+                  <Button variant="secondary" size="sm">ย้อนกลับ</Button>
+                </Link>
+                {!isStartJobBlocked && (
+                  <Button onClick={handleStartJob} className="gap-1.5" size="sm">
+                    <Play className="w-4 h-4 text-slate-950 fill-current" />
+                    <span>เริ่มปฏิบัติงานตรวจรถ</span>
+                  </Button>
+                )}
+              </div>
+              {isStartJobBlocked && (
+                <p className="text-xs text-red-500 font-semibold flex items-center gap-1.5 bg-red-50 p-2.5 rounded-lg border border-red-100">
+                  <ShieldAlert className="w-4 h-4 text-red-500" />
+                  <span>บัญชีผู้ดูแลระบบ (Admin) ไม่สามารถเริ่มปฏิบัติงานหรือทำการตรวจสภาพรถได้</span>
+                </p>
+              )}
             </div>
           </Card>
         ) : (
@@ -369,12 +383,16 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
             {/* Main Workspace content */}
             <ChecklistForm
               jobId={job.id}
-              modelCode={job.vehicle?.modelCode || 'AION_V'}
+              modelCode={job.vehicle.modelCode}
               pdiType={job.pdiType}
+              vehicleVin={job.vehicleVin}
+              jobNumber={job.jobNumber}
+              isApproved={job.status === 'APPROVED'}
               templateItems={templateItems}
               initialResults={job.checklistItems}
               initialBatteryData={job.batteryTestResult || {}}
               initialDefects={job.defects}
+              initialDocuments={job.documents || []}
               onSave={handleSaveResults}
               onSubmit={handleSubmitResults}
               readOnly={readOnly}

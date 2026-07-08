@@ -32,9 +32,12 @@ next-env.d.ts
 # -------------------------------------------------------------------------
 .env
 .env.local
+.env.*.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*
+!.env.example
 *.pem
 *.key
 *.cert
@@ -88,3 +91,25 @@ yarn-error.log*
 *.db-journal
 *.sqlite
 *.sqlite-journal
+
+# -------------------------------------------------------------------------
+# 9. ไฟล์แคชของ Python และสภาพแวดล้อมจำลอง (Python Caches & Virtual Envs)
+# -------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# -------------------------------------------------------------------------
+# 10. สคริปต์ทดสอบชั่วคราวระดับ Root (Temporary Scratch/Audit Scripts)
+# -------------------------------------------------------------------------
+/analyze_aion_ut.py
+/find_all_vertical_lines_everywhere.py
+/test_why_line_remained.py
+/check_db_jobs.ts
+/comment.txt
+

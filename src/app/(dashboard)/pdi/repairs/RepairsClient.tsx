@@ -25,9 +25,20 @@ import { Label } from '@/components/ui/label';
 interface RepairsClientProps {
   initialJobs: any[];
   isDbConnected: boolean;
+  branches?: any[];
 }
 
-export default function RepairsClient({ initialJobs, isDbConnected }: RepairsClientProps) {
+export default function RepairsClient({ initialJobs, isDbConnected, branches = [] }: RepairsClientProps) {
+  const dbBranches = branches && branches.length > 0 ? branches : [
+    { id: '1', code: 'MBR', name: 'Aion มีนบุรี' },
+    { id: '2', code: 'KJN', name: 'Aion กาญจนาภิเษก' },
+    { id: '3', code: 'LBD', name: 'Aion ลาดบังดี' },
+    { id: '4', code: 'PBL', name: 'Aion พิบูลสงคราม' },
+    { id: '5', code: 'MHC', name: 'Aion มหาชัย' },
+    { id: '6', code: 'SLY', name: 'Aion สุราษฎร์ธานี' },
+    { id: '7', code: 'AYT', name: 'Aion อยุธยา' },
+  ];
+
   const router = useRouter();
   const { data: session } = useSession();
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,7 +48,7 @@ export default function RepairsClient({ initialJobs, isDbConnected }: RepairsCli
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [repairDate, setRepairDate] = useState('');
-  const [repairLocation, setRepairLocation] = useState('อู่ตัวถังและสี (Body & Paint)');
+  const [repairLocation, setRepairLocation] = useState(dbBranches[0]?.name || '');
   const [customLocation, setCustomLocation] = useState('');
   const [repairNotes, setRepairNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -92,6 +103,17 @@ export default function RepairsClient({ initialJobs, isDbConnected }: RepairsCli
   useEffect(() => {
     setJobs(isDbConnected ? initialJobs : getMockJobs());
   }, [initialJobs, isDbConnected]);
+
+  // Handle printing once printJob state is updated and committed to the DOM
+  useEffect(() => {
+    if (printJob) {
+      const timer = setTimeout(() => {
+        window.print();
+        setPrintJob(null);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [printJob]);
 
   // Filter jobs based on search term
   const filteredJobs = jobs.filter((job) => {
@@ -215,9 +237,6 @@ export default function RepairsClient({ initialJobs, isDbConnected }: RepairsCli
 
   const handlePrint = (job: any) => {
     setPrintJob(job);
-    setTimeout(() => {
-      window.print();
-    }, 150);
   };
 
   const handleCompleteRepair = (job: any) => {
@@ -308,8 +327,10 @@ export default function RepairsClient({ initialJobs, isDbConnected }: RepairsCli
             <Table>
               <TableHeader className="bg-slate-50/75 border-b border-slate-100">
                 <TableRow>
-                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขที่งาน / ประเภท<br/><span className="text-[10px] text-slate-400 font-normal">(Job No. / Type)</span></TableHead>
-                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ข้อมูลรถยนต์<br/><span className="text-[10px] text-slate-400 font-normal">(Model / VIN)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขที่งาน<br/><span className="text-[10px] text-slate-400 font-normal">(Job No.)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ประเภท<br/><span className="text-[10px] text-slate-400 font-normal">(Type)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">รุ่นรถ<br/><span className="text-[10px] text-slate-400 font-normal">(Model)</span></TableHead>
+                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขตัวถัง<br/><span className="text-[10px] text-slate-400 font-normal">(VIN)</span></TableHead>
                   <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">สาขา<br/><span className="text-[10px] text-slate-400 font-normal">(Branch)</span></TableHead>
                   <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ช่างตรวจ<br/><span className="text-[10px] text-slate-400 font-normal">(Inspector)</span></TableHead>
                   <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">จุดบกพร่อง<br/><span className="text-[10px] text-slate-400 font-normal">(Defects)</span></TableHead>
@@ -319,32 +340,24 @@ export default function RepairsClient({ initialJobs, isDbConnected }: RepairsCli
               <TableBody>
                 {filteredJobs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12 text-slate-500">
+                    <TableCell colSpan={8} className="text-center py-12 text-slate-500">
                       ไม่มีงานที่ตรวจพบจุดชำรุดค้างซ่อมในขณะนี้
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredJobs.map((job) => (
                     <TableRow key={job.id} className="hover:bg-slate-50/50 transition-colors">
-                      <TableCell className="py-4">
-                        <div className="flex flex-col gap-1.5">
-                          <span className="font-mono text-xs font-semibold text-slate-800">
-                            {job.jobNumber}
-                          </span>
-                          <div>
-                            {getPdiTypeBadge(job.pdiType)}
-                          </div>
-                        </div>
+                      <TableCell className="py-4 font-mono text-xs font-semibold text-slate-800">
+                        {job.jobNumber}
                       </TableCell>
                       <TableCell className="py-4">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-xs font-bold text-slate-800">
-                            {job.vehicle?.modelName || 'ไม่พบรุ่นรถ'}
-                          </span>
-                          <span className="font-mono text-[10px] text-slate-500 font-semibold select-all leading-none">
-                            {job.vehicleVin}
-                          </span>
-                        </div>
+                        {getPdiTypeBadge(job.pdiType)}
+                      </TableCell>
+                      <TableCell className="py-4 text-xs font-bold text-slate-800">
+                        {job.vehicle?.modelName || 'ไม่พบรุ่นรถ'}
+                      </TableCell>
+                      <TableCell className="py-4 font-mono text-[10px] text-slate-500 font-semibold select-all">
+                        {job.vehicleVin}
                       </TableCell>
                       <TableCell className="text-xs py-4 text-slate-700 font-medium">
                         {job.vehicle?.branch?.name || '-'}
@@ -491,9 +504,9 @@ export default function RepairsClient({ initialJobs, isDbConnected }: RepairsCli
                   onChange={(e) => setRepairLocation(e.target.value)}
                   className="text-xs h-9 border-slate-200"
                 >
-                  <option value="อู่ตัวถังและสี (Body & Paint)">อู่ตัวถังและสี (Body & Paint)</option>
-                  <option value="ฝ่ายเทคนิค/ช่างเครื่องยนต์ (Mechanic/Technical)">ฝ่ายเทคนิค/ช่างเครื่องยนต์ (Mechanic/Technical)</option>
-                  <option value="อู่ภายนอก (External Shop)">อู่ภายนอก (External Shop)</option>
+                  {dbBranches.map((b) => (
+                    <option key={b.id} value={b.name}>{b.name}</option>
+                  ))}
                   <option value="อื่น ๆ">อื่น ๆ (ระบุเอง)</option>
                 </Select>
               </div>

@@ -46,8 +46,8 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           employeeId: user.employeeId,
           branchId: user.branchId,
-          branchCode: user.branch.code,
-          branchName: user.branch.name,
+          branchCode: user.branch?.code || null,
+          branchName: user.branch?.name || null,
         };
       },
     }),

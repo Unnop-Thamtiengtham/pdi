@@ -35,49 +35,49 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       label: 'ภาพรวม (Dashboard)',
       href: '/',
       icon: LayoutDashboard,
-      roles: ['ADMIN', 'SUPERVISOR', 'BRANCH_MANAGER', 'INSPECTOR', 'WAREHOUSE'],
+      roles: ['ADMIN', 'SUPERVISOR', 'INSPECTOR'],
     },
     {
       label: 'สต็อกรถ (Vehicles)',
       href: '/vehicles',
       icon: Car,
-      roles: ['ADMIN', 'SUPERVISOR', 'BRANCH_MANAGER', 'INSPECTOR', 'WAREHOUSE'],
+      roles: ['ADMIN', 'SUPERVISOR', 'INSPECTOR'],
     },
     {
       label: 'Incoming PDI',
       href: '/pdi/incoming',
       icon: Clock,
-      roles: ['ADMIN', 'SUPERVISOR', 'BRANCH_MANAGER', 'INSPECTOR', 'WAREHOUSE'],
+      roles: ['ADMIN', 'SUPERVISOR', 'INSPECTOR'],
     },
     {
       label: 'Long-term Maintenance',
       href: '/pdi/longterm',
       icon: Calendar,
-      roles: ['ADMIN', 'SUPERVISOR', 'BRANCH_MANAGER', 'INSPECTOR'],
+      roles: ['ADMIN', 'SUPERVISOR', 'INSPECTOR'],
     },
     {
       label: 'Pre-delivery PDI',
       href: '/pdi/predelivery',
       icon: UserCheck,
-      roles: ['ADMIN', 'SUPERVISOR', 'BRANCH_MANAGER', 'INSPECTOR'],
+      roles: ['ADMIN', 'SUPERVISOR', 'INSPECTOR'],
     },
     {
       label: 'อนุมัติงาน PDI (QC Approvals)',
       href: '/pdi/approvals',
       icon: CheckSquare,
-      roles: ['ADMIN', 'SUPERVISOR', 'BRANCH_MANAGER'],
+      roles: ['SUPERVISOR'],
     },
     {
       label: 'รายการส่งซ่อม/ปรับสภาพ (Pending Repairs)',
       href: '/pdi/repairs',
       icon: Wrench,
-      roles: ['ADMIN', 'SUPERVISOR', 'BRANCH_MANAGER', 'INSPECTOR', 'WAREHOUSE'],
+      roles: ['SUPERVISOR'],
     },
     {
       label: 'รายงาน PDI (Reports)',
       href: '/reports',
       icon: FileText,
-      roles: ['ADMIN', 'SUPERVISOR', 'BRANCH_MANAGER'],
+      roles: ['SUPERVISOR'],
     },
   ];
 
@@ -107,14 +107,21 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <div className="flex items-center gap-3">
             <svg className="w-9 h-9 flex-shrink-0" viewBox="0 0 24 24">
               <path
-                d="M12 3.5a8.5 8.5 0 1 1-5 15.3M12 20.5a8.5 8.5 0 0 1-5-1.6"
+                d="M6 18 A 8.5 8.5 0 1 1 18 18"
                 stroke="#5F6368"
                 strokeWidth="2.5"
                 fill="none"
                 strokeLinecap="round"
               />
               <path
-                d="M8.5 15L12 9l3.5 6"
+                d="M9.5 20.1 A 8.5 8.5 0 0 1 14.5 20.1"
+                stroke="#5F6368"
+                strokeWidth="2.5"
+                fill="none"
+                strokeLinecap="round"
+              />
+              <path
+                d="M7.5 17.5L12 9l4.5 8.5"
                 stroke="#30C0D0"
                 strokeWidth="2.5"
                 fill="none"

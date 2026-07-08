@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
       interiorColor,
       wsDate,
       productionYear,
+      motorBatteryNumber,
     } = body;
 
     if (!vin || !modelCode || !modelName || !branchId) {
@@ -95,6 +96,7 @@ export async function POST(req: NextRequest) {
         interiorColor,
         wsDate: wsDate ? new Date(wsDate) : null,
         productionYear: productionYear ? parseInt(productionYear) : null,
+        motorBatteryNumber,
         arrivedAt,
         incomingDeadline,
         currentStatus: 'IN_STOCK',
