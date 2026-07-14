@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ModelCode, MODEL_NAMES } from '@/types/pdi';
+import { checkAuth } from '@/lib/api-auth';
 
 export async function POST(req: NextRequest) {
+  if (!(await checkAuth(req))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     const body = await req.json();
     const { vehicles } = body;
@@ -128,6 +132,7 @@ export async function POST(req: NextRequest) {
         branchId,
         warehouse: v.warehouse ? String(v.warehouse).trim() : null,
         floorplan: v.floorplan ? String(v.floorplan).trim() : null,
+        lotNumber: v.lotNumber ? String(v.lotNumber).trim() : null,
         motorBatteryNumber: v.motorBatteryNumber ? String(v.motorBatteryNumber).trim() : null,
       });
     }
@@ -139,11 +144,12 @@ export async function POST(req: NextRequest) {
     // 4. Database Transaction for bulk creation
     const createdVehicles = await prisma.$transaction(async (tx) => {
       const results: any[] = [];
+      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
       for (let i = 0; i < validatedVehicles.length; i++) {
         const item = validatedVehicles[i];
         const arrivedAt = new Date();
-        const incomingDeadline = arrivedAt; // SLA timer starts when Incoming PDI starts manually
+        const incomingDeadline = new Date(arrivedAt.getTime() + 24 * 60 * 60 * 1000); // 24-hour SLA starts immediately
 
         // Create Vehicle
         const vehicle = await tx.vehicle.create({
@@ -159,10 +165,25 @@ export async function POST(req: NextRequest) {
             branchId: item.branchId,
             warehouse: item.warehouse,
             floorplan: item.floorplan,
+            lotNumber: item.lotNumber,
             motorBatteryNumber: item.motorBatteryNumber,
             arrivedAt,
             incomingDeadline,
             currentStatus: 'IN_STOCK',
+          },
+        });
+
+        // Create INCOMING PdiJob for the vehicle
+        const rand = Math.floor(100000 + Math.random() * 900000);
+        const jobNumber = `JO-INC-${todayStr}-${rand}`;
+
+        await tx.pdiJob.create({
+          data: {
+            jobNumber,
+            pdiType: 'INCOMING',
+            status: 'PENDING',
+            vehicleVin: item.vin,
+            scheduledDate: incomingDeadline,
           },
         });
 

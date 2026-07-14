@@ -15,6 +15,7 @@ enum UserRole {
   SUPERVISOR      // QC / Supervisor
   ADMIN           // Admin
   SUPER_ADMIN     // Super Admin
+  MASTER          // สิทธิ์สูงสุดในระบบ
 }
 
 enum PdiType {
@@ -118,6 +119,7 @@ model Vehicle {
   branchId        String
   warehouse       String?                    // ชื่อ warehouse
   floorplan       String?                    // zone / floorplan
+  lotNumber       String?                    // เลขล็อต / เลขล็อค
   arrivedAt       DateTime                   // วันที่รถลงเรือ / เข้า stock
   incomingDeadline DateTime                  // arrivedAt + 24h (สำหรับ Incoming PDI SLA)
   currentStatus   VehicleStatus @default(IN_STOCK)
@@ -128,6 +130,8 @@ model Vehicle {
   updatedAt       DateTime  @updatedAt
 
   @@index([branchId])
+  @@index([lotNumber])
+  @@index([currentStatus])
 }
 
 // ──────────────────────────────────────
@@ -184,6 +188,8 @@ model PdiJob {
   @@index([vehicleVin])
   @@index([inspectorId])
   @@index([approverId])
+  @@index([status])
+  @@index([pdiType])
 }
 
 // ──────────────────────────────────────

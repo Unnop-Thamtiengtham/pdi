@@ -147,7 +147,7 @@ const formatWorksheet = (XLSX: any, ws: any, hasHeader = true, fontName = 'Segoe
 export default function VehiclesClient({ initialVehicles, branches, isDbConnected }: VehiclesClientProps) {
   const { data: session } = useSession();
   const userRole = session?.user?.role || 'INSPECTOR';
-  const canSendIncoming = userRole === 'SUPER_ADMIN' || userRole === 'SUPERVISOR';
+  const canSendIncoming = userRole === 'SUPER_ADMIN' || userRole === 'SUPERVISOR' || userRole === 'MASTER';
   const [vehicles, setVehicles] = useState(
     isDbConnected
       ? initialVehicles
@@ -215,8 +215,20 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
   // Filter & Search states
   const [activeTab, setActiveTab] = useState<'ALL' | 'INCOMING' | 'LONG_TERM' | 'PRE_DELIVERY'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLotFilter, setSelectedLotFilter] = useState<string>('ALL');
 
-  // Filtered dataset based on activeTab and searchQuery
+  // Get list of unique lot numbers for the filter dropdown
+  const uniqueLots = React.useMemo(() => {
+    const lots = new Set<string>();
+    vehicles.forEach((v) => {
+      if (v.lotNumber) {
+        lots.add(v.lotNumber);
+      }
+    });
+    return Array.from(lots).sort();
+  }, [vehicles]);
+
+  // Filtered dataset based on activeTab, searchQuery, and selectedLotFilter
   const filteredVehicles = vehicles.filter((veh) => {
     // 1. Filter by PDI Job Type of the latest job
     const latestJob = veh.pdiJobs?.[0];
@@ -226,7 +238,14 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
       }
     }
 
-    // 2. Filter by search text query
+    // 2. Filter by Lot Number
+    if (selectedLotFilter !== 'ALL') {
+      if (veh.lotNumber !== selectedLotFilter) {
+        return false;
+      }
+    }
+
+    // 3. Filter by search text query
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
       const vinMatch = veh.vin.toLowerCase().includes(q);
@@ -234,8 +253,9 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
       const branchMatch = (veh.branch?.name || '').toLowerCase().includes(q);
       const warehouseMatch = (veh.warehouse || '').toLowerCase().includes(q);
       const floorplanMatch = (veh.floorplan || '').toLowerCase().includes(q);
+      const lotMatch = (veh.lotNumber || '').toLowerCase().includes(q);
       
-      return vinMatch || modelMatch || branchMatch || warehouseMatch || floorplanMatch;
+      return vinMatch || modelMatch || branchMatch || warehouseMatch || floorplanMatch || lotMatch;
     }
 
     return true;
@@ -260,6 +280,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
         'วันที่เข้าคลัง (Arrived)': v.arrivedAt ? new Date(v.arrivedAt).toLocaleDateString('th-TH') : '',
         'คลังสินค้า (Warehouse)': v.warehouse || '',
         'ตำแหน่งจอด (Floorplan)': v.floorplan || '',
+        'เลขล็อต/เลขล็อค (Lot Number)': v.lotNumber || '',
         'สาขา (Branch)': v.branch?.name || '',
         'สถานะสต็อก (Stock Status)': v.currentStatus === 'IN_STOCK' ? 'ใน Stock' : 'ส่งมอบแล้ว',
         'สถานะ PDI (PDI Status)': pdiStatusStr
@@ -287,6 +308,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
         'วันที่ขายส่งดีลเลอร์ (WSDate)': '2026-06-23',
         'คลังสินค้าโกดัง': 'คลังท่าเรือแหลมฉบัง',
         'โซน/ตำแหน่งจอด': 'Zone A-3',
+        'เลขล็อต/เลขล็อค': 'LOT-2026-01',
         'รหัสสาขา (Branch Code)': 'MBR'
       }
     ];
@@ -362,6 +384,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
           wsDate: row.wsDate || row['วันที่ขายส่งดีลเลอร์ (WSDate)'] || row['วันที่ขายส่ง'] || row['WSDate'] || '',
           warehouse: row.warehouse || row['คลังสินค้าโกดัง'] || row['โกดัง'] || row['Warehouse'] || '',
           floorplan: row.floorplan || row['โซน/ตำแหน่งจอด'] || row['ตำแหน่งจอด'] || row['Floorplan'] || '',
+          lotNumber: row.lotNumber || row['เลขล็อต/เลขล็อค'] || row['ล็อต'] || row['เลขล็อต'] || row['Lot'] || row['Lot Number'] || row['ล็อค'] || row['เลขล็อค'] || '',
           branchCode: row.branchCode || row['รหัสสาขา (Branch Code)'] || row['รหัสสาขา'] || row['Branch Code'] || '',
           motorBatteryNumber: row.motorBatteryNumber || row['เลขมอเตอร์แบตเตอรี่ (Motor Battery No.)'] || row['เลขมอเตอร์แบตเตอรี่'] || row['Motor Battery Number'] || '',
         }));
@@ -465,21 +488,27 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
           setVehicles(updatedList);
         }
       } else {
-        const mockImported = importVehicles.map((v, i) => ({
-          vin: String(v.vin).toUpperCase(),
-          modelCode: v.modelCode,
-          modelName: modelMap[v.modelCode] || v.modelCode,
-          colorName: v.colorName,
-          exteriorColor: v.exteriorColor,
-          interiorColor: v.interiorColor,
-          productionYear: parseInt(v.productionYear) || 2026,
-          wsDate: new Date(v.wsDate).toISOString(),
-          motorBatteryNumber: v.motorBatteryNumber,
-          arrivedAt: new Date().toISOString(),
-          currentStatus: 'IN_STOCK',
-          branch: { name: branches.find(b => b.code.toUpperCase() === String(v.branchCode).toUpperCase())?.name || 'มีนบุรี' },
-          pdiJobs: [{ id: `mock-import-${Date.now()}-${i}`, pdiType: 'INCOMING', status: 'PENDING' }],
-        }));
+        const mockImported = importVehicles.map((v, i) => {
+          const nowStr = new Date().toISOString();
+          const deadlineStr = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+          return {
+            vin: String(v.vin).toUpperCase(),
+            modelCode: v.modelCode,
+            modelName: modelMap[v.modelCode] || v.modelCode,
+            colorName: v.colorName,
+            exteriorColor: v.exteriorColor,
+            interiorColor: v.interiorColor,
+            productionYear: parseInt(v.productionYear) || 2026,
+            wsDate: new Date(v.wsDate).toISOString(),
+            motorBatteryNumber: v.motorBatteryNumber,
+            arrivedAt: nowStr,
+            incomingDeadline: deadlineStr,
+            lotNumber: v.lotNumber || null,
+            currentStatus: 'IN_STOCK',
+            branch: { name: branches.find(b => b.code.toUpperCase() === String(v.branchCode).toUpperCase())?.name || 'มีนบุรี' },
+            pdiJobs: [{ id: `mock-import-${Date.now()}-${i}`, pdiType: 'INCOMING', status: 'PENDING', scheduledDate: deadlineStr }],
+          };
+        });
         setVehicles([...mockImported, ...vehicles]);
         toast.success(`[Mock Mode] จำลองการนำเข้ารถยนต์สำเร็จ ${mockImported.length} คัน`);
       }
@@ -693,17 +722,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
             <span>นำเข้า Excel (Import)</span>
           </Button>
 
-          {/* Start Incoming PDI button */}
-          {selectedVins.length > 0 && canSendIncoming && (
-            <Button
-              onClick={handleStartIncoming}
-              disabled={actionLoading}
-              className="gap-1.5 text-xs font-semibold bg-brand-teal hover:bg-brand-teal/90 text-white"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              <span>เริ่มตรวจ Incoming ({selectedVins.length} คัน)</span>
-            </Button>
-          )}
+          {/* Start Incoming PDI button - Hidden since automated */}
 
           {/* Dialog register trigger - hidden */}
           {/* <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -871,28 +890,47 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
           ))}
         </div>
 
-        {/* Search Box */}
-        <div className="flex items-center gap-2 max-w-xs w-full">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-            <Input
-              type="text"
-              placeholder="ค้นหาเลขตัวถัง, รุ่นรถ, สาขา, โกดัง..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-[11px] border-slate-200 bg-white focus-visible:ring-brand-teal focus-visible:border-brand-teal"
-            />
-          </div>
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSearchQuery('')}
-              className="text-[10px] h-8 px-2 text-slate-400 hover:text-slate-600"
+        {/* Filter Controls (Lot Dropdown + Search Box) */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-md w-full sm:justify-end">
+          {/* Lot Filter Dropdown */}
+          <div className="w-full sm:w-40 shrink-0">
+            <Select
+              value={selectedLotFilter}
+              onChange={(e: any) => setSelectedLotFilter(e.target.value)}
+              className="h-8 text-[11px] border-slate-200 bg-white"
             >
-              ล้าง
-            </Button>
-          )}
+              <option value="ALL">ล็อตทั้งหมด (All Lots)</option>
+              {uniqueLots.map((lot) => (
+                <option key={lot} value={lot}>
+                  {lot}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Search Box */}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              <Input
+                type="text"
+                placeholder="ค้นหาเลขตัวถัง, รุ่นรถ, ล็อต..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-8 text-[11px] border-slate-200 bg-white focus-visible:ring-brand-teal focus-visible:border-brand-teal w-full"
+              />
+            </div>
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSearchQuery('')}
+                className="text-[10px] h-8 px-2 text-slate-400 hover:text-slate-600 shrink-0"
+              >
+                ล้าง
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -903,7 +941,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
             <Table>
               <TableHeader className="bg-slate-50/75 border-b border-slate-100">
                 <TableRow>
-                  <TableHead className="w-16 text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">ส่งตรวจ<br/><span className="text-[10px] text-slate-400 font-normal">(Select)</span></TableHead>
+                  <TableHead className="pl-6 whitespace-nowrap py-3.5 font-semibold text-slate-700">ล็อตการรับเข้า<br/><span className="text-[10px] text-slate-400 font-normal">(Lot Number)</span></TableHead>
                   <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขตัวถัง<br/><span className="text-[10px] text-slate-400 font-normal">(VIN)</span></TableHead>
                   <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">รุ่นรถ<br/><span className="text-[10px] text-slate-400 font-normal">(Model)</span></TableHead>
                   <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">สีรถ (นอก/ใน)<br/><span className="text-[10px] text-slate-400 font-normal">(Colors)</span></TableHead>
@@ -934,36 +972,25 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
 
                     return (
                       <TableRow key={veh.vin} className="hover:bg-slate-50/50 transition-colors">
-                        <TableCell className="w-16 text-center py-4">
-                          {!hasIncomingJob ? (
-                            <input
-                              type="checkbox"
-                              disabled={!canSendIncoming}
-                              checked={selectedVins.includes(veh.vin)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedVins([...selectedVins, veh.vin]);
-                                } else {
-                                  setSelectedVins(selectedVins.filter((id) => id !== veh.vin));
-                                }
-                              }}
-                              className="h-4 w-4 rounded border-slate-300 text-brand-teal focus:ring-brand-teal cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                            />
+                        <TableCell className="pl-6 py-4 whitespace-nowrap">
+                          {veh.lotNumber ? (
+                            <span className="font-mono text-xs font-semibold text-slate-700 whitespace-nowrap">
+                              {veh.lotNumber}
+                            </span>
                           ) : (
-                            <div className="w-4 h-4 mx-auto flex items-center justify-center">
-                              {/* Empty space */}
-                            </div>
+                            <span className="text-slate-400 font-mono text-xs">-</span>
                           )}
                         </TableCell>
                         <TableCell className="font-mono text-xs text-slate-800 font-medium py-4 select-all">
                           <div>{veh.vin}</div>
                           {veh.motorBatteryNumber && (
-                            <div className="text-[10px] text-slate-500 font-sans mt-0.5 font-normal">
-                              มอเตอร์แบตเตอรี่: {veh.motorBatteryNumber}
+                            <div className="text-[10px] text-slate-500 font-sans mt-0.5 font-normal leading-normal">
+                              <div>มอเตอร์แบตเตอรี่:</div>
+                              <div className="font-mono text-slate-700 text-[9.5px] mt-0.5">{veh.motorBatteryNumber}</div>
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="text-xs font-semibold py-4">{veh.modelName}</TableCell>
+                        <TableCell className="text-xs font-semibold py-4 whitespace-nowrap">{veh.modelName}</TableCell>
                         <TableCell className="text-xs py-4">
                           <div className="text-slate-700">{veh.exteriorColor || veh.colorName || '-'}</div>
                           <div className="text-slate-500 text-[10px]">ใน: {veh.interiorColor || '-'}</div>
@@ -971,8 +998,8 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                         <TableCell className="text-xs font-mono py-4">{veh.productionYear || '-'}</TableCell>
                         <TableCell className="text-xs py-4 font-semibold text-slate-700">{veh.branch?.name || '-'}</TableCell>
                         <TableCell className="text-xs py-4">
-                          <div className="text-slate-700">{veh.warehouse || '-'}</div>
-                          <div className="text-slate-500 text-[10px]">{veh.floorplan || '-'}</div>
+                          <div className="text-slate-700 font-semibold">{veh.warehouse || '-'}</div>
+                          <div className="text-slate-500 text-[10px]">ตำแหน่งจอด: {veh.floorplan || '-'}</div>
                         </TableCell>
                         <TableCell className="text-xs py-4">
                           {new Date(veh.arrivedAt).toLocaleDateString('th-TH')}
@@ -1077,7 +1104,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                     <TableHead className="text-xs">ปีผลิต</TableHead>
                     <TableHead className="text-xs">วันที่ WSDate</TableHead>
                     <TableHead className="text-xs">สาขา</TableHead>
-                    <TableHead className="text-xs">โกดัง/โซน</TableHead>
+                    <TableHead className="text-xs">โกดัง/โซน/ล็อต</TableHead>
                     <TableHead className="text-xs">เลขมอเตอร์แบตเตอรี่</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1091,7 +1118,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                       <TableCell className="text-xs font-mono">{v.productionYear || '-'}</TableCell>
                       <TableCell className="text-xs font-mono">{v.wsDate}</TableCell>
                       <TableCell className="text-xs font-bold text-slate-700">{v.branchCode}</TableCell>
-                      <TableCell className="text-xs">{v.warehouse || '-'} / {v.floorplan || '-'}</TableCell>
+                      <TableCell className="text-xs">{v.warehouse || '-'} / {v.floorplan || '-'} {v.lotNumber ? `/ ล็อต: ${v.lotNumber}` : ''}</TableCell>
                       <TableCell className="text-xs font-mono">{v.motorBatteryNumber || '-'}</TableCell>
                     </TableRow>
                   ))}

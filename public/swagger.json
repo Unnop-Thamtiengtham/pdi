@@ -1,0 +1,242 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "PDI Management System API Documentation",
+    "version": "1.0.0",
+    "description": "API documentation for managing vehicles, import queues, and PDI check jobs. All secured endpoints require either an active NextAuth session or Bearer token authorization."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Enter the Bearer token: pdi-secret-token-2026"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/vehicles": {
+      "get": {
+        "summary": "Fetch list of vehicles or a single vehicle by VIN",
+        "tags": ["Vehicles"],
+        "parameters": [
+          {
+            "name": "vin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by specific VIN to return detailed single vehicle data (e.g. VIN-LOTA-001)"
+          },
+          {
+            "name": "branchId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter vehicles by Branch ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success - Returns vehicle or array of vehicles in stock"
+          },
+          "401": {
+            "description": "Unauthorized - Missing active session or valid Bearer Token"
+          }
+        }
+      },
+      "post": {
+        "summary": "Receive and add a single vehicle to stock, auto-triggering PDI job",
+        "tags": ["Vehicles"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vin": { "type": "string", "example": "VIN-TEST-POST-1" },
+                  "modelCode": { "type": "string", "example": "AION_V" },
+                  "modelName": { "type": "string", "example": "AION V" },
+                  "branchId": { "type": "string", "example": "MBR" },
+                  "colorName": { "type": "string", "example": "Space Gray" },
+                  "warehouse": { "type": "string", "example": "มีนบุรี A" },
+                  "floorplan": { "type": "string", "example": "Zone A-1" },
+                  "lotNumber": { "type": "string", "example": "LOT-2026-X" },
+                  "productionYear": { "type": "integer", "example": 2026 },
+                  "motorBatteryNumber": { "type": "string", "example": "BAT-TEST-MOCK" }
+                },
+                "required": ["vin", "modelCode", "modelName", "branchId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/vehicles/import": {
+      "post": {
+        "summary": "Bulk import multiple vehicles from external team",
+        "tags": ["Vehicles"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vehicles": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "vin": { "type": "string", "example": "VIN-IMPORT-A1" },
+                        "modelCode": { "type": "string", "example": "AION_V" },
+                        "modelName": { "type": "string", "example": "AION V" },
+                        "branchCode": { "type": "string", "example": "MBR" },
+                        "colorName": { "type": "string", "example": "White" },
+                        "warehouse": { "type": "string", "example": "มีนบุรี A" },
+                        "floorplan": { "type": "string", "example": "Zone A-2" },
+                        "lotNumber": { "type": "string", "example": "LOT-2026-X" }
+                      },
+                      "required": ["vin", "modelCode", "modelName", "branchCode"]
+                    }
+                  }
+                },
+                "required": ["vehicles"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success - Bulk import complete"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/pdi-jobs": {
+      "get": {
+        "summary": "List all PDI Jobs or get single job by ID",
+        "tags": ["PDI Jobs"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by specific PDI Job ID"
+          },
+          {
+            "name": "vin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter PDI Jobs by vehicle VIN"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by job status (PENDING, APPROVED, DEFECT_FOUND, etc.)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create new PDI job (Long-term / Pre-delivery)",
+        "tags": ["PDI Jobs"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pdiType": { "type": "string", "enum": ["LONG_TERM", "PRE_DELIVERY"], "example": "LONG_TERM" },
+                  "vehicleVin": { "type": "string", "example": "VIN-LOTA-001" },
+                  "scheduledDate": { "type": "string", "format": "date-time", "example": "2026-07-15T09:00:00Z" }
+                },
+                "required": ["pdiType", "vehicleVin"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Save inspection checklist results or update job status",
+        "tags": ["PDI Jobs"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "jobId": { "type": "string", "example": "cuid-job-id" },
+                  "status": { "type": "string", "example": "APPROVED" },
+                  "notes": { "type": "string", "example": "ตรวจสอบเช็คสภาพผ่านเรียบร้อยดี" }
+                },
+                "required": ["jobId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    }
+  }
+}

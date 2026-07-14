@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { checkAuth } from '@/lib/api-auth';
 
 // GET /api/vehicles — ดึงข้อมูลรถเดี่ยว หรือ รายการรถ
 export async function GET(req: NextRequest) {
+  if (!(await checkAuth(req))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     const vin = req.nextUrl.searchParams.get('vin');
     const branchId = req.nextUrl.searchParams.get('branchId');
@@ -50,6 +54,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/vehicles — รับรถเข้า stock (Incoming trigger)
 export async function POST(req: NextRequest) {
+  if (!(await checkAuth(req))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     const body = await req.json();
     const {
@@ -61,6 +68,7 @@ export async function POST(req: NextRequest) {
       branchId,
       warehouse,
       floorplan,
+      lotNumber,
       exteriorColor,
       interiorColor,
       wsDate,
@@ -79,28 +87,49 @@ export async function POST(req: NextRequest) {
     }
 
     const arrivedAt = new Date();
-    // SLA: not started yet, set incomingDeadline to arrivedAt initially
-    const incomingDeadline = arrivedAt;
+    // SLA starts immediately upon vehicle creation (24 hours)
+    const incomingDeadline = new Date(arrivedAt.getTime() + 24 * 60 * 60 * 1000);
 
-    const vehicle = await prisma.vehicle.create({
-      data: {
-        vin,
-        modelCode,
-        modelName,
-        colorCode,
-        colorName,
-        branchId,
-        warehouse,
-        floorplan,
-        exteriorColor,
-        interiorColor,
-        wsDate: wsDate ? new Date(wsDate) : null,
-        productionYear: productionYear ? parseInt(productionYear) : null,
-        motorBatteryNumber,
-        arrivedAt,
-        incomingDeadline,
-        currentStatus: 'IN_STOCK',
-      },
+    const todayStr = arrivedAt.toISOString().slice(0, 10).replace(/-/g, '');
+    const rand = Math.floor(100000 + Math.random() * 900000);
+    const jobNumber = `JO-INC-${todayStr}-${rand}`;
+
+    const vehicle = await prisma.$transaction(async (tx) => {
+      // 1. Create Vehicle
+      const veh = await tx.vehicle.create({
+        data: {
+          vin,
+          modelCode,
+          modelName,
+          colorCode,
+          colorName,
+          branchId,
+          warehouse,
+          floorplan,
+          lotNumber,
+          exteriorColor,
+          interiorColor,
+          wsDate: wsDate ? new Date(wsDate) : null,
+          productionYear: productionYear ? parseInt(productionYear) : null,
+          motorBatteryNumber,
+          arrivedAt,
+          incomingDeadline,
+          currentStatus: 'IN_STOCK',
+        },
+      });
+
+      // 2. Create INCOMING PdiJob
+      await tx.pdiJob.create({
+        data: {
+          jobNumber,
+          pdiType: 'INCOMING',
+          status: 'PENDING',
+          vehicleVin: vin,
+          scheduledDate: incomingDeadline,
+        },
+      });
+
+      return veh;
     });
 
     return NextResponse.json(vehicle, { status: 201 });

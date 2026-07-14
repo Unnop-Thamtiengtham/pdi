@@ -98,13 +98,16 @@ export default function PdiPrintReport({ job, templateItems, signatures }: PdiPr
   const isHyptec = modelCode === 'HYPTEC_HT' || modelCode === 'HYPTEC_HT8' || modelCode?.startsWith('HYPTEC');
   const isAionV = modelCode === 'AION_V' || modelCode === 'AION_V5' || modelCode?.includes('_V');
   const isAionUt = modelCode === 'AION_UT' || modelCode?.includes('_UT');
+  const isAionEs = modelCode === 'AION_ES';
   const carImage = isHyptec 
     ? '/images/hyptec_ht_wireframe.png' 
     : isAionV 
       ? '/images/aion_v_wireframe.png' 
       : isAionUt
         ? '/images/aion_ut_wireframe_clean.png'
-        : '/images/aion_yp_wireframe.png';
+        : isAionEs
+          ? '/images/aion_es_wireframe.png'
+          : '/images/aion_yp_wireframe.png';
 
   const batteryVoltage = battery.mainVoltage !== undefined && battery.mainVoltage !== null ? `${battery.mainVoltage} V` : '_______ V';
   const batterySoh = battery.mainSoh !== undefined && battery.mainSoh !== null ? `${battery.mainSoh} %` : '_______ %';
@@ -210,327 +213,274 @@ export default function PdiPrintReport({ job, templateItems, signatures }: PdiPr
 
   return (
     <div className="hidden print:block bg-white text-slate-800 p-0 font-sans print:p-0">
-      <style dangerouslySetInnerHTML={{__html: `
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 0 !important;
+        <style dangerouslySetInnerHTML={{__html: `
+          @media print {
+            @page {
+              size: A4 portrait;
+              margin: 0 !important;
+            }
+            body {
+              background-color: white !important;
+              color: #1e293b !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+            .print-page-a4-yp {
+              width: 210mm !important;
+              height: 296mm !important;
+              padding: 6mm 8mm 6mm 8mm !important;
+              margin: 0 !important;
+              box-sizing: border-box !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: space-between !important;
+              page-break-after: avoid !important;
+              page-break-inside: avoid !important;
+              overflow: hidden !important;
+            }
           }
-          body {
-            background-color: white !important;
-            color: #1e293b !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          .print-page-a4 {
-            width: 210mm !important;
-            height: 296mm !important;
-            padding: 8mm 8mm 8mm 8mm !important;
-            margin: 0 !important;
-            box-sizing: border-box !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
-            page-break-after: avoid !important;
-            page-break-inside: avoid !important;
-            overflow: hidden !important;
-          }
-        }
-      `}} />
+        `}} />
 
-      <div className="print-page-a4 flex flex-col justify-between h-[296mm] w-[210mm] mx-auto text-slate-800 text-[10px] leading-tight">
-        
-        {/* Header Block */}
-        <div className="border-2 border-slate-800 p-2 rounded-xl space-y-2">
-          {/* Logo & Title Row */}
-          <div className="flex justify-between items-center border-b-2 border-slate-800 pb-2">
-            <div className="flex items-center gap-1">
-              <AionLogo />
+        <div className="print-page-a4-yp flex flex-col justify-between h-[296mm] w-[210mm] mx-auto text-slate-800 text-[9px] leading-tight">
+          
+          {/* Header Block with single border */}
+          <div className="border border-slate-900 p-1.5 space-y-1.5">
+            {/* Logo & Title Row */}
+            <div className="flex justify-between items-center border-b border-slate-400 pb-1.5">
+              <div className="flex items-center gap-1">
+                <AionLogo />
+              </div>
+              <div className="text-center flex-grow">
+                <h2 className="text-xs font-bold text-slate-900 text-center tracking-wide pr-10">
+                  แบบฟอร์มตรวจสอบ PDI รับรถใหม่ รุ่น {job.vehicle?.modelName || 'AION YP'}
+                </h2>
+              </div>
+              <div className="text-right text-[8px] font-mono text-slate-500 whitespace-nowrap">
+                เลขใบงาน: {job.jobNumber}
+              </div>
             </div>
-            <div className="text-center">
-              <h2 className="text-sm font-bold text-slate-900 font-sans">{reportTitle}</h2>
-            </div>
-            <div className="text-right text-[8px] font-mono text-slate-500">
-              เลขใบงาน: {job.jobNumber}
-            </div>
-          </div>
 
-          {/* Metadata Grid Table */}
-          <table className="w-full border-collapse border border-slate-800 text-[9px]">
-            <tbody>
-              <tr>
-                <td className="border border-slate-800 px-2 py-1 bg-slate-50 font-bold w-[10%]">VIN</td>
-                <td className="border border-slate-800 px-2 py-1 w-[30%] font-mono font-semibold select-all">{job.vehicleVin}</td>
-                <td className="border border-slate-800 px-2 py-1 bg-slate-50 font-bold w-[15%]">หมายเลขมอเตอร์ / แบตเตอรี่</td>
-                <td className="border border-slate-800 px-2 py-1 w-[25%] font-mono select-all">{job.vehicle?.motorBatteryNumber || '-'}</td>
-                <td className="border border-slate-800 px-2 py-1 bg-slate-50 font-bold w-[8%]">รุ่นรถ</td>
-                <td className="border border-slate-800 px-2 py-1 w-[12%] font-semibold">{job.vehicle?.modelName || '-'}</td>
-              </tr>
-              <tr>
-                <td className="border border-slate-800 px-2 py-1 bg-slate-50 font-bold">{labelCol1}</td>
-                <td className="border border-slate-800 px-2 py-1">{valCol1}</td>
-                <td className="border border-slate-800 px-2 py-1 bg-slate-50 font-bold">สีตัวถังรถ</td>
-                <td className="border border-slate-800 px-2 py-1">{job.vehicle?.colorName || job.vehicle?.exteriorColor || '-'}</td>
-                <td className="border border-slate-800 px-2 py-1 bg-slate-50 font-bold">{labelCol3}</td>
-                <td className="border border-slate-800 px-2 py-1">{valCol3}</td>
-              </tr>
-              <tr>
-                <td className="border border-slate-800 px-2 py-1 bg-slate-50 font-bold">{labelCol4}</td>
-                <td className="border border-slate-800 px-2 py-1">{valCol4}</td>
-                <td className="border border-slate-800 px-2 py-1 bg-slate-50 font-bold">{labelCol5}</td>
-                <td className="border border-slate-800 px-2 py-1">{valCol5}</td>
-                <td className="border border-slate-800 px-2 py-1 bg-slate-50 font-bold">ผู้ตรวจสอบ</td>
-                <td className="border border-slate-800 px-2 py-1 font-semibold">{job.inspector?.name || '-'}</td>
-              </tr>
-              {job.pdiType === 'PRE_DELIVERY' && (
-                <tr>
-                  <td className="border border-slate-800 px-2 py-1 bg-slate-50 font-bold">เบอร์โทรพนักงานขาย</td>
-                  <td className="border border-slate-800 px-2 py-1 font-mono">{job.salesPhone || '-'}</td>
-                  <td className="border border-slate-800 px-2 py-1 bg-slate-50 font-bold">สาขาของ Sales</td>
-                  <td className="border border-slate-800 px-2 py-1">{job.salesBranch || '-'}</td>
-                  <td className="border border-slate-800 px-2 py-1 bg-slate-50 font-bold">ชื่อลูกค้าผู้รับรถ</td>
-                  <td className="border border-slate-800 px-2 py-1 font-semibold">{job.customerName || '-'}</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Legend Banner */}
-        <div className="bg-[#00A2C9] text-white text-center py-1 px-3 rounded-lg font-bold text-[9px] flex justify-center gap-6">
-          <span>ผลการตรวจสอบ จะต้องระบุตามนี้:</span>
-          <span>ปกติ ✓</span>
-          <span>ผิดปกติ ✗</span>
-          <span>แก้ไขแล้ว o</span>
-          <span>- ไม่มีในรถรุ่นนี้</span>
-        </div>
-
-        {/* Main Columns Grid (Left Categories - Center Diagram - Right Categories) */}
-        <div className="grid grid-cols-10 gap-3 items-stretch my-1 flex-grow">
-          {/* Left Column (3/10) */}
-          <div className="col-span-3 flex flex-col justify-between space-y-2 h-full">
-            {renderCategoryBox('ตัวสีภายนอก', ['EXT_001', 'EXT_002', 'EXT_003', 'EXT_004', 'EXT_005', 'EXT_006', 'EXT_007'])}
-            {renderCategoryBox('ระบบไฟส่องสว่าง', ['LGT_001', 'LGT_002', 'LGT_003', 'LGT_004', 'LGT_005', 'LGT_006', 'LGT_007', 'LGT_008', 'LGT_009'])}
-            {renderCategoryBox('การตรวจสอบระดับของเหลว', ['FLD_001', 'FLD_002', 'FLD_003'])}
-          </div>
-
-          {/* Center Diagram (4/10) */}
-          <div className="col-span-4 border border-slate-300 rounded-lg bg-white p-2 flex justify-center items-center flex-grow h-full overflow-hidden">
-            <img 
-              src={`${carImage}?v=19`} 
-              alt="Car Blueprint Wireframe" 
-              className="max-w-full max-h-[300px] object-contain opacity-95 mix-blend-multiply" 
-            />
-          </div>
-
-          {/* Right Column (3/10) */}
-          <div className="col-span-3 flex flex-col justify-between space-y-2 h-full">
-            {renderCategoryBox('กระจกหน้ารถและที่ปัดน้ำฝน', ['GLS_001', 'GLS_002', 'GLS_003', 'GLS_004'])}
-            {renderCategoryBox('ระบบปรับอากาศ', ['AC_001', 'AC_002'])}
-            {renderCategoryBox('ระบบความบันเทิง', ['ENT_001', 'ENT_002', 'ENT_003', 'ENT_004', 'ENT_005', 'ENT_006', 'ENT_007'])}
-          </div>
-        </div>
-
-        {/* Chassis, Brakes, Chargeport Row (3 boxes side by side) */}
-        <div className="grid grid-cols-3 gap-3 my-1">
-          {renderCategoryBox('ระบบแชสซี', ['CHS_001', 'CHS_002', 'CHS_003'])}
-          {renderCategoryBox('ระบบเบรกและพวงมาลัย', ['BRK_001', 'BRK_002', 'BRK_003'])}
-          {renderCategoryBox('การปลดล็อกฝาปิดช่องชาร์จ', ['CHG_001', 'CHG_002', 'CHG_003'])}
-        </div>
-
-        {/* Footer Blocks (Battery check, Warning, Software diagnostics, Signatures) */}
-        <div className="grid grid-cols-12 gap-3 items-stretch mt-1 border-t border-slate-300 pt-2">
-          {/* Battery check (3/12) */}
-          <div className="col-span-3 border border-slate-400 rounded-lg p-1.5 bg-white space-y-1 flex flex-col justify-between">
-            <div className="font-bold text-[9px] border-b pb-0.5 text-center text-slate-800">การตรวจสอบแบตเตอรี่ (12V)</div>
-            <table className="w-full text-[8px] leading-tight">
+            {/* Metadata Table exact layout */}
+            <table className="w-full border-collapse border border-slate-900 text-[8.5px]">
               <tbody>
-                {hasVoltage && (
-                  <tr>
-                    <td>ความต่างศักย์:</td>
-                    <td className="text-right font-bold font-mono whitespace-nowrap">{batteryVoltage}</td>
-                  </tr>
-                )}
-                {hasSoh && (
-                  <tr>
-                    <td>SOH:</td>
-                    <td className="text-right font-bold font-mono whitespace-nowrap">{batterySoh}</td>
-                  </tr>
-                )}
-                {hasSubVoltage && (
-                  <tr>
-                    <td>ความต่างศักย์ (รอง):</td>
-                    <td className="text-right font-bold font-mono whitespace-nowrap">
-                      {battery.secVoltage !== undefined && battery.secVoltage !== null ? `${battery.secVoltage} V` : '_______ V'}
-                    </td>
-                  </tr>
-                )}
-                {hasSubSoh && (
-                  <tr>
-                    <td>SOH (รอง):</td>
-                    <td className="text-right font-bold font-mono whitespace-nowrap">
-                      {battery.secSoh !== undefined && battery.secSoh !== null ? `${battery.secSoh} %` : '_______ %'}
-                    </td>
-                  </tr>
-                )}
-                {hasSoc && (
-                  <tr>
-                    <td>SOC:</td>
-                    <td className="text-right font-bold font-mono whitespace-nowrap">{batterySoc}</td>
-                  </tr>
-                )}
-                {hasCca && (
-                  <tr>
-                    <td>CCA:</td>
-                    <td className="text-right font-bold font-mono whitespace-nowrap">{batteryCca}</td>
-                  </tr>
-                )}
-                {hasTirePressure && (
-                  <tr>
-                    <td>แรงดันลมยาง:</td>
-                    <td className="text-right font-bold font-mono whitespace-nowrap">{tirePressure}</td>
-                  </tr>
-                )}
-                {nonNumericBatteryItems.map(item => {
-                  const itemId = item.id;
-                  const itemCode = item.itemCode;
-                  const symbol = getResultSymbol(itemId, itemCode);
-                  const itemName = item.itemName.replace('*', '');
-                  return (
-                    <tr key={item.id}>
-                      <td className="pr-1 leading-tight">{itemName}:</td>
-                      <td className="text-right font-bold text-[9px] font-mono whitespace-nowrap">{symbol}</td>
-                    </tr>
-                  );
-                })}
-                {!hasVoltage && !hasSoh && !hasSubVoltage && !hasSubSoh && !hasSoc && !hasCca && !hasTirePressure && nonNumericBatteryItems.length === 0 && (
-                  <tr>
-                    <td className="text-center text-slate-400 py-2">— ไม่มีรายการตรวจวัด —</td>
-                  </tr>
-                )}
+                <tr>
+                  <td className="border border-slate-900 px-2 py-0.5 bg-slate-50 font-bold w-[12%] text-slate-700">รุ่นรถ</td>
+                  <td className="border border-slate-900 px-2 py-0.5 w-[20%] font-semibold">{job.vehicle?.modelName || 'AION Y Plus'}</td>
+                  <td className="border border-slate-900 px-2 py-0.5 bg-slate-50 font-bold w-[10%] text-slate-700">VIN</td>
+                  <td className="border border-slate-900 px-2 py-0.5 w-[28%] font-mono font-semibold select-all">{job.vehicleVin}</td>
+                  <td className="border border-slate-900 px-2 py-0.5 bg-slate-50 font-bold w-[15%] text-slate-700">หมายเลขมอเตอร์</td>
+                  <td className="border border-slate-900 px-2 py-0.5 w-[15%] font-mono select-all">{job.vehicle?.motorBatteryNumber || '-'}</td>
+                  <td className="border border-slate-900 px-2 py-0.5 bg-slate-50 font-bold w-[12%] text-slate-700">วันที่รับรถ</td>
+                  <td className="border border-slate-900 px-2 py-0.5 w-[18%]">{valCol3}</td>
+                </tr>
+                <tr>
+                  <td className="border border-slate-900 px-2 py-0.5 bg-slate-50 font-bold text-slate-700">ชื่อผู้จำหน่าย</td>
+                  <td className="border border-slate-900 px-2 py-0.5">{valCol1}</td>
+                  <td className="border border-slate-900 px-2 py-0.5 bg-slate-50 font-bold text-slate-700">สีตัวถังรถ</td>
+                  <td className="border border-slate-900 px-2 py-0.5">{job.vehicle?.colorName || job.vehicle?.exteriorColor || '-'}</td>
+                  <td className="border border-slate-900 px-2 py-0.5 bg-slate-50 font-bold text-slate-700">วันที่รับเข้าสต็อก</td>
+                  <td className="border border-slate-900 px-2 py-0.5">{valCol4}</td>
+                  <td className="border border-slate-900 px-2 py-0.5 bg-slate-50 font-bold text-slate-700">วันที่ตรวจสอบ</td>
+                  <td className="border border-slate-900 px-2 py-0.5">{valCol5}</td>
+                </tr>
               </tbody>
             </table>
           </div>
 
-          {/* Warning Lights (3/12) */}
-          <div className="col-span-3 border border-slate-400 rounded-lg p-1.5 bg-white flex flex-col justify-between items-center text-center">
-            <div className="font-bold text-[9px] border-b pb-0.5 w-full text-slate-800">ไฟเตือนหน้าปัดรถยนต์</div>
-            <div className="flex flex-col items-center justify-start flex-1 pt-1.5 w-full">
-              <div className="text-[7px] text-slate-500 leading-tight font-semibold flex items-center justify-center gap-0.5">
-                <svg className="w-3.5 h-3.5 text-slate-400 inline-block flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <span>ไม่พบไฟเตือนสะสม</span>
-              </div>
-              <div className="text-[8px] font-bold text-green-600 mt-0.5">ปกติ ✓</div>
+          {/* Blue Legend Bar */}
+          <div className="bg-[#00A2C9] text-white text-center py-0.5 px-3 rounded font-bold text-[8.5px] flex justify-center gap-6 mt-1">
+            <span>ผลการตรวจสอบ จะต้องระบุตามนี้ :</span>
+            <span>ปกติ ✓</span>
+            <span>ผิดปกติ ✗</span>
+            <span>แก้ไขแล้ว o</span>
+            <span>- ไม่มีในรถรุ่นนี้</span>
+          </div>
+
+          {/* Main 3 columns: Left (Exterior, Lights) - Center (Image) - Right (Glass, AC, Infotainment) */}
+          <div className="flex justify-between items-stretch my-1 flex-grow w-full">
+            {/* Left column (w-[66mm]) */}
+            <div className="w-[66mm] flex-shrink-0 flex flex-col justify-between space-y-1.5 h-full">
+              {renderCategoryBox('ตัวสีภายนอก', ['EXT_001', 'EXT_002', 'EXT_003', 'EXT_004', 'EXT_005', 'EXT_006', 'EXT_007'])}
+              {renderCategoryBox('ระบบไฟส่องสว่าง', ['LGT_001', 'LGT_002', 'LGT_003', 'LGT_004', 'LGT_005', 'LGT_006', 'LGT_007', 'LGT_008', 'LGT_009'])}
+            </div>
+
+            {/* Center column (w-[62mm]) */}
+            <div className="w-[62mm] flex-shrink-0 flex justify-center items-center h-full overflow-hidden pt-12">
+              <img 
+                src={carImage} 
+                alt="Car Diagram" 
+                className="w-full h-full object-fill opacity-95 mix-blend-multiply" 
+              />
+            </div>
+
+            {/* Right column (w-[66mm]) */}
+            <div className="w-[66mm] flex-shrink-0 flex flex-col justify-between space-y-1.5 h-full">
+              {renderCategoryBox('กระจกหน้ารถและที่ปัดน้ำฝน', ['GLS_001', 'GLS_002', 'GLS_003', 'GLS_004'])}
+              {renderCategoryBox('ระบบปรับอากาศ', ['AC_001', 'AC_002'])}
+              {renderCategoryBox('ระบบความบันเทิง', ['ENT_001', 'ENT_002', 'ENT_003', 'ENT_004', 'ENT_005', 'ENT_006', 'ENT_007'])}
             </div>
           </div>
 
-          {/* Software Diagnostics (3/12) */}
-          <div className="col-span-3 border border-slate-400 rounded-lg p-1.5 bg-white flex flex-col justify-between items-center text-center">
-            <div className="font-bold text-[9px] border-b pb-0.5 w-full text-slate-800">การวิเคราะห์ซอฟต์แวร์</div>
-            <div className="flex justify-around items-center w-full flex-1 my-1">
-              <div className="flex flex-col items-center">
-                <span className="text-[7px] text-slate-500 font-semibold">ลบ DTC (VDCI)</span>
-                <span className="text-[8px] font-bold text-green-600">สำเร็จ ✓</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-[7px] text-slate-500 font-semibold">OTA Update</span>
-                <span className="text-[8px] font-bold text-green-600">ล่าสุด ✓</span>
-              </div>
-            </div>
+          {/* Bottom row: Fluids, Chassis, Brakes, Charging (4 columns) */}
+          <div className="grid grid-cols-4 gap-2 my-1">
+            {renderCategoryBox('การตรวจสอบระดับของเหลว', ['FLD_001', 'FLD_002', 'FLD_003'])}
+            {renderCategoryBox('ระบบแชสซี', ['CHS_001', 'CHS_002', 'CHS_003'])}
+            {renderCategoryBox('ระบบเบรกและพวงมาลัย', ['BRK_001', 'BRK_002', 'BRK_003'])}
+            {renderCategoryBox('การปลดล็อกของช่องชาร์จไฟ', ['CHG_001', 'CHG_002', 'CHG_003'])}
           </div>
 
-          {/* Signatures (3/12) */}
-          <div className="col-span-3 border border-slate-400 rounded-lg p-1.5 bg-white flex flex-col justify-between">
-            <div className="font-bold text-[9px] border-b pb-0.5 text-center text-slate-800">ยืนยันผลการตรวจสภาพ</div>
-            <div className="flex flex-col space-y-1 my-1 text-[8px] leading-normal">
-              <div className="flex justify-between items-center border-b pb-0.5">
-                <span>ผู้ตรวจ:</span>
-                <span className="font-semibold truncate max-w-[60px]">{job.inspector?.name || '-'}</span>
+          {/* Footer blocks: Battery check, Warning Light, Software diagnostics (3 columns) */}
+          <div className="grid grid-cols-3 gap-2 mt-1 border-t border-slate-300 pt-1.5">
+            {/* Box 1: Battery 12V Check */}
+            <div className="border border-slate-400 rounded p-1.5 bg-white space-y-1 flex flex-col justify-between">
+              <div className="font-bold text-[8.5px] border-b pb-0.5 text-center text-slate-800">
+                การตรวจสอบแบตเตอรี่ (12V, 45Ah) ขณะดับรถ
               </div>
-              <div className="flex justify-between items-center">
-                <span>QC/Super:</span>
-                <span className="font-semibold truncate max-w-[60px]">{job.approver?.name || '-'}</span>
-              </div>
-            </div>
-            {/* Tiny Signatures Canvas */}
-            <div className="h-6 flex justify-around items-center border border-dashed rounded bg-slate-50/50 overflow-hidden">
-              {signatures?.inspector || job.inspectorSig ? (
-                <img src={signatures?.inspector || job.inspectorSig} className="h-5 max-w-[45%] object-contain" alt="Sig" />
-              ) : <span className="text-[7px] text-slate-400">-</span>}
-              {signatures?.supervisor || job.supervisorSig ? (
-                <img src={signatures?.supervisor || job.supervisorSig} className="h-5 max-w-[45%] object-contain" alt="Sig" />
-              ) : <span className="text-[7px] text-slate-400">-</span>}
-            </div>
-          </div>
-        </div>
-
-        {/* Defect Records Section */}
-        <div className="border border-slate-400 rounded-lg p-2 bg-white flex-grow min-h-[70px] flex flex-col justify-between mt-1.5 mb-1.5">
-          <div>
-            <div className="font-bold text-[9px] border-b pb-1 text-slate-800 mb-1">
-              รายการจุดบกพร่องจากการตรวจสภาพ (Defect Records)
-            </div>
-            {job.defects && job.defects.length > 0 ? (
-              <table className="w-full text-[8px] border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-300">
-                    <th className="border border-slate-200 p-1 text-center w-[8%]">ลำดับ</th>
-                    <th className="border border-slate-200 p-1 text-left w-[20%]">รหัสรายการ</th>
-                    <th className="border border-slate-200 p-1 text-left">รายละเอียดอาการ</th>
-                    <th className="border border-slate-200 p-1 text-center w-[12%]">ความรุนแรง</th>
-                    <th className="border border-slate-200 p-1 text-center w-[15%]">สถานะ</th>
-                  </tr>
-                </thead>
+              <table className="w-full text-[8px] leading-tight">
                 <tbody>
-                  {job.defects.map((defect: any, idx: number) => {
-                    const severityText = defect.severity === 'CRITICAL' ? 'รุนแรง' : 'ทั่วไป';
-                    const severityColor = defect.severity === 'CRITICAL' ? 'text-red-600 font-bold' : 'text-slate-600';
-                    
-                    let statusText = defect.status;
-                    let statusColor = 'text-slate-600';
-                    if (defect.status === 'OPEN') {
-                      statusText = 'รอดำเนินการ';
-                      statusColor = 'text-red-500 font-semibold';
-                    } else if (defect.status === 'IN_REPAIR') {
-                      statusText = 'กำลังซ่อมแซม';
-                      statusColor = 'text-amber-500 font-semibold';
-                    } else if (defect.status === 'RESOLVED') {
-                      statusText = 'แก้ไขแล้ว';
-                      statusColor = 'text-green-600 font-semibold';
-                    } else if (defect.status === 'CLOSED') {
-                      statusText = 'ปิดงาน';
-                      statusColor = 'text-slate-600';
-                    }
-
-                    return (
-                      <tr key={defect.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
-                        <td className="p-1 border border-slate-100 text-center">{defect.defectNo || (idx + 1)}</td>
-                        <td className="p-1 border border-slate-100 text-left font-mono font-bold text-slate-700">{defect.checklistItemCode || '-'}</td>
-                        <td className="p-1 border border-slate-100 text-left text-slate-600 leading-tight">{defect.description}</td>
-                        <td className={`p-1 border border-slate-100 text-center ${severityColor}`}>{severityText}</td>
-                        <td className={`p-1 border border-slate-100 text-center ${statusColor}`}>{statusText}</td>
-                      </tr>
-                    );
-                  })}
+                  <tr>
+                    <td className="text-slate-600 font-medium">1) ค่าความต่างศักย์:</td>
+                    <td className="text-right font-bold font-mono text-slate-800">{batteryVoltage} <span className="font-normal text-slate-500">(≥12.6V)</span></td>
+                  </tr>
+                  <tr>
+                    <td className="text-slate-600 font-medium">2) สุขภาพแบตเตอรี่ (SOH):</td>
+                    <td className="text-right font-bold font-mono text-slate-800">{batterySoh} <span className="font-normal text-slate-500">(≥80%)</span></td>
+                  </tr>
+                  <tr>
+                    <td className="text-slate-600 font-medium">3) สถานะการชาร์จ (SOC):</td>
+                    <td className="text-right font-bold font-mono text-slate-800">{batterySoc} <span className="font-normal text-slate-500">(100%)</span></td>
+                  </tr>
+                  <tr>
+                    <td className="text-slate-600 font-medium">4) ค่า CCA:</td>
+                    <td className="text-right font-bold font-mono text-slate-800">{batteryCca} <span className="font-normal text-slate-500">(≥400A)</span></td>
+                  </tr>
+                  <tr className="border-t border-slate-100 mt-0.5">
+                    <td className="text-slate-600 font-medium pt-0.5">แรงดันลมยางทั้งสี่ล้อ:</td>
+                    <td className="text-right font-bold font-mono text-slate-800 pt-0.5">{tirePressure} <span className="font-normal text-slate-500">(35-39psi.)</span></td>
+                  </tr>
                 </tbody>
               </table>
-            ) : (
-              <div className="text-center py-2 text-[8px] text-slate-400 font-medium">
-                — ไม่พบข้อมูลจุดบกพร่องสะสมในการตรวจสอบครั้งนี้ (ตรวจผ่าน 100%) —
-              </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Footer watermark */}
-        <div className="text-center text-[7px] text-slate-400 mt-0.5 border-t pt-0.5">
-          เอกสารผลการตรวจสอบ PDI Digital — พิมพ์อ้างอิงจากระบบ Gold Integrate Co., Ltd.
+            {/* Box 2: Speedometer Warning check */}
+            <div className="border border-slate-400 rounded p-1.5 bg-white flex flex-col justify-between items-center text-center">
+              <div className="font-bold text-[8.5px] border-b pb-0.5 w-full text-slate-800">
+                การตรวจสอบ ไฟแสดงการทำงานผิดปกติของรถ
+              </div>
+              <div className="text-[7.5px] text-slate-500 font-medium leading-tight py-0.5">
+                จะต้องไม่พบ ไฟแสดงการทำงานผิดปกติของรถบนหน้าจออย่างเด็ดขาด
+              </div>
+              <div className="h-14 w-full flex justify-center items-center overflow-hidden my-0.5">
+                <img 
+                  src="/images/dashboard_speedometer.png" 
+                  alt="Speedometer instrument panel" 
+                  className="h-full w-full object-cover rounded border border-slate-200"
+                />
+              </div>
+            </div>
+
+            {/* Box 3: Software diagnostics */}
+            <div className="border border-slate-400 rounded p-1.5 bg-white flex flex-col justify-between items-center text-center">
+              <div className="font-bold text-[8.5px] border-b pb-0.5 w-full text-slate-800">
+                การวิเคราะห์และอัปเดตซอฟต์แวร์หน้ารถ
+              </div>
+              <div className="grid grid-cols-2 gap-1 w-full flex-grow items-center my-0.5">
+                <div className="flex flex-col items-center">
+                  <span className="text-[7px] text-slate-500 font-medium">การลบรหัสปัญหาโดยใช้ VDCI</span>
+                  <img 
+                    src="/images/vdci_software.png" 
+                    alt="VDCI diagnostics" 
+                    className="h-7 w-[90%] object-cover border border-slate-200 rounded mt-0.5"
+                  />
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-[7px] text-slate-500 font-medium">ตรวจสอบและอัปเดตซอฟต์แวร์</span>
+                  <img 
+                    src="/images/ota_update.png" 
+                    alt="OTA System update" 
+                    className="h-7 w-[90%] object-cover border border-slate-200 rounded mt-0.5"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Nonconforming item and treatment result table (with 3 rows) */}
+          <div className="mt-1.5">
+            <div className="bg-[#00A2C9] text-white text-center py-0.5 font-bold text-[8.5px] rounded-t border border-[#00A2C9]">
+              Nonconforming item and treatment result รายการที่ไม่ผ่านการตรวจสอบและผลการดำเนินการ
+            </div>
+            <table className="w-full text-[8px] border-collapse border border-slate-400">
+              <thead>
+                <tr className="bg-slate-50 text-slate-700">
+                  <th className="border border-slate-400 p-0.5 text-center w-[5%]">No.</th>
+                  <th className="border border-slate-400 p-0.5 text-left w-[30%]">รายการที่ตรวจสอบ</th>
+                  <th className="border border-slate-400 p-0.5 text-left w-[30%]">ปัญหาที่พบ</th>
+                  <th className="border border-slate-400 p-0.5 text-left w-[35%]">สาเหตุและการแก้ไข</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 3 }).map((_, idx) => {
+                  const defect = job.defects?.[idx];
+                  return (
+                    <tr key={idx} className="h-4">
+                      <td className="border border-slate-400 text-center font-mono">{idx + 1}</td>
+                      <td className="border border-slate-400 px-1 font-mono">{defect?.checklistItemCode || ''}</td>
+                      <td className="border border-slate-400 px-1">{defect?.description || ''}</td>
+                      <td className="border border-slate-400 px-1">
+                        {defect ? (defect.status === 'RESOLVED' || defect.status === 'CLOSED' ? 'แก้ไขเรียบร้อยแล้ว' : 'ส่งปรับสภาพซ่อมแซม') : ''}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Warning disclaimer text */}
+          <div className="text-[7.5px] text-slate-500 leading-normal mt-1 text-justify font-medium">
+            คำเตือน: เนื่องจากรถยนต์เกี่ยวข้องกับไฟฟ้าแรงสูง จึงต้องมีมาตรการป้องกันฉนวนก่อนดำเนินการตรวจสอบรถยนต์ อย่าเสียบหรือถอดชุดสายไฟแรงสูงใดๆ ในระหว่างการตรวจสอบ หากจำเป็นต้องบำรุงรักษา โปรดดูคู่มือการบำรุงรักษา
+          </div>
+
+          {/* Signatures block at absolute bottom of page */}
+          <div className="grid grid-cols-2 gap-8 items-end mt-1.5 mb-1 text-[8.5px] border-t border-slate-300 pt-2 font-medium">
+            <div className="flex justify-between items-end relative h-8">
+              <span>ผู้ตรวจสอบ PDI:</span>
+              <div className="absolute left-[70px] bottom-1 h-6 w-24 overflow-hidden flex items-center justify-center">
+                {signatures?.inspector || job.inspectorSig ? (
+                  <img src={signatures?.inspector || job.inspectorSig} className="h-6 object-contain" alt="inspector signature" />
+                ) : null}
+              </div>
+              <span className="flex-grow border-b border-dotted border-slate-500 mx-2 text-center text-[8px] font-semibold pb-0.5 select-all">
+                {(signatures?.inspector || job.inspectorSig) ? '' : (job.inspector?.name || '_________________________')}
+              </span>
+              <span>วันที่: __________________</span>
+            </div>
+            <div className="flex justify-between items-end relative h-8">
+              <span>ที่ปรึกษาการขาย:</span>
+              <div className="absolute left-[70px] bottom-1 h-6 w-24 overflow-hidden flex items-center justify-center">
+                {signatures?.customer || job.customerSig ? (
+                  <img src={signatures?.customer || job.customerSig} className="h-6 object-contain" alt="customer signature" />
+                ) : null}
+              </div>
+              <span className="flex-grow border-b border-dotted border-slate-500 mx-2 text-center text-[8px] font-semibold pb-0.5 select-all">
+                {(signatures?.customer || job.customerSig) ? '' : (job.customerName || '_________________________')}
+              </span>
+              <span>วันที่: __________________</span>
+            </div>
+          </div>
+
+          {/* Bottom disclaimer banner with double warning border */}
+          <div className="border-2 border-slate-900 rounded p-1.5 bg-slate-50/50 flex items-start gap-2 mt-1">
+            <span className="text-amber-500 text-sm font-bold flex-shrink-0 mt-0.5">⚠️</span>
+            <p className="text-[7px] leading-relaxed text-slate-600 font-medium">
+              <span className="font-bold text-slate-800">หมายเหตุ:</span> เมื่อตัวแทนจำหน่ายได้รับส่งมอบรถยนต์ใหม่จากบริษัทเอสไอซีไทยแลนด์ฯ จะต้องทำการตรวจเช็คสภาพรถ หากพบเจอความบกพร่องใดๆ จะต้องแจ้งกลับบริษัทเอสไอซีไทยแลนด์ฯ ทันทีเพื่อรับทราบภายใน 24 ชั่วโมงนับจากเซ็นรับรถ หากแจ้งกลับหลังจาก 24 ชม. บริษัทมีสิทธิ์ในการปฏิเสธการให้เคลม ตัวแทนจำหน่ายสามารถเพิ่มเติมรายการตรวจสอบได้ตามที่เห็นสมควร
+            </p>
+          </div>
+
         </div>
       </div>
-    </div>
-  );
+    );
 }

@@ -12,9 +12,9 @@ export default async function ApprovalsPage() {
     redirect('/login');
   }
 
-  // Restrict access to roles SUPER_ADMIN and SUPERVISOR
+  // Restrict access to roles SUPER_ADMIN, SUPERVISOR and MASTER
   const userRole = session.user?.role;
-  if (userRole !== 'SUPER_ADMIN' && userRole !== 'SUPERVISOR') {
+  if (userRole !== 'SUPER_ADMIN' && userRole !== 'SUPERVISOR' && userRole !== 'MASTER') {
     redirect('/');
   }
 

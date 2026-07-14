@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { PdiStatus, PdiType, DefectStatus, VehicleStatus } from '@prisma/client';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { checkAuth } from '@/lib/api-auth';
 
 // GET /api/pdi-jobs — ดึงข้อมูล jobs ทั้งหมด พร้อม filters
 export async function GET(req: NextRequest) {
+  if (!(await checkAuth(req))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     const jobId = req.nextUrl.searchParams.get('id');
     const branchId = req.nextUrl.searchParams.get('branchId');
@@ -70,7 +76,13 @@ export async function GET(req: NextRequest) {
 
 // POST /api/pdi-jobs — สร้าง PDI Job ใหม่ (เช่น Long-term หรือ Pre-delivery)
 export async function POST(req: NextRequest) {
+  if (!(await checkAuth(req))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id || null;
+
     const body = await req.json();
     const {
       pdiType,
@@ -95,21 +107,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 });
     }
 
-    // Block non-incoming jobs if INCOMING PDI is not APPROVED yet
+    // Auto-approve / Auto-create INCOMING job if creating LONG_TERM or PRE_DELIVERY
     if (pdiType === 'LONG_TERM' || pdiType === 'PRE_DELIVERY') {
-      const incomingApproved = await prisma.pdiJob.findFirst({
+      const incomingJob = await prisma.pdiJob.findFirst({
         where: {
           vehicleVin,
           pdiType: 'INCOMING',
-          status: 'APPROVED',
         },
       });
 
-      if (!incomingApproved) {
-        return NextResponse.json(
-          { error: 'ไม่สามารถสร้างใบงานได้: รถคันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI)' },
-          { status: 400 }
-        );
+      if (!incomingJob) {
+        // Auto-create new APPROVED incoming job
+        const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const rand = Math.floor(1000 + Math.random() * 9000);
+        const incomingJobNumber = `JO-INC-${todayStr}-${rand}`;
+
+        await prisma.pdiJob.create({
+          data: {
+            jobNumber: incomingJobNumber,
+            pdiType: 'INCOMING',
+            status: 'APPROVED',
+            vehicleVin,
+            inspectorId: userId,
+            approverId: userId,
+            startedAt: new Date(),
+            completedAt: new Date(),
+            approvedAt: new Date(),
+            notes: '[SYSTEM] อนุมัติอัตโนมัติ (ขายด่วน)',
+          },
+        });
+      } else if (incomingJob.status !== 'APPROVED') {
+        // Auto-approve existing INCOMING job
+        await prisma.pdiJob.update({
+          where: { id: incomingJob.id },
+          data: {
+            status: 'APPROVED',
+            inspectorId: incomingJob.inspectorId || userId,
+            approverId: incomingJob.approverId || userId,
+            startedAt: incomingJob.startedAt || new Date(),
+            completedAt: incomingJob.completedAt || new Date(),
+            approvedAt: incomingJob.approvedAt || new Date(),
+            notes: (incomingJob.notes ? `${incomingJob.notes} | ` : '') + '[SYSTEM] อนุมัติอัตโนมัติ (ขายด่วน)',
+          },
+        });
       }
     }
 
@@ -131,7 +171,7 @@ export async function POST(req: NextRequest) {
         salesName,
         salesPhone,
         salesBranch,
-        customerName,
+
         customerPhone,
       },
     });
@@ -145,6 +185,9 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/pdi-jobs — บันทึกผลการตรวจ (Force route reload)
 export async function PATCH(req: NextRequest) {
+  if (!(await checkAuth(req))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     const body = await req.json();
     const {

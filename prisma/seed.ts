@@ -126,7 +126,7 @@ async function main() {
       name: 'master',
       email: 'master@pdi.com',
       passwordHash,
-      role: UserRole.SUPERVISOR,
+      role: UserRole.MASTER,
     },
   ];
 
@@ -308,12 +308,29 @@ async function main() {
       arrivedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
       incomingDeadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
       currentStatus: VehicleStatus.IN_STOCK,
-      motorBatteryNumber: 'TZ220XS-BAT-M8-010',
     }
   ];
+  const todayStr = now.toISOString().slice(0, 10).replace(/-/g, '');
 
   for (const v of vehiclesData) {
-    await prisma.vehicle.create({ data: v });
+    await prisma.vehicle.create({
+      data: {
+        ...v,
+        lotNumber: 'LOT-202607-001',
+      },
+    });
+
+    const rand = Math.floor(100000 + Math.random() * 900000);
+    const jobNumber = `JO-INC-${todayStr}-${rand}`;
+    await prisma.pdiJob.create({
+      data: {
+        jobNumber,
+        pdiType: 'INCOMING',
+        status: 'PENDING',
+        vehicleVin: v.vin,
+        scheduledDate: v.incomingDeadline,
+      },
+    });
   }
 
   console.log(`🚗 Created ${vehiclesData.length} sample vehicles representing all models.`);
@@ -1097,6 +1114,58 @@ async function main() {
       });
     }
   }
+
+  // 5. Create 1 Mock Vehicle for each model
+  console.log('🚗 Seeding 1 mock vehicle for each model...');
+  const mockVehicles = [
+    { modelCode: 'AION_V', modelName: 'AION V', vin: 'VIN-AION-V-001' },
+    { modelCode: 'AION_V5', modelName: 'AION V 5', vin: 'VIN-AION-V5-001' },
+    { modelCode: 'AION_UT', modelName: 'AION UT', vin: 'VIN-AION-UT-001' },
+    { modelCode: 'AION_YP', modelName: 'AION Y Plus', vin: 'VIN-AION-YP-001' },
+    { modelCode: 'AION_YP5', modelName: 'AION Y Plus 5', vin: 'VIN-AION-YP5-001' },
+    { modelCode: 'AION_ES', modelName: 'AION ES', vin: 'VIN-AION-ES-001' },
+    { modelCode: 'HYPTEC_HT', modelName: 'HYPTEC HT', vin: 'VIN-HYPTEC-HT-001' },
+    { modelCode: 'HYPTEC_HT8', modelName: 'HYPTEC HT 8', vin: 'VIN-HYPTEC-HT8-001' },
+    { modelCode: 'GAC_M8', modelName: 'GAC M8', vin: 'VIN-GAC-M8-001' },
+  ];
+
+  for (const v of mockVehicles) {
+    const arrivedAt = new Date();
+    const incomingDeadline = new Date(arrivedAt.getTime() + 24 * 60 * 60 * 1000);
+    await prisma.vehicle.create({
+      data: {
+        vin: v.vin,
+        modelCode: v.modelCode,
+        modelName: v.modelName,
+        motorBatteryNumber: 'MOCK-MOTOR-BAT-123456',
+        colorCode: 'COL-WHT',
+        colorName: 'White',
+        exteriorColor: 'White',
+        interiorColor: 'Black',
+        productionYear: 2026,
+        branchId: branchMBR.id,
+        warehouse: 'มีนบุรี A',
+        floorplan: 'Zone A-1',
+        lotNumber: 'LOT-MOCK-INC',
+        arrivedAt,
+        incomingDeadline,
+        currentStatus: 'IN_STOCK',
+      },
+    });
+
+    const rand = Math.floor(100000 + Math.random() * 900000);
+    const jobNumber = `JO-INC-${todayStr}-${rand}`;
+    await prisma.pdiJob.create({
+      data: {
+        jobNumber,
+        pdiType: 'INCOMING',
+        status: 'PENDING',
+        vehicleVin: v.vin,
+        scheduledDate: incomingDeadline,
+      },
+    });
+  }
+  console.log('🚗 Finished seeding mock vehicles.');
 
   console.log('📝 Created checklist templates for all 10 models across 3 PDI types.');
   console.log('✅ Database seeding finished successfully.');

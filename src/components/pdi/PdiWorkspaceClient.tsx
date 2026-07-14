@@ -324,8 +324,8 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
   }
 
   const userRole = session?.user?.role || 'INSPECTOR';
-  const isInspector = userRole === 'INSPECTOR' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
-  const isQC = userRole === 'SUPERVISOR' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+  const isInspector = userRole === 'INSPECTOR' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'MASTER';
+  const isQC = userRole === 'SUPERVISOR' || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'MASTER';
   
   const isIncomingTickingBlocked = job.pdiType === 'INCOMING' && userRole === 'ADMIN';
   const isStartJobBlocked = userRole === 'ADMIN';

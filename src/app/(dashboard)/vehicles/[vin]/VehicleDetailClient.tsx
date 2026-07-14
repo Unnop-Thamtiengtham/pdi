@@ -100,10 +100,6 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
   // Manual Long-term Job Submit
   const handleTriggerLtm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!hasPassedIncoming) {
-      toast.error('ไม่สามารถดำเนินการได้', { description: 'รถคันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI)' });
-      return;
-    }
     if (!ltmScheduledDate) {
       toast.warning('กรุณาระบุวันที่กำหนดตรวจ');
       return;
@@ -131,10 +127,11 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
         }
 
         const newJob = await res.json();
-        setVehicle({
-          ...vehicle,
-          pdiJobs: [newJob, ...vehicle.pdiJobs],
-        });
+        toast.success('สร้างงาน Long-term สำเร็จ', { description: `สร้างงานตรวจบำรุงรักษาระยะยาว ${ltmInterval} วัน เรียบร้อยแล้ว` });
+        setIsLtmOpen(false);
+        setLtmScheduledDate('');
+        window.location.reload();
+        return;
       } else {
         // Mock State Update
         const mockNewJob = {
@@ -169,10 +166,6 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
   // Manual Pre-delivery Job Submit
   const handleTriggerPd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!hasPassedIncoming) {
-      toast.error('ไม่สามารถดำเนินการได้', { description: 'รถคันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI)' });
-      return;
-    }
     if (!targetDeliveryDate || !salesName || !salesPhone || !salesBranch || !customerName || !customerPhone) {
       toast.warning('กรอกข้อมูลไม่ครบถ้วน', { description: 'กรุณากรอกรายละเอียดเพื่อรองรับการตรวจก่อนส่งมอบและ PDPA' });
       return;
@@ -204,10 +197,16 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
         }
 
         const newJob = await res.json();
-        setVehicle({
-          ...vehicle,
-          pdiJobs: [newJob, ...vehicle.pdiJobs],
-        });
+        toast.success('สร้างงาน Pre-delivery สำเร็จ', { description: 'สร้างงานตรวจเตรียมส่งมอบลูกค้าเรียบร้อยแล้ว' });
+        setIsPdOpen(false);
+        setTargetDeliveryDate('');
+        setSalesName('');
+        setSalesPhone('');
+        setSalesBranch('');
+        setCustomerName('');
+        setCustomerPhone('');
+        window.location.reload();
+        return;
       } else {
         // Mock State Update
         const mockNewJob = {
@@ -490,13 +489,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                   variant="secondary"
                   size="sm"
                   className="gap-1.5 text-xs font-semibold"
-                  onClick={() => {
-                    if (!hasPassedIncoming) {
-                      toast.error('ไม่สามารถเปิดงานตรวจได้', { description: 'รถคันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI)' });
-                    } else {
-                      setIsLtmOpen(true);
-                    }
-                  }}
+                  onClick={() => setIsLtmOpen(true)}
                 >
                   <Calendar className="w-4 h-4 text-slate-500" />
                   <span>สร้างใบงาน Long-term Maintenance</span>
@@ -506,13 +499,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                   variant="primary"
                   size="sm"
                   className="gap-1.5 text-xs font-semibold"
-                  onClick={() => {
-                    if (!hasPassedIncoming) {
-                      toast.error('ไม่สามารถเปิดงานตรวจได้', { description: 'รถคันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI)' });
-                    } else {
-                      setIsPdOpen(true);
-                    }
-                  }}
+                  onClick={() => setIsPdOpen(true)}
                 >
                   <UserCheck className="w-4 h-4 text-slate-950" />
                   <span>สร้างใบงาน Pre-delivery PDI (ส่งมอบ)</span>
@@ -526,9 +513,9 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
             )}
 
             {!hasPassedIncoming && (
-              <p className="text-[11px] text-red-600 flex items-center gap-1.5 font-medium bg-red-50 p-2.5 rounded-lg border border-red-100">
-                <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
-                <span>รถยนต์คันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI) ทำให้ไม่สามารถเปิดสั่งงานตรวจประเภทอื่น ๆ ได้</span>
+              <p className="text-[11px] text-amber-600 flex items-center gap-1.5 font-medium bg-amber-50 p-2.5 rounded-lg border border-amber-100">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                <span>รถคันนี้ยังไม่ผ่านการตรวจแรกรับ หากสร้างใบงานอื่นระบบจะอนุมัติผลแรกรับเป็น APPROVED อัตโนมัติ (ขายด่วน)</span>
               </p>
             )}
 
@@ -695,10 +682,17 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                         <TableRow key={job.id} className="hover:bg-slate-50/50 transition-colors">
                           <TableCell className="font-mono text-xs text-slate-800 select-all py-4">{job.jobNumber}</TableCell>
                           <TableCell className="py-4">
-                            <Badge variant="outline" className="text-xs">
-                              {job.pdiType}
-                              {job.ltmInterval ? ` (${job.ltmInterval}วัน)` : ''}
-                            </Badge>
+                            <div className="flex flex-col gap-1">
+                              <Badge variant="outline" className="text-xs w-fit">
+                                {job.pdiType}
+                                {job.ltmInterval ? ` (${job.ltmInterval}วัน)` : ''}
+                              </Badge>
+                              {job.notes && (
+                                <span className={`text-[10px] leading-tight ${job.notes.includes('[SYSTEM]') ? 'text-amber-600 font-medium' : 'text-slate-500'}`}>
+                                  {job.notes.replace('[SYSTEM] อนุมัติแรกรับอัตโนมัติ (ขายด่วน / สร้างใบงานส่งมอบทันที)', '[SYSTEM] อนุมัติอัตโนมัติ (ขายด่วน)')}
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-center whitespace-nowrap py-4">
                             {job.status === 'PENDING' && <Badge variant="default">รอตรวจ</Badge>}
