@@ -47,8 +47,17 @@ export default async function VehicleDetailPage({
     isDbConnected = false;
   }
 
-  if (isDbConnected && !vehicle) {
-    notFound();
+  const userRole = session?.user?.role;
+  const userBranchId = session?.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
+  if (isDbConnected) {
+    if (!vehicle) {
+      notFound();
+    }
+    if (isBranchRestricted && vehicle.branchId !== userBranchId) {
+      redirect('/');
+    }
   }
 
   return (

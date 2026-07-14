@@ -50,8 +50,17 @@ export default async function PredeliveryPdiJobPage({
     isDbConnected = false;
   }
 
-  if (isDbConnected && !jobId.startsWith('mock-') && !job) {
-    notFound();
+  const userRole = session?.user?.role;
+  const userBranchId = session?.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
+  if (isDbConnected && !jobId.startsWith('mock-')) {
+    if (!job) {
+      notFound();
+    }
+    if (isBranchRestricted && job.vehicle.branchId !== userBranchId) {
+      redirect('/');
+    }
   }
 
   return (
