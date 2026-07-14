@@ -11,7 +11,10 @@ import {
   Building, 
   UserPlus, 
   Key, 
-  IdCard 
+  IdCard,
+  Edit,
+  X,
+  Power
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,6 +50,9 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
   const [users, setUsers] = useState<UserData[]>(initialUsers);
   const [loading, setLoading] = useState(false);
 
+  // Edit Mode state
+  const [editingUser, setEditingUser] = useState<UserData | null>(null);
+
   // Form states
   const [employeeId, setEmployeeId] = useState('');
   const [name, setName] = useState('');
@@ -54,51 +60,81 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('INSPECTOR');
   const [branchId, setBranchId] = useState('');
+  const [isActive, setIsActive] = useState(true);
+
+  const handleEditClick = (u: UserData) => {
+    setEditingUser(u);
+    setEmployeeId(u.employeeId);
+    setName(u.name);
+    setEmail(u.email || '');
+    setRole(u.role);
+    setBranchId(u.branchId || '');
+    setPassword('');
+    setIsActive(u.isActive);
+    toast.info(`กำลังแก้ไขข้อมูลของ ${u.name}`);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUser(null);
+    setEmployeeId('');
+    setName('');
+    setEmail('');
+    setPassword('');
+    setRole('INSPECTOR');
+    setBranchId('');
+    setIsActive(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!employeeId || !name || !email || !password || !role) {
+    if (!employeeId || !name || !email || !role) {
       toast.error('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
+
+    if (!editingUser && !password) {
+      toast.error('กรุณากรอกรหัสผ่านสำหรับผู้ใช้งานใหม่');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch('/api/users', {
-        method: 'POST',
+      const url = '/api/users';
+      const method = editingUser ? 'PATCH' : 'POST';
+      const payload = {
+        userId: editingUser?.id,
+        employeeId: employeeId.trim(),
+        name: name.trim(),
+        email: email.trim(),
+        password: password || undefined,
+        role,
+        branchId: role === 'MASTER' || role === 'SUPER_ADMIN' ? null : branchId || null,
+        isActive: editingUser ? isActive : true,
+      };
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          employeeId: employeeId.trim(),
-          name: name.trim(),
-          email: email.trim(),
-          password,
-          role,
-          branchId: role === 'MASTER' || role === 'SUPER_ADMIN' ? null : branchId || null,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'เกิดข้อผิดพลาดในการสร้างบัญชี');
+        throw new Error(result.error || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
       }
 
-      toast.success(`เพิ่มผู้ใช้งาน ${name} สำเร็จแล้ว!`);
+      toast.success(editingUser ? `แก้ไขข้อมูลคุณ ${name} สำเร็จ!` : `เพิ่มผู้ใช้งาน ${name} สำเร็จแล้ว!`);
       
-      // Clear form
-      setEmployeeId('');
-      setName('');
-      setEmail('');
-      setPassword('');
-      setRole('INSPECTOR');
-      setBranchId('');
+      // Reset Form and Mode
+      handleCancelEdit();
 
-      // Refresh data
+      // Refresh page data
       router.refresh();
       
-      // Refresh local list
+      // Update local list
       const fetchUsers = await fetch('/api/users');
       if (fetchUsers.ok) {
         const updatedList = await fetchUsers.json();
@@ -156,13 +192,22 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* Left: Add User Form */}
+        {/* Left: Add / Edit User Form */}
         <div className="lg:col-span-4">
-          <Card className="shadow-sm border-slate-200 bg-white">
+          <Card className={`shadow-sm border-slate-200 bg-white transition-all ${editingUser ? 'ring-1 ring-indigo-500/30' : ''}`}>
             <CardHeader className="border-b border-slate-100 pb-4">
               <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-indigo-600" />
-                <span>เพิ่มผู้ใช้งานใหม่</span>
+                {editingUser ? (
+                  <>
+                    <Edit className="w-4 h-4 text-indigo-600" />
+                    <span>แก้ไขข้อมูลผู้ใช้งาน</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 text-indigo-600" />
+                    <span>เพิ่มผู้ใช้งานใหม่</span>
+                  </>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5">
@@ -227,7 +272,9 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
 
                 {/* Password */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-xs font-semibold text-slate-700">รหัสผ่านสำหรับเข้าสู่ระบบ *</Label>
+                  <Label htmlFor="password" className="text-xs font-semibold text-slate-700">
+                    รหัสผ่านสำหรับเข้าสู่ระบบ {editingUser ? '(เว้นว่างไว้หากใช้รหัสเดิม)' : '*'}
+                  </Label>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                       <Lock className="w-4 h-4" />
@@ -235,11 +282,11 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
                     <Input
                       id="password"
                       type="password"
-                      placeholder="••••••••"
+                      placeholder={editingUser ? '•••••••• (เว้นว่างไว้เพื่อใช้รหัสเดิม)' : '••••••••'}
                       className="pl-9 bg-white border-slate-200 text-slate-900 placeholder-slate-400 text-sm focus:ring-indigo-500 focus:border-indigo-500"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      required
+                      required={!editingUser}
                     />
                   </div>
                 </div>
@@ -292,13 +339,55 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
                   </div>
                 )}
 
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors cursor-pointer"
-                >
-                  {loading ? 'กำลังบันทึก...' : 'ลงทะเบียนผู้ใช้งาน'}
-                </Button>
+                {/* Status Toggle (Show only on Edit Mode) */}
+                {editingUser && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="status" className="text-xs font-semibold text-slate-700">สถานะการใช้งาน *</Label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                        <Power className="w-4 h-4" />
+                      </span>
+                      <select
+                        id="status"
+                        className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-shadow"
+                        value={isActive ? 'true' : 'false'}
+                        onChange={(e) => setIsActive(e.target.value === 'true')}
+                      >
+                        <option value="true">เปิดใช้งานปกติ</option>
+                        <option value="false">ระงับการใช้งาน</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit and Cancel Actions */}
+                {editingUser ? (
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                      className="w-full py-2 rounded-lg border-slate-200 hover:bg-slate-50 font-semibold text-slate-700 cursor-pointer"
+                    >
+                      ยกเลิก
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow-sm transition-colors cursor-pointer"
+                    >
+                      {loading ? 'บันทึก...' : 'บันทึกแก้ไข'}
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors cursor-pointer"
+                  >
+                    {loading ? 'กำลังบันทึก...' : 'ลงทะเบียนผู้ใช้งาน'}
+                  </Button>
+                )}
 
               </form>
             </CardContent>
@@ -319,23 +408,24 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
                 <Table>
                   <TableHeader className="bg-slate-50/75 border-b border-slate-100">
                     <TableRow>
-                      <th className="pl-6 py-3.5 text-xs font-semibold text-slate-700">รหัสพนักงาน</th>
-                      <th className="py-3.5 text-xs font-semibold text-slate-700">ชื่อ - อีเมล</th>
-                      <th className="py-3.5 text-xs font-semibold text-slate-700">บทบาท (Role)</th>
-                      <th className="py-3.5 text-xs font-semibold text-slate-700">สาขาที่สังกัด</th>
-                      <th className="py-3.5 text-xs font-semibold text-slate-700">สถานะ</th>
+                      <th className="pl-6 py-3.5 text-xs font-semibold text-slate-700 text-left">รหัสพนักงาน</th>
+                      <th className="py-3.5 text-xs font-semibold text-slate-700 text-left">ชื่อ - อีเมล</th>
+                      <th className="py-3.5 text-xs font-semibold text-slate-700 text-left">บทบาท (Role)</th>
+                      <th className="py-3.5 text-xs font-semibold text-slate-700 text-left">สาขาที่สังกัด</th>
+                      <th className="py-3.5 text-xs font-semibold text-slate-700 text-left">สถานะ</th>
+                      <th className="pr-6 py-3.5 text-xs font-semibold text-slate-700 text-center">จัดการ</th>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {users.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-12 text-slate-500 text-sm">
+                        <TableCell colSpan={6} className="text-center py-12 text-slate-500 text-sm">
                           ไม่มีข้อมูลบัญชีผู้ใช้งานในระบบ
                         </TableCell>
                       </TableRow>
                     ) : (
                       users.map((u) => (
-                        <TableRow key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                        <TableRow key={u.id} className={`hover:bg-slate-50/50 transition-colors ${editingUser?.id === u.id ? 'bg-indigo-50/30' : ''}`}>
                           <TableCell className="pl-6 py-4 font-mono text-xs text-slate-850 font-bold">{u.employeeId}</TableCell>
                           <TableCell className="py-4">
                             <div className="text-sm font-semibold text-slate-800">{u.name}</div>
@@ -367,6 +457,18 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
                                 ระงับใช้งาน
                               </span>
                             )}
+                          </TableCell>
+                          <TableCell className="pr-6 py-4 text-center">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditClick(u)}
+                              className="text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 h-8 px-2.5 rounded-lg flex items-center gap-1 mx-auto cursor-pointer"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                              <span className="text-xs">แก้ไข</span>
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))
