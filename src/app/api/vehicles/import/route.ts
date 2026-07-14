@@ -2,11 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ModelCode, MODEL_NAMES } from '@/types/pdi';
 import { checkAuth } from '@/lib/api-auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   if (!(await checkAuth(req))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const session = await getServerSession(authOptions);
+  const userRole = session?.user?.role;
+  const userBranchId = session?.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
   try {
     const body = await req.json();
     const { vehicles } = body;
@@ -97,6 +105,11 @@ export async function POST(req: NextRequest) {
       const branchId = branchMap.get(bCode);
       if (!branchId) {
         errors.push(`แถวที่ ${rowNum}: รหัสสาขา "${v.branchCode}" ไม่มีอยู่ในระบบ (รหัสสาขาที่มี: MBR, RCD)`);
+        continue;
+      }
+
+      if (isBranchRestricted && branchId !== userBranchId) {
+        errors.push(`แถวที่ ${rowNum}: คุณไม่มีสิทธิ์นำเข้ารถยนต์เข้าสาขาอื่นนอกเหนือจากสาขาของคุณเอง`);
         continue;
       }
 
