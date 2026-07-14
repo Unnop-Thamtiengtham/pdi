@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkAuth } from '@/lib/api-auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // GET /api/vehicles — ดึงข้อมูลรถเดี่ยว หรือ รายการรถ
 export async function GET(req: NextRequest) {
   if (!(await checkAuth(req))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const session = await getServerSession(authOptions);
+  const userRole = session?.user?.role;
+  const userBranchId = session?.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
   try {
     const vin = req.nextUrl.searchParams.get('vin');
     const branchId = req.nextUrl.searchParams.get('branchId');
@@ -28,11 +36,17 @@ export async function GET(req: NextRequest) {
       if (!vehicle) {
         return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 });
       }
+      if (isBranchRestricted && vehicle.branchId !== userBranchId) {
+        return NextResponse.json({ error: 'Unauthorized to view vehicle from another branch' }, { status: 403 });
+      }
       return NextResponse.json(vehicle);
     }
 
     // Filter by branch if requested
-    const whereClause = branchId ? { branchId } : {};
+    let whereClause: any = branchId ? { branchId } : {};
+    if (isBranchRestricted) {
+      whereClause = { branchId: userBranchId };
+    }
 
     const vehicles = await prisma.vehicle.findMany({
       where: whereClause,
@@ -57,6 +71,12 @@ export async function POST(req: NextRequest) {
   if (!(await checkAuth(req))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const session = await getServerSession(authOptions);
+  const userRole = session?.user?.role;
+  const userBranchId = session?.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
   try {
     const body = await req.json();
     const {
@@ -78,6 +98,10 @@ export async function POST(req: NextRequest) {
 
     if (!vin || !modelCode || !modelName || !branchId) {
       return NextResponse.json({ error: 'Missing required fields: vin, modelCode, modelName, branchId' }, { status: 400 });
+    }
+
+    if (isBranchRestricted && branchId !== userBranchId) {
+      return NextResponse.json({ error: 'Unauthorized to add vehicles to another branch' }, { status: 403 });
     }
 
     // Check if vehicle already exists

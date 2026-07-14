@@ -22,11 +22,19 @@ export default async function RepairsPage() {
   let dbBranches: any[] = [];
   let isDbConnected = true;
 
+  const userBranchId = session.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
+  const jobWhere: any = {
+    status: { in: ['DEFECT_FOUND', 'REJECTED'] },
+  };
+  if (isBranchRestricted) {
+    jobWhere.vehicle = { branchId: userBranchId };
+  }
+
   try {
     dbJobs = await prisma.pdiJob.findMany({
-      where: {
-        status: { in: ['DEFECT_FOUND', 'REJECTED'] },
-      },
+      where: jobWhere,
       include: {
         vehicle: {
           include: { branch: true },

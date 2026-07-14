@@ -16,8 +16,15 @@ export default async function VehiclesPage() {
   let dbBranches: any[] = [];
   let isDbConnected = true;
 
+  const userRole = session?.user?.role;
+  const userBranchId = session?.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
+  const vehicleWhere = isBranchRestricted ? { branchId: userBranchId } : {};
+
   try {
     dbVehicles = await prisma.vehicle.findMany({
+      where: vehicleWhere,
       include: {
         branch: true,
         pdiJobs: {

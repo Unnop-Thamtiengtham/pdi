@@ -21,9 +21,19 @@ export default async function ApprovalsPage() {
   let dbJobs: any[] = [];
   let isDbConnected = true;
 
+  const userBranchId = session.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
+  const jobWhere: any = {
+    status: 'PENDING_APPROVAL',
+  };
+  if (isBranchRestricted) {
+    jobWhere.vehicle = { branchId: userBranchId };
+  }
+
   try {
     dbJobs = await prisma.pdiJob.findMany({
-      where: { status: 'PENDING_APPROVAL' },
+      where: jobWhere,
       include: {
         vehicle: {
           include: { branch: true },

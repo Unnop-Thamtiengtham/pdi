@@ -17,9 +17,16 @@ export default async function DashboardPage() {
   let isDbConnected = true;
   let connectionError = '';
 
+  const userRole = session?.user?.role;
+  const userBranchId = session?.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
+  const jobWhere = isBranchRestricted ? { vehicle: { branchId: userBranchId } } : {};
+
   try {
     // Attempt database query
     dbJobs = await prisma.pdiJob.findMany({
+      where: jobWhere,
       include: {
         vehicle: {
           include: { branch: true },

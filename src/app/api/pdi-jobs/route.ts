@@ -10,6 +10,12 @@ export async function GET(req: NextRequest) {
   if (!(await checkAuth(req))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const session = await getServerSession(authOptions);
+  const userRole = session?.user?.role;
+  const userBranchId = session?.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
   try {
     const jobId = req.nextUrl.searchParams.get('id');
     const branchId = req.nextUrl.searchParams.get('branchId');
@@ -38,6 +44,10 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Job not found' }, { status: 404 });
       }
 
+      if (isBranchRestricted && job.vehicle.branchId !== userBranchId) {
+        return NextResponse.json({ error: 'Unauthorized to view job from another branch' }, { status: 403 });
+      }
+
       // Map batteryTest to batteryTestResult to preserve the expected response shape
       const { batteryTest, ...rest } = job;
       return NextResponse.json({ ...rest, batteryTestResult: batteryTest });
@@ -49,7 +59,10 @@ export async function GET(req: NextRequest) {
     if (statusParam) where.status = statusParam as PdiStatus;
     if (typeParam) where.pdiType = typeParam as PdiType;
     if (vinParam) where.vehicleVin = vinParam;
-    if (branchId) {
+    
+    if (isBranchRestricted) {
+      where.vehicle = { branchId: userBranchId };
+    } else if (branchId) {
       where.vehicle = { branchId };
     }
 
@@ -79,9 +92,14 @@ export async function POST(req: NextRequest) {
   if (!(await checkAuth(req))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id || null;
+  const userRole = session?.user?.role;
+  const userBranchId = session?.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
   try {
-    const session = await getServerSession(authOptions);
-    const userId = session?.user?.id || null;
 
     const body = await req.json();
     const {
@@ -105,6 +123,10 @@ export async function POST(req: NextRequest) {
     const vehicle = await prisma.vehicle.findUnique({ where: { vin: vehicleVin } });
     if (!vehicle) {
       return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 });
+    }
+
+    if (isBranchRestricted && vehicle.branchId !== userBranchId) {
+      return NextResponse.json({ error: 'Unauthorized to create job for vehicle of another branch' }, { status: 403 });
     }
 
     // Auto-approve / Auto-create INCOMING job if creating LONG_TERM or PRE_DELIVERY
@@ -188,6 +210,12 @@ export async function PATCH(req: NextRequest) {
   if (!(await checkAuth(req))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const session = await getServerSession(authOptions);
+  const userRole = session?.user?.role;
+  const userBranchId = session?.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
   try {
     const body = await req.json();
     const {
@@ -211,6 +239,17 @@ export async function PATCH(req: NextRequest) {
 
     if (!jobId) {
       return NextResponse.json({ error: 'Missing jobId' }, { status: 400 });
+    }
+
+    const existingJob = await prisma.pdiJob.findUnique({
+      where: { id: jobId },
+      include: { vehicle: true }
+    });
+    if (!existingJob) {
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+    }
+    if (isBranchRestricted && existingJob.vehicle.branchId !== userBranchId) {
+      return NextResponse.json({ error: 'Unauthorized to modify job from another branch' }, { status: 403 });
     }
 
     // 1. Save Checklist Results
