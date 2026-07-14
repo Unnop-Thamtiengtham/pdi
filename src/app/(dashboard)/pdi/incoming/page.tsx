@@ -15,9 +15,20 @@ export default async function IncomingPdiPage() {
   let dbJobs: any[] = [];
   let isDbConnected = true;
 
+  const userRole = session?.user?.role;
+  const userBranchId = session?.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
+  const jobWhere: any = {
+    pdiType: 'INCOMING',
+  };
+  if (isBranchRestricted) {
+    jobWhere.vehicle = { branchId: userBranchId };
+  }
+
   try {
     dbJobs = await prisma.pdiJob.findMany({
-      where: { pdiType: 'INCOMING' },
+      where: jobWhere,
       include: {
         vehicle: {
           include: { branch: true },

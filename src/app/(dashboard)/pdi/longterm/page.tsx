@@ -15,9 +15,20 @@ export default async function LongTermPdiPage() {
   let dbJobs: any[] = [];
   let isDbConnected = true;
 
+  const userRole = session?.user?.role;
+  const userBranchId = session?.user?.branchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+
+  const jobWhere: any = {
+    pdiType: 'LONG_TERM',
+  };
+  if (isBranchRestricted) {
+    jobWhere.vehicle = { branchId: userBranchId };
+  }
+
   try {
     dbJobs = await prisma.pdiJob.findMany({
-      where: { pdiType: 'LONG_TERM' },
+      where: jobWhere,
       include: {
         vehicle: {
           include: { branch: true },
