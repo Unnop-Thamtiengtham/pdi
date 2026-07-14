@@ -17,6 +17,7 @@ import {
   X,
   CheckSquare,
   Wrench,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -78,6 +79,12 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       href: '/reports',
       icon: FileText,
       roles: ['SUPERVISOR'],
+    },
+    {
+      label: 'จัดการผู้ใช้งาน (Users)',
+      href: '/users',
+      icon: Users,
+      roles: ['MASTER'],
     },
   ];
 
