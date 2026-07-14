@@ -13,7 +13,7 @@ generator client {
 enum UserRole {
   INSPECTOR       // ช่างตรวจ
   SUPERVISOR      // QC / Supervisor
-  ADMIN           // Admin
+  SALE            // SALE
   SUPER_ADMIN     // Super Admin
   MASTER          // สิทธิ์สูงสุดในระบบ
 }

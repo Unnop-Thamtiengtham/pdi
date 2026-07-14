@@ -199,7 +199,7 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
         return 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-50';
       case 'SUPER_ADMIN':
         return 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-50';
-      case 'ADMIN':
+      case 'SALE':
         return 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50';
       case 'SUPERVISOR':
         return 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50';
@@ -215,8 +215,8 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
         return 'MASTER (สิทธิ์สูงสุด)';
       case 'SUPER_ADMIN':
         return 'Super Admin';
-      case 'ADMIN':
-        return 'Admin';
+      case 'SALE':
+        return 'ฝ่ายขาย (Sales)';
       case 'SUPERVISOR':
         return 'Supervisor / QC';
       case 'INSPECTOR':
@@ -351,7 +351,7 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
                     >
                       <option value="INSPECTOR">ช่างตรวจสภาพ (INSPECTOR)</option>
                       <option value="SUPERVISOR">Supervisor / QC (SUPERVISOR)</option>
-                      <option value="ADMIN">Admin สาขา (ADMIN)</option>
+                      <option value="SALE">ฝ่ายขาย / Sales (SALE)</option>
                       <option value="SUPER_ADMIN">Super Admin (SUPER_ADMIN)</option>
                       <option value="MASTER">MASTER (สิทธิ์สูงสุด)</option>
                     </select>

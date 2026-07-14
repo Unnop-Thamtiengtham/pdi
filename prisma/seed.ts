@@ -98,11 +98,11 @@ async function main() {
       branchId: branchMBR.id,
     },
     {
-      employeeId: 'EMP-ADMIN',
-      name: 'admin',
-      email: 'admin@pdi.com',
+      employeeId: 'EMP-SALE',
+      name: 'sale',
+      email: 'sale@pdi.com',
       passwordHash,
-      role: UserRole.ADMIN,
+      role: UserRole.SALE,
       branchId: branchMBR.id,
     },
     {
