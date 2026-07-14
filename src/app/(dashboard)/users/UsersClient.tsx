@@ -14,7 +14,8 @@ import {
   IdCard,
   Edit,
   X,
-  Power
+  Power,
+  Trash2
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -83,6 +84,50 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
     setRole('INSPECTOR');
     setBranchId('');
     setIsActive(true);
+  };
+
+  const handleDeleteClick = async (u: UserData) => {
+    if (u.role === 'MASTER') {
+      toast.error('ไม่สามารถลบผู้ใช้งานสิทธิ์ MASTER ได้');
+      return;
+    }
+
+    const confirmDelete = window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้งาน "${u.name}" (${u.employeeId}) ออกจากระบบ? การกระทำนี้ไม่สามารถย้อนกลับได้`);
+    if (!confirmDelete) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/users?userId=${u.id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'เกิดข้อผิดพลาดในการลบผู้ใช้งาน');
+      }
+
+      toast.success(`ลบผู้ใช้งานคุณ ${u.name} สำเร็จแล้ว!`);
+
+      // If we are currently editing this user, cancel edit mode
+      if (editingUser?.id === u.id) {
+        handleCancelEdit();
+      }
+
+      // Refresh page data
+      router.refresh();
+
+      // Update local list
+      const fetchUsers = await fetch('/api/users');
+      if (fetchUsers.ok) {
+        const updatedList = await fetchUsers.json();
+        setUsers(updatedList);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -458,17 +503,29 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
                               </span>
                             )}
                           </TableCell>
-                          <TableCell className="pr-6 py-4 text-center">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditClick(u)}
-                              className="text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 h-8 px-2.5 rounded-lg flex items-center gap-1 mx-auto cursor-pointer"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                              <span className="text-xs">แก้ไข</span>
-                            </Button>
+                          <TableCell className="pr-6 py-4">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditClick(u)}
+                                className="text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 h-8 px-2 rounded-lg flex items-center gap-1 cursor-pointer"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                                <span className="text-xs">แก้ไข</span>
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteClick(u)}
+                                className="text-rose-600 hover:text-rose-950 hover:bg-rose-55 h-8 px-2 rounded-lg flex items-center gap-1 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span className="text-xs">ลบ</span>
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))

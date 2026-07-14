@@ -177,3 +177,44 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user?.role !== 'MASTER') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('userId');
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
+    }
+
+    // Check relations to prevent foreign key errors and preserve PDI history
+    const linkedJobs = await prisma.pdiJob.count({
+      where: {
+        OR: [
+          { inspectorId: userId },
+          { approverId: userId },
+        ]
+      }
+    });
+
+    if (linkedJobs > 0) {
+      return NextResponse.json({ 
+        error: 'ไม่สามารถลบผู้ใช้งานรายนี้ได้ เนื่องจากบัญชีมีประวัติการตรวจสภาพหรืออนุมัติใบงาน PDI ในระบบแล้ว เพื่อป้องกันข้อมูลประวัติสูญหาย กรุณาใช้วิธีเปลี่ยนสถานะเป็น "ระงับการใช้งาน" แทน' 
+      }, { status: 400 });
+    }
+
+    await prisma.user.delete({
+      where: { id: userId }
+    });
+
+    return NextResponse.json({ message: 'ลบผู้ใช้งานสำเร็จแล้ว' });
+  } catch (error: any) {
+    console.error('Error deleting user:', error);
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+  }
+}
