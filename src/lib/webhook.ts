@@ -8,62 +8,34 @@ export async function triggerWebhook(jobId: string) {
   }
 
   try {
-    // Fetch full job detail with vehicle, branch, inspector, and approver details
-    const fullJob = await prisma.pdiJob.findUnique({
+    // Fetch only essential PDI job details for status updates
+    const job = await prisma.pdiJob.findUnique({
       where: { id: jobId },
-      include: {
-        vehicle: {
-          include: {
-            branch: true,
-          },
-        },
-        inspector: { select: { name: true, employeeId: true } },
-        approver: { select: { name: true, employeeId: true } },
+      select: {
+        id: true,
+        jobNumber: true,
+        pdiType: true,
+        status: true,
+        approvedAt: true,
+        vehicleVin: true,
       },
     });
 
-    if (!fullJob) {
+    if (!job) {
       console.warn(`[Webhook] Job not found for ID: ${jobId}`);
       return;
     }
 
+    // Lightweight status update payload
     const payload = {
-      event: 'pdi.job_approved',
-      jobId: fullJob.id,
-      jobNumber: fullJob.jobNumber,
-      pdiType: fullJob.pdiType,
-      status: fullJob.status,
-      approvedAt: fullJob.approvedAt ? fullJob.approvedAt.toISOString() : null,
-      completedAt: fullJob.completedAt ? fullJob.completedAt.toISOString() : null,
-      startedAt: fullJob.startedAt ? fullJob.startedAt.toISOString() : null,
-      notes: fullJob.notes,
-      vehicle: {
-        vin: fullJob.vehicle.vin,
-        modelCode: fullJob.vehicle.modelCode,
-        modelName: fullJob.vehicle.modelName,
-        colorCode: fullJob.vehicle.colorCode,
-        colorName: fullJob.vehicle.colorName,
-        currentStatus: fullJob.vehicle.currentStatus,
-        lotNumber: fullJob.vehicle.lotNumber,
-        warehouse: fullJob.vehicle.warehouse,
-        floorplan: fullJob.vehicle.floorplan,
-        branch: fullJob.vehicle.branch ? {
-          id: fullJob.vehicle.branch.id,
-          code: fullJob.vehicle.branch.code,
-          name: fullJob.vehicle.branch.name,
-        } : null,
-      },
-      inspector: fullJob.inspector ? {
-        employeeId: fullJob.inspector.employeeId,
-        name: fullJob.inspector.name,
-      } : null,
-      approver: fullJob.approver ? {
-        employeeId: fullJob.approver.employeeId,
-        name: fullJob.approver.name,
-      } : null,
+      event: 'pdi.status_update',
+      vin: job.vehicleVin,          // เลขตัวถังรถยนต์
+      pdiType: job.pdiType,         // ขั้นตอนตรวจ: INCOMING, LONG_TERM, PRE_DELIVERY
+      status: job.status,           // สถานะล่าสุด: APPROVED
+      updatedAt: job.approvedAt ? job.approvedAt.toISOString() : new Date().toISOString(), // วันเวลาที่อัปเดตสถานะ
     };
 
-    console.log(`[Webhook] Sending PDI approval notification to ${webhookUrl}...`);
+    console.log(`[Webhook] Sending PDI status update for VIN ${job.vehicleVin} to ${webhookUrl}...`);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -80,7 +52,7 @@ export async function triggerWebhook(jobId: string) {
       .then(async (res) => {
         clearTimeout(timeoutId);
         if (res.ok) {
-          console.log(`[Webhook] Successfully notified other team for job ${fullJob.jobNumber}`);
+          console.log(`[Webhook] Successfully notified other team for VIN ${job.vehicleVin}`);
         } else {
           const text = await res.text();
           console.error(`[Webhook] Failed response from receiver: Status ${res.status}. Body: ${text}`);
