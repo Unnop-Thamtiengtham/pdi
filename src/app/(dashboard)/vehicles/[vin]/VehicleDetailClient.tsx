@@ -488,6 +488,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                 <Button
                   variant="secondary"
                   size="sm"
+                  disabled={!hasPassedIncoming}
                   className="gap-1.5 text-xs font-semibold"
                   onClick={() => setIsLtmOpen(true)}
                 >
@@ -498,6 +499,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                 <Button
                   variant="primary"
                   size="sm"
+                  disabled={!hasPassedIncoming}
                   className="gap-1.5 text-xs font-semibold"
                   onClick={() => setIsPdOpen(true)}
                 >
@@ -513,9 +515,9 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
             )}
 
             {!hasPassedIncoming && (
-              <p className="text-[11px] text-amber-600 flex items-center gap-1.5 font-medium bg-amber-50 p-2.5 rounded-lg border border-amber-100">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-                <span>รถคันนี้ยังไม่ผ่านการตรวจแรกรับ หากสร้างใบงานอื่นระบบจะอนุมัติผลแรกรับเป็น APPROVED อัตโนมัติ (ขายด่วน)</span>
+              <p className="text-[11px] text-rose-600 flex items-center gap-1.5 font-medium bg-rose-50 p-2.5 rounded-lg border border-rose-100">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
+                <span>รถคันนี้ยังไม่ผ่านการตรวจแรกรับ (Incoming PDI) คุณจะไม่สามารถเปิดใบสั่งงานตรวจประเภทอื่นได้จนกว่าผลการตรวจแรกรับจะได้รับการอนุมัติ (APPROVED)</span>
               </p>
             )}
 

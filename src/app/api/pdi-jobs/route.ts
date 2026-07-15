@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized to create job for vehicle of another branch' }, { status: 403 });
     }
 
-    // Auto-approve / Auto-create INCOMING job if creating LONG_TERM or PRE_DELIVERY
+    // Verify INCOMING job is APPROVED before creating LONG_TERM or PRE_DELIVERY
     if (pdiType === 'LONG_TERM' || pdiType === 'PRE_DELIVERY') {
       const incomingJob = await prisma.pdiJob.findFirst({
         where: {
@@ -138,40 +138,11 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      if (!incomingJob) {
-        // Auto-create new APPROVED incoming job
-        const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const rand = Math.floor(1000 + Math.random() * 9000);
-        const incomingJobNumber = `JO-INC-${todayStr}-${rand}`;
-
-        await prisma.pdiJob.create({
-          data: {
-            jobNumber: incomingJobNumber,
-            pdiType: 'INCOMING',
-            status: 'APPROVED',
-            vehicleVin,
-            inspectorId: userId,
-            approverId: userId,
-            startedAt: new Date(),
-            completedAt: new Date(),
-            approvedAt: new Date(),
-            notes: '[SYSTEM] อนุมัติอัตโนมัติ (ขายด่วน)',
-          },
-        });
-      } else if (incomingJob.status !== 'APPROVED') {
-        // Auto-approve existing INCOMING job
-        await prisma.pdiJob.update({
-          where: { id: incomingJob.id },
-          data: {
-            status: 'APPROVED',
-            inspectorId: incomingJob.inspectorId || userId,
-            approverId: incomingJob.approverId || userId,
-            startedAt: incomingJob.startedAt || new Date(),
-            completedAt: incomingJob.completedAt || new Date(),
-            approvedAt: incomingJob.approvedAt || new Date(),
-            notes: (incomingJob.notes ? `${incomingJob.notes} | ` : '') + '[SYSTEM] อนุมัติอัตโนมัติ (ขายด่วน)',
-          },
-        });
+      if (!incomingJob || incomingJob.status !== 'APPROVED') {
+        return NextResponse.json(
+          { error: 'ไม่สามารถสร้างใบงานได้ เนื่องจากรถยนต์คันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI) หรือกำลังอยู่ในกระบวนการตรวจ' },
+          { status: 400 }
+        );
       }
     }
 
