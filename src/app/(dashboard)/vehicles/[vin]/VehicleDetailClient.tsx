@@ -517,7 +517,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
             {!hasPassedIncoming && (
               <p className="text-[11px] text-rose-600 flex items-center gap-1.5 font-medium bg-rose-50 p-2.5 rounded-lg border border-rose-100">
                 <AlertTriangle className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
-                <span>รถคันนี้ยังไม่ผ่านการตรวจแรกรับ (Incoming PDI) คุณจะไม่สามารถเปิดใบสั่งงานตรวจประเภทอื่นได้จนกว่าผลการตรวจแรกรับจะได้รับการอนุมัติ (APPROVED)</span>
+                <span>รถคันนี้ยังไม่ผ่านการตรวจแรกรับ (Incoming ) คุณจะไม่สามารถเปิดใบสั่งงานตรวจประเภทอื่นได้จนกว่าผลการตรวจแรกรับจะได้รับการอนุมัติ (APPROVED)</span>
               </p>
             )}
 
