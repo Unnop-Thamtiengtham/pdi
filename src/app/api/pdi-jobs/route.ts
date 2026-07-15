@@ -4,6 +4,7 @@ import { PdiStatus, PdiType, DefectStatus, VehicleStatus } from '@prisma/client'
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { checkAuth } from '@/lib/api-auth';
+import { triggerWebhook } from '@/lib/webhook';
 
 // GET /api/pdi-jobs — ดึงข้อมูล jobs ทั้งหมด พร้อม filters
 export async function GET(req: NextRequest) {
@@ -429,6 +430,9 @@ export async function PATCH(req: NextRequest) {
         where: { vin: job.vehicleVin },
         data: { currentStatus: nextVehicleStatus },
       });
+
+      // Trigger webhook notification to other team (runs asynchronously)
+      triggerWebhook(job.id);
     }
 
     return NextResponse.json(job);
