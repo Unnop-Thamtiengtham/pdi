@@ -1,20 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Calendar, UserCheck, Shield, Clipboard, MapPin, BarChart2, Car, AlertTriangle, Edit, Clock } from 'lucide-react';
+import { ArrowLeft, Calendar, UserCheck, Shield, Clipboard, Car, Edit, Clock, Wrench, Camera, CheckCircle2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
-import { toast } from 'sonner';
 import { formatDateTime, formatLocalDate, getPdiRouteSlug } from '@/lib/utils';
-import { MODEL_NAMES, ModelCode } from '@/types/pdi';
+import { MODEL_NAMES } from '@/types/pdi';
+
+// Import refactored modules
+import { useVehicleDetail } from './hooks/useVehicleDetail';
+import { EditVehicleDialog } from './components/EditVehicleDialog';
+import { LtmTriggerDialog } from './components/LtmTriggerDialog';
+import { PdTriggerDialog } from './components/PdTriggerDialog';
+import { ImageLightbox } from './components/ImageLightbox';
 
 interface VehicleDetailClientProps {
   initialVehicle: any;
@@ -28,315 +30,67 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
   const userRole = session?.user?.role || 'INSPECTOR';
   const canCreateJobs = userRole !== 'INSPECTOR';
 
-  const [vehicle, setVehicle] = useState(
-    isDbConnected
-      ? initialVehicle
-      : {
-          vin,
-          modelCode: 'AION_V',
-          modelName: 'AION V',
-          colorName: 'Space Gray',
-          exteriorColor: 'Gray Metallic',
-          interiorColor: 'Coal Black',
-          productionYear: 2026,
-          wsDate: '2026-05-10T00:00:00.000Z',
-          currentStatus: 'IN_STOCK',
-          warehouse: 'Main Dock',
-          floorplan: 'Zone A',
-          arrivedAt: '2026-06-08T12:00:00.000Z',
-          incomingDeadline: new Date(Date.now() + 1.5 * 60 * 60 * 1000).toISOString(),
-          branch: { name: 'มีนบุรี' },
-          pdiJobs: [
-            {
-              id: 'mock-1',
-              jobNumber: 'JO-INC-20260609-001',
-              pdiType: 'INCOMING',
-              status: 'PENDING',
-              createdAt: '2026-06-08T12:00:00.000Z',
-              inspector: null,
-              approver: null,
-            },
-          ],
-          editLogs: [],
-        }
-  );
+  const dbBranches = branches && branches.length > 0 ? branches : [{ id: 'mock-branch', code: 'MBR', name: 'มีนบุรี' }];
+
+  // Destructure state and actions from Hook
+  const {
+    vehicle,
+    loading,
+    isLtmOpen,
+    setIsLtmOpen,
+    ltmInterval,
+    setLtmInterval,
+    ltmScheduledDate,
+    setLtmScheduledDate,
+    isPdOpen,
+    setIsPdOpen,
+    targetDeliveryDate,
+    setTargetDeliveryDate,
+    salesName,
+    setSalesName,
+    salesPhone,
+    setSalesPhone,
+    salesBranch,
+    setSalesBranch,
+    customerName,
+    setCustomerName,
+    customerPhone,
+    setCustomerPhone,
+    isEditOpen,
+    setIsEditOpen,
+    editVin,
+    setEditVin,
+    editModelCode,
+    setEditModelCode,
+    editColorName,
+    setEditColorName,
+    editExteriorColor,
+    setEditExteriorColor,
+    editInteriorColor,
+    setEditInteriorColor,
+    editProductionYear,
+    setEditProductionYear,
+    editWsDate,
+    setEditWsDate,
+    editMotorBatteryNumber,
+    setEditMotorBatteryNumber,
+    editWarehouse,
+    setEditWarehouse,
+    editFloorplan,
+    setEditFloorplan,
+    editBranchId,
+    setEditBranchId,
+    editLoading,
+    previewImageUrl,
+    setPreviewImageUrl,
+    handleTriggerLtm,
+    handleTriggerPd,
+    handleEditVehicle,
+  } = useVehicleDetail({ initialVehicle, vin, isDbConnected, dbBranches: branches });
 
   const hasPassedIncoming = (vehicle.pdiJobs || []).some(
     (j: any) => j.pdiType === 'INCOMING' && j.status === 'APPROVED'
   );
-
-  // Manual Trigger Modals States
-  const [isLtmOpen, setIsLtmOpen] = useState(false);
-  const [ltmInterval, setLtmInterval] = useState('30');
-  const [ltmScheduledDate, setLtmScheduledDate] = useState('');
-
-  const [isPdOpen, setIsPdOpen] = useState(false);
-  const [targetDeliveryDate, setTargetDeliveryDate] = useState('');
-  const [salesName, setSalesName] = useState('');
-  const [salesPhone, setSalesPhone] = useState('');
-  const [salesBranch, setSalesBranch] = useState('');
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-
-  const [loading, setLoading] = useState(false);
-
-  // Edit Vehicle Details state
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editVin, setEditVin] = useState(vehicle.vin);
-  const [editModelCode, setEditModelCode] = useState(vehicle.modelCode || 'AION_V');
-  const [editColorName, setEditColorName] = useState(vehicle.colorName || '');
-  const [editExteriorColor, setEditExteriorColor] = useState(vehicle.exteriorColor || '');
-  const [editInteriorColor, setEditInteriorColor] = useState(vehicle.interiorColor || '');
-  const [editProductionYear, setEditProductionYear] = useState(String(vehicle.productionYear || 2026));
-  const [editWsDate, setEditWsDate] = useState(vehicle.wsDate ? new Date(vehicle.wsDate).toISOString().slice(0, 10) : '');
-  const [editMotorBatteryNumber, setEditMotorBatteryNumber] = useState(vehicle.motorBatteryNumber || '');
-  const [editWarehouse, setEditWarehouse] = useState(vehicle.warehouse || '');
-  const [editFloorplan, setEditFloorplan] = useState(vehicle.floorplan || '');
-  const [editBranchId, setEditBranchId] = useState(vehicle.branchId || '');
-  const [editLoading, setEditLoading] = useState(false);
-
-  const dbBranches = branches && branches.length > 0 ? branches : [{ id: 'mock-branch', code: 'MBR', name: 'มีนบุรี' }];
-
-  // Manual Long-term Job Submit
-  const handleTriggerLtm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ltmScheduledDate) {
-      toast.warning('กรุณาระบุวันที่กำหนดตรวจ');
-      return;
-    }
-
-    setLoading(true);
-    const payload = {
-      pdiType: 'LONG_TERM',
-      vehicleVin: vin,
-      ltmInterval: parseInt(ltmInterval),
-      scheduledDate: new Date(ltmScheduledDate).toISOString(),
-    };
-
-    try {
-      if (isDbConnected) {
-        const res = await fetch('/api/pdi-jobs', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Failed to create job');
-        }
-
-        const newJob = await res.json();
-        toast.success('สร้างงาน Long-term สำเร็จ', { description: `สร้างงานตรวจบำรุงรักษาระยะยาว ${ltmInterval} วัน เรียบร้อยแล้ว` });
-        setIsLtmOpen(false);
-        setLtmScheduledDate('');
-        window.location.reload();
-        return;
-      } else {
-        // Mock State Update
-        const mockNewJob = {
-          id: `mock-ltm-${Date.now()}`,
-          jobNumber: `JO-LTM-20260609-${Math.floor(1000 + Math.random() * 9000)}`,
-          pdiType: 'LONG_TERM',
-          status: 'PENDING',
-          createdAt: new Date().toISOString(),
-          scheduledDate: payload.scheduledDate,
-          ltmInterval: payload.ltmInterval,
-          inspector: null,
-          approver: null,
-        };
-        setVehicle({
-          ...vehicle,
-          pdiJobs: [mockNewJob, ...vehicle.pdiJobs],
-        });
-      }
-
-      window.dispatchEvent(new Event('pdi-job-updated'));
-      toast.success('สร้างงาน Long-term สำเร็จ', { description: `สร้างงานตรวจบำรุงรักษาระยะยาว ${ltmInterval} วัน เรียบร้อยแล้ว` });
-      setIsLtmOpen(false);
-      setLtmScheduledDate('');
-    } catch (err: any) {
-      console.error(err);
-      toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Manual Pre-delivery Job Submit
-  const handleTriggerPd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!targetDeliveryDate || !salesName || !salesPhone || !salesBranch || !customerName || !customerPhone) {
-      toast.warning('กรอกข้อมูลไม่ครบถ้วน', { description: 'กรุณากรอกรายละเอียดเพื่อรองรับการตรวจก่อนส่งมอบและ PDPA' });
-      return;
-    }
-
-    setLoading(true);
-    const payload = {
-      pdiType: 'PRE_DELIVERY',
-      vehicleVin: vin,
-      targetDeliveryDate: new Date(targetDeliveryDate).toISOString(),
-      salesName,
-      salesPhone,
-      salesBranch,
-      customerName,
-      customerPhone,
-    };
-
-    try {
-      if (isDbConnected) {
-        const res = await fetch('/api/pdi-jobs', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Failed to create job');
-        }
-
-        const newJob = await res.json();
-        toast.success('สร้างงาน Pre-delivery สำเร็จ', { description: 'สร้างงานตรวจเตรียมส่งมอบลูกค้าเรียบร้อยแล้ว' });
-        setIsPdOpen(false);
-        setTargetDeliveryDate('');
-        setSalesName('');
-        setSalesPhone('');
-        setSalesBranch('');
-        setCustomerName('');
-        setCustomerPhone('');
-        window.location.reload();
-        return;
-      } else {
-        // Mock State Update
-        const mockNewJob = {
-          id: `mock-pd-${Date.now()}`,
-          jobNumber: `JO-PD-20260609-${Math.floor(1000 + Math.random() * 9000)}`,
-          pdiType: 'PRE_DELIVERY',
-          status: 'PENDING',
-          createdAt: new Date().toISOString(),
-          targetDeliveryDate: payload.targetDeliveryDate,
-          salesName: payload.salesName,
-          salesPhone: payload.salesPhone,
-          salesBranch: payload.salesBranch,
-          customerName: payload.customerName,
-          customerPhone: payload.customerPhone,
-          inspector: null,
-          approver: null,
-        };
-        setVehicle({
-          ...vehicle,
-          pdiJobs: [mockNewJob, ...vehicle.pdiJobs],
-        });
-      }
-
-      window.dispatchEvent(new Event('pdi-job-updated'));
-      toast.success('สร้างงาน Pre-delivery สำเร็จ', { description: 'สร้างงานตรวจเตรียมส่งมอบลูกค้าเรียบร้อยแล้ว' });
-      setIsPdOpen(false);
-      setTargetDeliveryDate('');
-      setSalesName('');
-      setSalesPhone('');
-      setSalesBranch('');
-      setCustomerName('');
-      setCustomerPhone('');
-    } catch (err: any) {
-      console.error(err);
-      toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEditVehicle = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editVin || editVin.trim().length < 5) {
-      toast.warning('กรุณากรอกเลขตัวถัง (VIN) ที่ถูกต้อง');
-      return;
-    }
-    if (!editColorName) {
-      toast.warning('กรุณากรอกข้อมูลสำคัญ: สีหลัก');
-      return;
-    }
-
-    setEditLoading(true);
-    const payload = {
-      vin: editVin.trim().toUpperCase(),
-      modelCode: editModelCode,
-      colorName: editColorName,
-      exteriorColor: editExteriorColor,
-      interiorColor: editInteriorColor,
-      productionYear: parseInt(editProductionYear),
-      wsDate: editWsDate ? new Date(editWsDate).toISOString() : null,
-      motorBatteryNumber: editMotorBatteryNumber,
-      warehouse: editWarehouse,
-      floorplan: editFloorplan,
-      branchId: editBranchId,
-    };
-
-    try {
-      if (isDbConnected) {
-        const res = await fetch(`/api/vehicles/${vin}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Failed to update vehicle details');
-        }
-
-        const updatedVeh = await res.json();
-        setVehicle(updatedVeh);
-      } else {
-        // Mock State Update
-        const mockChangeLog = {
-          id: `mock-log-${Date.now()}`,
-          vehicleVin: editVin.trim().toUpperCase(),
-          editedBy: 'สมชาย ช่างตรวจ (Mock User)',
-          changeDetails: editVin.trim().toUpperCase() !== vin.toUpperCase()
-            ? `ปรับปรุงรายละเอียดรถยนต์แบบออฟไลน์ และเปลี่ยนเลขตัวถังจาก ${vin} เป็น ${editVin.trim().toUpperCase()}`
-            : 'ปรับปรุงรายละเอียดรถยนต์แบบออฟไลน์ (Mock Mode)',
-          createdAt: new Date().toISOString(),
-        };
-        const selectedBranch = dbBranches.find(b => b.id === editBranchId) || { name: 'มีนบุรี' };
-        setVehicle({
-          ...vehicle,
-          vin: editVin.trim().toUpperCase(),
-          modelCode: editModelCode,
-          modelName: MODEL_NAMES[editModelCode as ModelCode] || editModelCode,
-          colorName: editColorName,
-          exteriorColor: editExteriorColor,
-          interiorColor: editInteriorColor,
-          productionYear: parseInt(editProductionYear),
-          wsDate: editWsDate ? new Date(editWsDate).toISOString() : null,
-          motorBatteryNumber: editMotorBatteryNumber,
-          warehouse: editWarehouse,
-          floorplan: editFloorplan,
-          branchId: editBranchId,
-          branch: { name: selectedBranch.name },
-          editLogs: [mockChangeLog, ...(vehicle.editLogs || [])],
-        });
-      }
-
-      window.dispatchEvent(new Event('pdi-job-updated'));
-      
-      if (editVin.trim().toUpperCase() !== vin.toUpperCase()) {
-        toast.success('แก้ไขข้อมูลและเลขตัวถังสำเร็จ ระบบกำลังนำท่านไปยังหน้าใหม่');
-        setTimeout(() => {
-          window.location.href = `/vehicles/${editVin.trim().toUpperCase()}`;
-        }, 1000);
-      } else {
-        toast.success('แก้ไขข้อมูลรถสำเร็จ');
-        setIsEditOpen(false);
-      }
-    } catch (err: any) {
-      console.error(err);
-      toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
-    } finally {
-      setEditLoading(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -374,7 +128,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1 text-[11px] h-7 border-slate-200 text-slate-600 hover:bg-slate-50"
+                className="gap-1 text-[11px] h-7 border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"
                 onClick={() => setIsEditOpen(true)}
               >
                 <Edit className="w-3.5 h-3.5 text-slate-500" />
@@ -403,7 +157,6 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                 </div>
               </div>
 
-              {/* Added requested fields display */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-slate-100 pb-3">
                 <div>
                   <p className="text-slate-500">ลักษณะสีภายนอก</p>
@@ -420,20 +173,20 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                 <p className="text-slate-800 font-medium">{formatLocalDate(vehicle.wsDate)}</p>
               </div>
 
-              <div className="space-y-1.5 border-b border-slate-100 pb-3">
-                <p className="text-slate-500">สาขาที่จัดสรร (Branch)</p>
-                <p className="text-slate-800 font-medium">{vehicle.branch?.name || '-'}</p>
-              </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-slate-100 pb-3">
                 <div>
                   <p className="text-slate-500">คลังสินค้าโกดัง</p>
-                  <p className="text-slate-800 font-medium">{vehicle.warehouse || '-'}</p>
+                  <p className="text-slate-800 font-semibold">{vehicle.warehouse || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-slate-500">โซน/ตำแหน่งจอด</p>
-                  <p className="text-slate-800 font-medium">{vehicle.floorplan || '-'}</p>
+                  <p className="text-slate-500">ตำแหน่ง/โซนจอด</p>
+                  <p className="text-slate-800 font-semibold">{vehicle.floorplan || '-'}</p>
                 </div>
+              </div>
+
+              <div className="space-y-1.5 border-b border-slate-100 pb-3">
+                <p className="text-slate-500">สาขาที่จัดสรรสต็อก (Allocated Branch)</p>
+                <p className="text-slate-800 font-semibold">{vehicle.branch?.name || '-'}</p>
               </div>
 
               <div className="space-y-1.5 border-b border-slate-100 pb-3">
@@ -489,7 +242,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                   variant="secondary"
                   size="sm"
                   disabled={!hasPassedIncoming}
-                  className="gap-1.5 text-xs font-semibold"
+                  className="gap-1.5 text-xs font-semibold cursor-pointer"
                   onClick={() => setIsLtmOpen(true)}
                 >
                   <Calendar className="w-4 h-4 text-slate-500" />
@@ -500,7 +253,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                   variant="primary"
                   size="sm"
                   disabled={!hasPassedIncoming}
-                  className="gap-1.5 text-xs font-semibold"
+                  className="gap-1.5 text-xs font-semibold cursor-pointer"
                   onClick={() => setIsPdOpen(true)}
                 >
                   <UserCheck className="w-4 h-4 text-slate-950" />
@@ -520,135 +273,6 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                 <span>รถคันนี้ยังไม่ผ่านการตรวจแรกรับ (Incoming ) คุณจะไม่สามารถเปิดใบสั่งงานตรวจประเภทอื่นได้จนกว่าผลการตรวจแรกรับจะได้รับการอนุมัติ (APPROVED)</span>
               </p>
             )}
-
-            <Dialog open={isLtmOpen} onOpenChange={setIsLtmOpen}>
-              <DialogContent className="max-w-md">
-                <form onSubmit={handleTriggerLtm}>
-                  <DialogHeader>
-                    <DialogTitle>เปิดใบสั่งงานตรวจบำรุงรักษาระยะยาว</DialogTitle>
-                    <DialogDescription>
-                      ระบุรอบการตรวจและวันกำหนดตรวจเพื่อจัดสร้างใบสั่งงานสำหรับรถที่ค้าง Stock เกินเวลากำหนด
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-slate-500">รอบการตรวจบำรุงรักษา (Interval)</Label>
-                      <Select value={ltmInterval} onChange={(e: any) => setLtmInterval(e.target.value)}>
-                        <option value="30">30 วัน (รอบแรก)</option>
-                        <option value="60">60 วัน (รอบสอง)</option>
-                        <option value="90">90 วัน (รอบสาม)</option>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-slate-500">วันที่กำหนดให้ตรวจสภาพ</Label>
-                      <Input
-                        required
-                        type="date"
-                        value={ltmScheduledDate}
-                        onChange={(e) => setLtmScheduledDate(e.target.value)}
-                        className="text-xs"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button type="button" variant="secondary" size="sm">ยกเลิก</Button>
-                    </DialogClose>
-                    <Button type="submit" size="sm" disabled={loading}>
-                      {loading ? 'กำลังเปิดงาน...' : 'ยืนยันสร้างใบงาน'}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={isPdOpen} onOpenChange={setIsPdOpen}>
-              <DialogContent className="max-w-md">
-                <form onSubmit={handleTriggerPd}>
-                  <DialogHeader>
-                    <DialogTitle>เปิดใบสั่งงานตรวจเตรียมส่งมอบลูกค้า (Pre-delivery PDI)</DialogTitle>
-                    <DialogDescription>
-                      กรอกรายละเอียดส่งมอบ ทะเบียนผู้ซื้อ และกำหนดวันส่งมอบรถเพื่อบันทึกเตรียมตรวจและรับความยินยอม PDPA
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-3 py-4 text-xs">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-slate-500">ชื่อลูกค้าผู้รับรถ *</Label>
-                      <Input
-                        required
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        placeholder="เช่น นายสมบูรณ์ ดีงาม"
-                        className="text-xs"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-slate-500">เบอร์ติดต่อลูกค้า *</Label>
-                      <Input
-                        required
-                        value={customerPhone}
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                        placeholder="เช่น 089-123-4567"
-                        className="text-xs"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-slate-500">ชื่อที่ปรึกษาการขาย (Sales) *</Label>
-                        <Input
-                          required
-                          value={salesName}
-                          onChange={(e) => setSalesName(e.target.value)}
-                          placeholder="เช่น พลอยสวย รักขาย"
-                          className="text-xs"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-slate-500">เบอร์โทรศัพท์ของ Sales *</Label>
-                        <Input
-                          required
-                          value={salesPhone}
-                          onChange={(e) => setSalesPhone(e.target.value)}
-                          placeholder="เช่น 081-987-6543"
-                          className="text-xs"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-slate-500">สาขาเจ้าของรถ (Branch) *</Label>
-                        <Select value={salesBranch} onChange={(e: any) => setSalesBranch(e.target.value)} className="text-xs">
-                          <option value="">เลือกสาขา</option>
-                          {dbBranches.map((b) => (
-                            <option key={b.id} value={b.name}>
-                              {b.name} ({b.code})
-                            </option>
-                          ))}
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-slate-500">วันที่กำหนดส่งมอบลูกค้า *</Label>
-                        <Input
-                          required
-                          type="date"
-                          value={targetDeliveryDate}
-                          onChange={(e) => setTargetDeliveryDate(e.target.value)}
-                          className="text-xs"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button type="button" variant="secondary" size="sm">ยกเลิก</Button>
-                    </DialogClose>
-                    <Button type="submit" size="sm" disabled={loading}>
-                      {loading ? 'กำลังเปิดงาน...' : 'ยืนยันสร้างใบงาน'}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
           </div>
 
           {/* Timeline of PDI jobs */}
@@ -708,7 +332,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                           <TableCell className="text-xs py-4">{new Date(job.createdAt).toLocaleDateString('th-TH')}</TableCell>
                           <TableCell className="text-center whitespace-nowrap py-4">
                             <Link href={`/pdi/${getPdiRouteSlug(job.pdiType)}/${job.id}`}>
-                              <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5 whitespace-nowrap">
+                              <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5 whitespace-nowrap cursor-pointer">
                                 {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ตรวจรถ'}
                               </Button>
                             </Link>
@@ -721,150 +345,210 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
               </div>
             </CardContent>
           </Card>
+
+          {/* Repair History with Photos */}
+          {vehicle.defects && vehicle.defects.length > 0 && (
+            <Card>
+              <CardHeader className="border-b border-slate-200">
+                <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                  <Wrench className="w-4 h-4 text-amber-600" />
+                  <span>ประวัติการซ่อม / จุดบกพร่อง ({vehicle.defects.length} จุด)</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {vehicle.defects.map((defect: any) => {
+                  const job = vehicle.pdiJobs?.find((j: any) => j.id === defect.jobId);
+                  const hasBeforePhotos = defect.photoUrls && defect.photoUrls.length > 0;
+                  const hasAfterPhotos = defect.repairPhotoUrls && defect.repairPhotoUrls.length > 0;
+
+                  return (
+                    <div
+                      key={defect.id}
+                      className={`border rounded-lg p-3 text-xs space-y-2.5 ${
+                        defect.status === 'RESOLVED' || defect.status === 'CLOSED'
+                          ? 'border-emerald-200 bg-emerald-50/20'
+                          : defect.status === 'IN_REPAIR'
+                          ? 'border-amber-200 bg-amber-50/20'
+                          : 'border-red-200 bg-red-50/20'
+                      }`}
+                    >
+                      {/* Defect header */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2 flex-1 min-w-0">
+                          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">
+                            {defect.defectNo}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-slate-800 font-medium leading-tight">{defect.description}</p>
+                            {job && (
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                งาน: <span className="font-mono font-medium text-slate-500">{job.jobNumber}</span>
+                                {' · '}
+                                {job.pdiType}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {defect.severity === 'CRITICAL' && (
+                            <Badge variant="danger" className="text-[9px]">วิกฤต</Badge>
+                          )}
+                          {(defect.status === 'RESOLVED' || defect.status === 'CLOSED') && (
+                            <Badge variant="success" className="text-[9px] flex items-center gap-0.5">
+                              <CheckCircle2 className="w-3 h-3" />
+                              ซ่อมแล้ว
+                            </Badge>
+                          )}
+                          {defect.status === 'IN_REPAIR' && (
+                            <Badge variant="warning" className="text-[9px]">กำลังซ่อม</Badge>
+                          )}
+                          {defect.status === 'OPEN' && (
+                            <Badge variant="danger" className="text-[9px]">รอแก้ไข</Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Photos comparison — column layout */}
+                      {(hasBeforePhotos || hasAfterPhotos) && (
+                        <div className="space-y-2.5 pt-1">
+                          {/* Before photos */}
+                          {hasBeforePhotos && (
+                            <div className="space-y-1.5 bg-red-50/40 rounded-lg p-2.5 border border-red-100">
+                              <p className="text-[10px] font-semibold text-red-600 flex items-center gap-1">
+                                <Camera className="w-3 h-3" />
+                                รูปก่อนซ่อม ({defect.photoUrls.length})
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {defect.photoUrls.map((url: string, idx: number) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setPreviewImageUrl(url)}
+                                    className="block w-20 h-20 rounded-lg overflow-hidden border-2 border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all cursor-pointer"
+                                  >
+                                    <img src={url} alt={`ก่อนซ่อม ${idx + 1}`} className="w-full h-full object-cover" />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Arrow separator */}
+                          {hasBeforePhotos && hasAfterPhotos && (
+                            <div className="flex items-center justify-center">
+                              <span className="text-slate-300 text-lg">▼</span>
+                            </div>
+                          )}
+
+                          {/* After photos */}
+                          {hasAfterPhotos && (
+                            <div className="space-y-1.5 bg-emerald-50/40 rounded-lg p-2.5 border border-emerald-100">
+                              <p className="text-[10px] font-semibold text-emerald-600 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" />
+                                รูปหลังซ่อม ({defect.repairPhotoUrls.length})
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {defect.repairPhotoUrls.map((url: string, idx: number) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setPreviewImageUrl(url)}
+                                    className="block w-20 h-20 rounded-lg overflow-hidden border-2 border-emerald-200 shadow-sm hover:shadow-md hover:border-emerald-400 transition-all cursor-pointer"
+                                  >
+                                    <img src={url} alt={`หลังซ่อม ${idx + 1}`} className="w-full h-full object-cover" />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Resolved timestamp */}
+                      {defect.resolvedAt && (
+                        <p className="text-[10px] text-slate-400 pt-1 border-t border-slate-100">
+                          ซ่อมเสร็จเมื่อ: {new Date(defect.resolvedAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
         </div>
+      </div>
+
       {/* Edit Vehicle Details Dialog */}
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-          <form onSubmit={handleEditVehicle}>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Edit className="w-5 h-5 text-brand-teal" />
-                <span>แก้ไขรายละเอียดข้อมูลรถยนต์</span>
-              </DialogTitle>
-              <DialogDescription>
-                ปรับเปลี่ยนข้อมูลคุณสมบัติ ข้อมูลขายส่ง หรือพิกัดจัดเก็บสินค้าของเลขตัวถัง {vin}
-              </DialogDescription>
-            </DialogHeader>
+      <EditVehicleDialog
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        onSubmit={handleEditVehicle}
+        vin={vin}
+        editVin={editVin}
+        setEditVin={setEditVin}
+        editModelCode={editModelCode}
+        setEditModelCode={setEditModelCode}
+        editColorName={editColorName}
+        setEditColorName={setEditColorName}
+        editExteriorColor={editExteriorColor}
+        setEditExteriorColor={setEditExteriorColor}
+        editInteriorColor={editInteriorColor}
+        setEditInteriorColor={setEditInteriorColor}
+        editProductionYear={editProductionYear}
+        setEditProductionYear={setEditProductionYear}
+        editWsDate={editWsDate}
+        setEditWsDate={setEditWsDate}
+        editMotorBatteryNumber={editMotorBatteryNumber}
+        setEditMotorBatteryNumber={setEditMotorBatteryNumber}
+        editWarehouse={editWarehouse}
+        setEditWarehouse={setEditWarehouse}
+        editFloorplan={editFloorplan}
+        setEditFloorplan={setEditFloorplan}
+        editBranchId={editBranchId}
+        setEditBranchId={setEditBranchId}
+        dbBranches={dbBranches}
+        editLoading={editLoading}
+      />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-slate-500 font-semibold">เลขตัวถัง (VIN) *</Label>
-                <Input
-                  required
-                  value={editVin}
-                  onChange={(e) => setEditVin(e.target.value)}
-                  placeholder="กรอกเลขตัวถัง 17 หลัก"
-                  className="text-xs font-mono uppercase"
-                />
-              </div>
+      {/* Manual LTM Trigger Dialog */}
+      <LtmTriggerDialog
+        open={isLtmOpen}
+        onOpenChange={setIsLtmOpen}
+        onSubmit={handleTriggerLtm}
+        ltmInterval={ltmInterval}
+        setLtmInterval={setLtmInterval}
+        ltmScheduledDate={ltmScheduledDate}
+        setLtmScheduledDate={setLtmScheduledDate}
+        loading={loading}
+      />
 
-              <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">รุ่นโมเดลรถ (Model) *</Label>
-                <Select value={editModelCode} onChange={(e: any) => setEditModelCode(e.target.value)}>
-                  {Object.entries(MODEL_NAMES).map(([code, name]) => (
-                    <option key={code} value={code}>
-                      {name}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+      {/* Manual PD Trigger Dialog */}
+      <PdTriggerDialog
+        open={isPdOpen}
+        onOpenChange={setIsPdOpen}
+        onSubmit={handleTriggerPd}
+        customerName={customerName}
+        setCustomerName={setCustomerName}
+        customerPhone={customerPhone}
+        setCustomerPhone={setCustomerPhone}
+        salesName={salesName}
+        setSalesName={setSalesName}
+        salesPhone={salesPhone}
+        setSalesPhone={setSalesPhone}
+        salesBranch={salesBranch}
+        setSalesBranch={setSalesBranch}
+        targetDeliveryDate={targetDeliveryDate}
+        setTargetDeliveryDate={setTargetDeliveryDate}
+        dbBranches={dbBranches}
+        loading={loading}
+      />
 
-              <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">สีรถภายนอกหลัก (Color Name) *</Label>
-                <Input
-                  required
-                  value={editColorName}
-                  onChange={(e) => setEditColorName(e.target.value)}
-                  placeholder="เช่น Space Gray"
-                  className="text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">ลักษณะสีภายนอก (Exterior Color)</Label>
-                <Input
-                  value={editExteriorColor}
-                  onChange={(e) => setEditExteriorColor(e.target.value)}
-                  placeholder="เช่น Gray Metallic"
-                  className="text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">โทนตกแต่งภายใน (Interior Color)</Label>
-                <Input
-                  value={editInteriorColor}
-                  onChange={(e) => setEditInteriorColor(e.target.value)}
-                  placeholder="เช่น Coal Black"
-                  className="text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">ปีที่ผลิตรถ (Production Year)</Label>
-                <Select value={editProductionYear} onChange={(e: any) => setEditProductionYear(e.target.value)}>
-                  <option value="2026">2026</option>
-                  <option value="2025">2025</option>
-                  <option value="2024">2024</option>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">วันที่ขายส่งดีลเลอร์ (WSDate)</Label>
-                <Input
-                  type="date"
-                  value={editWsDate}
-                  onChange={(e) => setEditWsDate(e.target.value)}
-                  className="text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-slate-500">เลขมอเตอร์แบตเตอรี่ (Motor Battery No.)</Label>
-                <Input
-                  value={editMotorBatteryNumber}
-                  onChange={(e) => setEditMotorBatteryNumber(e.target.value)}
-                  placeholder="เช่น TZ220XS-BAT202606001"
-                  className="text-xs font-mono"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">คลังสินค้าโกดัง (Warehouse)</Label>
-                <Input
-                  value={editWarehouse}
-                  onChange={(e) => setEditWarehouse(e.target.value)}
-                  placeholder="เช่น คลัง A"
-                  className="text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">โซน/ตำแหน่งจอด (Floorplan)</Label>
-                <Input
-                  value={editFloorplan}
-                  onChange={(e) => setEditFloorplan(e.target.value)}
-                  placeholder="เช่น Zone 1"
-                  className="text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-slate-500">สาขาที่จัดสรร (Branch)</Label>
-                <Select value={editBranchId} onChange={(e: any) => setEditBranchId(e.target.value)}>
-                  {dbBranches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name} ({b.code})
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="secondary" size="sm">
-                  ยกเลิก
-                </Button>
-              </DialogClose>
-              <Button type="submit" size="sm" disabled={editLoading}>
-                {editLoading ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Fullscreen Image Preview Lightbox */}
+      <ImageLightbox
+        imageUrl={previewImageUrl}
+        onClose={() => setPreviewImageUrl(null)}
+      />
     </div>
-  </div>
   );
 }

@@ -186,6 +186,7 @@ model PdiJob {
   notes           String?
 
   @@index([vehicleVin])
+  @@index([vehicleVin, pdiType])
   @@index([inspectorId])
   @@index([approverId])
   @@index([status])
@@ -206,6 +207,7 @@ model ChecklistTemplate {
   createdAt   DateTime            @default(now())
   
   @@unique([modelCode, pdiType, version])
+  @@index([modelCode, pdiType, isActive])
 }
 
 model ChecklistItem {
@@ -247,6 +249,7 @@ model ChecklistResult {
   checkedAt     DateTime        @default(now())
   
   @@unique([jobId, itemId])
+  @@index([jobId])
 }
 
 // ──────────────────────────────────────
@@ -267,11 +270,13 @@ model Defect {
   severity      DefectSeverity @default(NORMAL)
   status        DefectStatus  @default(OPEN)
   photoUrls     String[]      @default([])
+  repairPhotoUrls String[]    @default([])   // รูปถ่ายหลังซ่อมจาก Supervisor
   resolvedAt    DateTime?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   @@index([jobId])
+  @@index([jobId, status])
   @@index([vehicleVin])
 }
 

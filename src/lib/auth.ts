@@ -31,12 +31,17 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
-          throw new Error('No user found with those credentials.');
+          throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+        }
+
+        // Guard against null/empty passwordHash to prevent bcrypt crash
+        if (!user.passwordHash) {
+          throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
         }
 
         const isValid = bcrypt.compareSync(credentials.password, user.passwordHash);
         if (!isValid) {
-          throw new Error('Incorrect password.');
+          throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
         }
 
         return {

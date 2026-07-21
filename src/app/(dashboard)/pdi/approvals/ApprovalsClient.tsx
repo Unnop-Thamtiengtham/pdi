@@ -1,89 +1,36 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { CheckSquare, ArrowUpRight, Search, Clock, ShieldAlert } from 'lucide-react';
+import { CheckSquare, ArrowUpRight, Search, ShieldAlert } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { getPdiRouteSlug } from '@/lib/utils';
+import { useApprovals } from './hooks/useApprovals';
 
 interface ApprovalsClientProps {
   initialJobs: any[];
   isDbConnected: boolean;
 }
 
+const getPdiTypeBadge = (type: string) => {
+  switch (type) {
+    case 'INCOMING':
+      return <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-[10px] uppercase font-semibold">Incoming</Badge>;
+    case 'LONG_TERM':
+      return <Badge className="bg-teal-500 hover:bg-teal-600 text-white text-[10px] uppercase font-semibold">Long-Term</Badge>;
+    case 'PRE_DELIVERY':
+      return <Badge className="bg-purple-500 hover:bg-purple-600 text-white text-[10px] uppercase font-semibold">Pre-Delivery</Badge>;
+    default:
+      return <Badge variant="outline">{type}</Badge>;
+  }
+};
+
 export default function ApprovalsClient({ initialJobs, isDbConnected }: ApprovalsClientProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Fallback mock data when DB is not connected
-  const getMockJobs = () => {
-    return [
-      {
-        id: 'mock-approve-1',
-        jobNumber: 'JO-INC-20260626-4726',
-        pdiType: 'INCOMING',
-        status: 'PENDING_APPROVAL',
-        vehicleVin: 'LNAT4AB34T5G05101',
-        vehicle: { modelName: 'AION V', colorName: 'Space Gray', branch: { name: 'มีนบุรี' } },
-        inspector: { name: 'สมชาย ช่างตรวจ' },
-        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-        completedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'mock-approve-2',
-        jobNumber: 'JO-LTM-20260626-9305',
-        pdiType: 'LONG_TERM',
-        ltmInterval: 30,
-        status: 'PENDING_APPROVAL',
-        vehicleVin: 'LNAT4AB34T5G05102',
-        vehicle: { modelName: 'AION Y Plus', colorName: 'Pearl White', branch: { name: 'มีนบุรี' } },
-        inspector: { name: 'วิชัย ช่างตรวจ' },
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        completedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'mock-approve-3',
-        jobNumber: 'JO-PD-20260626-4499',
-        pdiType: 'PRE_DELIVERY',
-        status: 'PENDING_APPROVAL',
-        vehicleVin: 'LNAT4AB34T5G05104',
-        vehicle: { modelName: 'HYPTEC HT', colorName: 'Rose Gold', branch: { name: 'มีนบุรี' } },
-        customerName: 'คุณสมเกียรติ ยิ่งใหญ่',
-        inspector: { name: 'สมชาย ช่างตรวจ' },
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        completedAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-      },
-    ];
-  };
-
-  const jobs = isDbConnected ? initialJobs : getMockJobs();
-
-  // Filter jobs based on search term
-  const filteredJobs = jobs.filter((job) => {
-    const term = searchTerm.toLowerCase();
-    return (
-      job.jobNumber.toLowerCase().includes(term) ||
-      job.vehicleVin.toLowerCase().includes(term) ||
-      (job.vehicle?.modelName && job.vehicle.modelName.toLowerCase().includes(term)) ||
-      (job.inspector?.name && job.inspector.name.toLowerCase().includes(term))
-    );
-  });
-
-  const getPdiTypeBadge = (type: string) => {
-    switch (type) {
-      case 'INCOMING':
-        return <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-[10px] uppercase font-semibold">Incoming</Badge>;
-      case 'LONG_TERM':
-        return <Badge className="bg-teal-500 hover:bg-teal-600 text-white text-[10px] uppercase font-semibold">Long-Term</Badge>;
-      case 'PRE_DELIVERY':
-        return <Badge className="bg-purple-500 hover:bg-purple-600 text-white text-[10px] uppercase font-semibold">Pre-Delivery</Badge>;
-      default:
-        return <Badge variant="outline">{type}</Badge>;
-    }
-  };
+  const { searchTerm, setSearchTerm, filteredJobs } = useApprovals({ initialJobs, isDbConnected });
 
   return (
     <div className="space-y-6">

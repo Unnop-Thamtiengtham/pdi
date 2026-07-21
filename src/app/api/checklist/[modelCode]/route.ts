@@ -1,40 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { PdiType } from '@prisma/client';
+import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
+import { safeErrorResponse } from '@/lib/api-error';
+import { getChecklistTemplate, VALID_PDI_TYPES } from '@/modules/checklist/service';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ modelCode: string }> }
 ) {
+  const session = await requireAuth(req);
+  if (!session) return unauthorizedResponse();
+
   try {
     const { modelCode } = await params;
     const typeParam = req.nextUrl.searchParams.get('type') ?? 'INCOMING';
 
-    const pdiType = typeParam as PdiType;
+    if (!VALID_PDI_TYPES.has(typeParam as PdiType)) {
+      return NextResponse.json({ error: `Invalid PDI type: ${typeParam}` }, { status: 400 });
+    }
 
-    const template = await prisma.checklistTemplate.findFirst({
-      where: {
-        modelCode,
-        pdiType,
-        isActive: true,
-      },
-      include: {
-        items: {
-          orderBy: [
-            { categoryOrder: 'asc' },
-            { itemOrder: 'asc' },
-          ],
-        },
-      },
-    });
-
+    const template = await getChecklistTemplate(modelCode, typeParam as PdiType);
     if (!template) {
-      return NextResponse.json({ error: `Template not found for model ${modelCode} and PDI type ${pdiType}` }, { status: 404 });
+      return NextResponse.json({ error: `Template not found for model ${modelCode} and PDI type ${typeParam}` }, { status: 404 });
     }
 
     return NextResponse.json(template);
   } catch (error: any) {
     console.error('Error fetching checklist template:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return safeErrorResponse(error);
   }
 }

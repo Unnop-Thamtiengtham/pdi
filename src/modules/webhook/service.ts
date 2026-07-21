@@ -1,4 +1,4 @@
-import { prisma } from './prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function triggerWebhook(jobId: string) {
   const webhookUrl = process.env.PDI_WEBHOOK_URL;
@@ -29,10 +29,10 @@ export async function triggerWebhook(jobId: string) {
     // Lightweight status update payload
     const payload = {
       event: 'pdi.status_update',
-      vin: job.vehicleVin,          // เลขตัวถังรถยนต์
-      pdiType: job.pdiType,         // ขั้นตอนตรวจ: INCOMING, LONG_TERM, PRE_DELIVERY
-      status: job.status,           // สถานะล่าสุด: APPROVED
-      updatedAt: job.approvedAt ? job.approvedAt.toISOString() : new Date().toISOString(), // วันเวลาที่อัปเดตสถานะ
+      vin: job.vehicleVin,
+      pdiType: job.pdiType,
+      status: job.status,
+      updatedAt: job.approvedAt ? job.approvedAt.toISOString() : new Date().toISOString(),
     };
 
     console.log(`[Webhook] Sending PDI status update for VIN ${job.vehicleVin} to ${webhookUrl}...`);
@@ -40,12 +40,17 @@ export async function triggerWebhook(jobId: string) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
+    const webhookSecret = process.env.PDI_WEBHOOK_SECRET;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (webhookSecret) {
+      headers['Authorization'] = `Bearer ${webhookSecret}`;
+    }
+
     fetch(webhookUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.PDI_WEBHOOK_SECRET || 'pdi-webhook-secret-token-2026'}`,
-      },
+      headers,
       body: JSON.stringify(payload),
       signal: controller.signal,
     })

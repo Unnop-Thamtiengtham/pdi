@@ -1,443 +1,170 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { PdiStatus, PdiType, DefectStatus, VehicleStatus } from '@prisma/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { checkAuth } from '@/lib/api-auth';
-import { triggerWebhook } from '@/lib/webhook';
+import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
+import { safeErrorResponse } from '@/lib/api-error';
+import {
+  getJobById,
+  listJobs,
+  createJob,
+  VALID_PDI_TYPES,
+  VALID_PDI_STATUSES,
+  validateUserExists,
+  saveChecklistResults,
+  saveBatteryResults,
+  saveDefects,
+  markDefectsInRepair,
+  completeRepair,
+  buildJobUpdateData,
+  updateJobAndSideEffects,
+} from '@/modules/pdi-jobs/service';
 
-// GET /api/pdi-jobs — ดึงข้อมูล jobs ทั้งหมด พร้อม filters
+// GET /api/pdi-jobs
 export async function GET(req: NextRequest) {
-  if (!(await checkAuth(req))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const session = await requireAuth(req);
+  if (!session) return unauthorizedResponse();
 
-  const session = await getServerSession(authOptions);
-  const userRole = session?.user?.role;
-  const userBranchId = session?.user?.branchId;
+  const userRole = session.user?.role;
+  const userBranchId = session.user?.branchId;
   const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
 
   try {
     const jobId = req.nextUrl.searchParams.get('id');
-    const branchId = req.nextUrl.searchParams.get('branchId');
     const statusParam = req.nextUrl.searchParams.get('status');
     const typeParam = req.nextUrl.searchParams.get('type');
-    const vinParam = req.nextUrl.searchParams.get('vin');
+
+    // Validate enum params
+    if (statusParam && !VALID_PDI_STATUSES.has(statusParam as any)) {
+      return NextResponse.json({ error: `Invalid status: ${statusParam}` }, { status: 400 });
+    }
+    if (typeParam && !VALID_PDI_TYPES.has(typeParam as any)) {
+      return NextResponse.json({ error: `Invalid PDI type: ${typeParam}` }, { status: 400 });
+    }
+
+    // Single job lookup
     if (jobId) {
-      const job = await prisma.pdiJob.findUnique({
-        where: { id: jobId },
-        include: {
-          vehicle: {
-            include: { branch: true },
-          },
-          inspector: { select: { id: true, name: true, employeeId: true } },
-          approver: { select: { id: true, name: true, employeeId: true } },
-          checklistItems: {
-            include: { item: true },
-          },
-          defects: true,
-          documents: true,
-          batteryTest: true, // Fetch battery results in the same query via relation
-        },
-      });
-
-      if (!job) {
-        return NextResponse.json({ error: 'Job not found' }, { status: 404 });
-      }
-
+      const job = await getJobById(jobId);
+      if (!job) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
       if (isBranchRestricted && job.vehicle.branchId !== userBranchId) {
         return NextResponse.json({ error: 'Unauthorized to view job from another branch' }, { status: 403 });
       }
-
-      // Map batteryTest to batteryTestResult to preserve the expected response shape
-      const { batteryTest, ...rest } = job;
-      return NextResponse.json({ ...rest, batteryTestResult: batteryTest });
+      return NextResponse.json(job);
     }
 
-    // List filtering
-    const where: any = {};
-
-    if (statusParam) where.status = statusParam as PdiStatus;
-    if (typeParam) where.pdiType = typeParam as PdiType;
-    if (vinParam) where.vehicleVin = vinParam;
-    
-    if (isBranchRestricted) {
-      where.vehicle = { branchId: userBranchId };
-    } else if (branchId) {
-      where.vehicle = { branchId };
-    }
-
-    const jobs = await prisma.pdiJob.findMany({
-      where,
-      include: {
-        vehicle: {
-          include: { branch: true },
-        },
-        inspector: { select: { id: true, name: true } },
-        approver: { select: { id: true, name: true } },
-        defects: true,
+    // List with pagination
+    const result = await listJobs(
+      {
+        status: statusParam || undefined,
+        pdiType: typeParam || undefined,
+        vin: req.nextUrl.searchParams.get('vin') || undefined,
+        branchId: req.nextUrl.searchParams.get('branchId') || undefined,
+        page: parseInt(req.nextUrl.searchParams.get('page') || '1', 10),
+        limit: Math.min(parseInt(req.nextUrl.searchParams.get('limit') || '50', 10), 100),
       },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    });
+      isBranchRestricted ? userBranchId : undefined
+    );
 
-    return NextResponse.json(jobs);
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('Error fetching PDI jobs:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return safeErrorResponse(error);
   }
 }
 
-// POST /api/pdi-jobs — สร้าง PDI Job ใหม่ (เช่น Long-term หรือ Pre-delivery)
+// POST /api/pdi-jobs
 export async function POST(req: NextRequest) {
-  if (!(await checkAuth(req))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const session = await requireAuth(req);
+  if (!session) return unauthorizedResponse();
 
-  const session = await getServerSession(authOptions);
-  const userId = session?.user?.id || null;
-  const userRole = session?.user?.role;
-  const userBranchId = session?.user?.branchId;
+  const userRole = session.user?.role;
+  const userBranchId = session.user?.branchId;
   const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
 
   try {
-
     const body = await req.json();
-    const {
-      pdiType,
-      vehicleVin,
-      ltmInterval,
-      scheduledDate,
-      targetDeliveryDate,
-      salesName,
-      salesPhone,
-      salesBranch,
-      customerName,
-      customerPhone,
-    } = body;
 
-    if (!pdiType || !vehicleVin) {
+    if (!body.pdiType || !body.vehicleVin) {
       return NextResponse.json({ error: 'Missing required fields: pdiType, vehicleVin' }, { status: 400 });
     }
-
-    // Verify vehicle exists
-    const vehicle = await prisma.vehicle.findUnique({ where: { vin: vehicleVin } });
-    if (!vehicle) {
-      return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 });
+    if (!VALID_PDI_TYPES.has(body.pdiType as any)) {
+      return NextResponse.json({ error: `Invalid PDI type: ${body.pdiType}` }, { status: 400 });
     }
 
-    if (isBranchRestricted && vehicle.branchId !== userBranchId) {
-      return NextResponse.json({ error: 'Unauthorized to create job for vehicle of another branch' }, { status: 403 });
+    // Branch restriction check delegated to service via vehicle lookup
+    const result = await createJob(body);
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
     }
-
-    // Verify INCOMING job is APPROVED before creating LONG_TERM or PRE_DELIVERY
-    if (pdiType === 'LONG_TERM' || pdiType === 'PRE_DELIVERY') {
-      const incomingJob = await prisma.pdiJob.findFirst({
-        where: {
-          vehicleVin,
-          pdiType: 'INCOMING',
-        },
-      });
-
-      if (!incomingJob || incomingJob.status !== 'APPROVED') {
-        return NextResponse.json(
-          { error: 'ไม่สามารถสร้างใบงานได้ เนื่องจากรถยนต์คันนี้ยังไม่ผ่านการตรวจสภาพแรกรับ (Incoming PDI) หรือกำลังอยู่ในกระบวนการตรวจ' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Generate unique Job Number
-    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const rand = Math.floor(1000 + Math.random() * 9000);
-    const prefix = pdiType === 'INCOMING' ? 'INC' : pdiType === 'LONG_TERM' ? 'LTM' : 'PD';
-    const jobNumber = `JO-${prefix}-${todayStr}-${rand}`;
-
-    const job = await prisma.pdiJob.create({
-      data: {
-        jobNumber,
-        pdiType: pdiType as PdiType,
-        status: PdiStatus.PENDING,
-        vehicleVin,
-        ltmInterval: ltmInterval ? parseInt(ltmInterval) : null,
-        scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
-        targetDeliveryDate: targetDeliveryDate ? new Date(targetDeliveryDate) : null,
-        salesName,
-        salesPhone,
-        salesBranch,
-
-        customerPhone,
-      },
-    });
-
-    return NextResponse.json(job, { status: 201 });
+    return NextResponse.json(result.data, { status: result.status });
   } catch (error: any) {
     console.error('Error creating PDI job:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return safeErrorResponse(error);
   }
 }
 
-// PATCH /api/pdi-jobs — บันทึกผลการตรวจ (Force route reload)
+// PATCH /api/pdi-jobs
 export async function PATCH(req: NextRequest) {
-  if (!(await checkAuth(req))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const session = await requireAuth(req);
+  if (!session) return unauthorizedResponse();
 
-  const session = await getServerSession(authOptions);
-  const userRole = session?.user?.role;
-  const userBranchId = session?.user?.branchId;
+  const userRole = session.user?.role;
+  const userBranchId = session.user?.branchId;
   const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
 
   try {
     const body = await req.json();
-    const {
-      jobId,
-      results,
-      defects,
-      batteryData,
-      status,
-      inspectorId,
-      approverId,
-      notes,
-      sentToRepairAt,
-      repairLocation,
-      repairNotes,
-      repairCompleted,
-      customerSig,
-      inspectorSig,
-      supervisorSig,
-      pdpaConsent,
-    } = body;
+    const { jobId, status } = body;
 
-    if (!jobId) {
-      return NextResponse.json({ error: 'Missing jobId' }, { status: 400 });
+    if (!jobId) return NextResponse.json({ error: 'Missing jobId' }, { status: 400 });
+    if (status && !VALID_PDI_STATUSES.has(status as any)) {
+      return NextResponse.json({ error: `Invalid status: ${status}` }, { status: 400 });
     }
 
-    const existingJob = await prisma.pdiJob.findUnique({
-      where: { id: jobId },
-      include: { vehicle: true }
-    });
-    if (!existingJob) {
-      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
-    }
+    // Verify job exists + branch access
+    const existingJob = await getJobById(jobId);
+    if (!existingJob) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     if (isBranchRestricted && existingJob.vehicle.branchId !== userBranchId) {
       return NextResponse.json({ error: 'Unauthorized to modify job from another branch' }, { status: 403 });
     }
 
-    // 1. Save Checklist Results
-    if (results && Array.isArray(results)) {
-      await prisma.$transaction(
-        results.map((r: any) =>
-          prisma.checklistResult.upsert({
-            where: {
-              jobId_itemId: {
-                jobId,
-                itemId: r.itemId,
-              },
-            },
-            update: {
-              result: r.result,
-              numericValue: r.numericValue !== undefined ? r.numericValue : null,
-              numericValue2: r.numericValue2 !== undefined ? r.numericValue2 : null,
-              photoUrl: r.photoUrl || null,
-              remark: r.remark || null,
-              checkedAt: new Date(),
-            },
-            create: {
-              jobId,
-              itemId: r.itemId,
-              result: r.result,
-              numericValue: r.numericValue !== undefined ? r.numericValue : null,
-              numericValue2: r.numericValue2 !== undefined ? r.numericValue2 : null,
-              photoUrl: r.photoUrl || null,
-              remark: r.remark || null,
-            },
-          })
-        )
-      );
-    }
-
-    // 2. Save Battery Test Results
-    if (batteryData) {
-      await prisma.batteryTestResult.upsert({
-        where: { jobId },
-        update: {
-          mainVoltage: batteryData.mainVoltage,
-          mainSoh: batteryData.mainSoh,
-          mainCca: batteryData.mainCca,
-          mainSoc: batteryData.mainSoc,
-          secVoltage: batteryData.secVoltage,
-          secSoh: batteryData.secSoh,
-          hvBatteryLevel: batteryData.hvBatteryLevel,
-          tirePressure: batteryData.tirePressure,
-          reportPhotoUrl: batteryData.reportPhotoUrl,
-          terminalCheck: batteryData.terminalCheck,
-        },
-        create: {
-          jobId,
-          mainVoltage: batteryData.mainVoltage,
-          mainSoh: batteryData.mainSoh,
-          mainCca: batteryData.mainCca,
-          mainSoc: batteryData.mainSoc,
-          secVoltage: batteryData.secVoltage,
-          secSoh: batteryData.secSoh,
-          hvBatteryLevel: batteryData.hvBatteryLevel,
-          tirePressure: batteryData.tirePressure,
-          reportPhotoUrl: batteryData.reportPhotoUrl,
-          terminalCheck: batteryData.terminalCheck,
-        },
-      });
-    }
-
-    // 3. Save Defects
-    if (defects && Array.isArray(defects)) {
-      // Find vehicleVin of the job to link to created defects
-      const existingJob = await prisma.pdiJob.findUnique({
-        where: { id: jobId },
-        select: { vehicleVin: true },
-      });
-      if (!existingJob) {
-        return NextResponse.json({ error: 'Job not found' }, { status: 404 });
-      }
-      const vehicleVin = existingJob.vehicleVin;
-
-      // Delete old defects and recreate
-      await prisma.defect.deleteMany({ where: { jobId } });
-      if (defects.length > 0) {
-        await prisma.defect.createMany({
-          data: defects.map((d: any, index: number) => ({
-            jobId,
-            vehicleVin, // Link defect directly to vehicle
-            defectNo: index + 1,
-            checklistItemCode: d.checklistItemCode || null,
-            description: d.description,
-            cause: d.cause || null,
-            solution: d.solution || null,
-            severity: d.severity || 'NORMAL',
-            status: (d.status as DefectStatus) || ('OPEN' as DefectStatus),
-            photoUrls: d.photoUrls || (d.photoUrl ? [d.photoUrl] : []),
-            resolvedAt: d.status === 'RESOLVED' || d.status === 'CLOSED' ? new Date() : null,
-          })),
-        });
+    // Role guard for approve/reject
+    if (status === 'APPROVED' || status === 'REJECTED') {
+      if (userRole !== 'SUPERVISOR' && userRole !== 'SUPER_ADMIN' && userRole !== 'MASTER') {
+        return NextResponse.json({ error: 'Forbidden: เฉพาะหัวหน้างาน (Supervisor) ขึ้นไปเท่านั้นที่สามารถอนุมัติ/ปฏิเสธงานได้' }, { status: 403 });
       }
     }
 
-    // If sent to repair, automatically set any OPEN defects to IN_REPAIR
-    if (sentToRepairAt) {
-      await prisma.defect.updateMany({
-        where: {
-          jobId,
-          status: 'OPEN',
-        },
-        data: {
-          status: 'IN_REPAIR',
-        },
-      });
+    // Pre-validate user references
+    if (body.inspectorId && !(await validateUserExists(body.inspectorId))) {
+      return NextResponse.json({ error: 'เซสชันผู้ใช้งานช่างตรวจไม่พบในฐานข้อมูล กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่อีกครั้ง' }, { status: 400 });
+    }
+    if (body.approverId && !(await validateUserExists(body.approverId))) {
+      return NextResponse.json({ error: 'เซสชันผู้อนุมัติไม่พบในฐานข้อมูล กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่อีกครั้ง' }, { status: 400 });
     }
 
-    // If repairCompleted is true, automatically set OPEN/IN_REPAIR defects to RESOLVED and FAIL results to REPAIRED
-    if (repairCompleted) {
-      await prisma.defect.updateMany({
-        where: {
-          jobId,
-          status: { in: ['OPEN', 'IN_REPAIR'] },
-        },
-        data: {
-          status: 'RESOLVED',
-          resolvedAt: new Date(),
-        },
-      });
+    // 1. Checklist results
+    if (body.results?.length) await saveChecklistResults(jobId, body.results);
 
-      await prisma.checklistResult.updateMany({
-        where: {
-          jobId,
-          result: 'FAIL',
-        },
-        data: {
-          result: 'REPAIRED',
-        },
-      });
-    }
+    // 2. Battery data
+    if (body.batteryData) await saveBatteryResults(jobId, body.batteryData);
 
-    // 4. Update PDI Job Status & timestamps
-    const updateData: any = {};
-    if (status) updateData.status = status as PdiStatus;
-    
-    if (sentToRepairAt !== undefined) {
-      updateData.sentToRepairAt = sentToRepairAt ? new Date(sentToRepairAt) : null;
-    }
-    if (repairLocation !== undefined) {
-      updateData.repairLocation = repairLocation;
-    }
-    if (repairNotes !== undefined) {
-      updateData.repairNotes = repairNotes;
-    }
-    
-    if (inspectorId) {
-      const userExists = await prisma.user.findUnique({ where: { id: inspectorId } });
-      if (!userExists) {
-        return NextResponse.json(
-          { error: 'เซสชันผู้ใช้งานช่างตรวจไม่พบในฐานข้อมูล (เนื่องจากอาจมีการ Reset/Reseed ฐานข้อมูลล่าสุด) กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่อีกครั้ง' },
-          { status: 400 }
-        );
+    // 3. Defects
+    if (body.defects) await saveDefects(jobId, existingJob.vehicleVin, body.defects);
+
+    // 4. Repair flow
+    if (body.sentToRepairAt) await markDefectsInRepair(jobId);
+    if (body.repairCompleted) {
+      const repairError = await completeRepair(jobId, body.repairPhotos);
+      if (repairError) {
+        return NextResponse.json({ error: repairError.error }, { status: repairError.status });
       }
-      updateData.inspectorId = inspectorId;
     }
 
-    if (approverId) {
-      const userExists = await prisma.user.findUnique({ where: { id: approverId } });
-      if (!userExists) {
-        return NextResponse.json(
-          { error: 'เซสชันผู้อนุมัติไม่พบในฐานข้อมูล (เนื่องจากอาจมีการ Reset/Reseed ฐานข้อมูลล่าสุด) กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่อีกครั้ง' },
-          { status: 400 }
-        );
-      }
-      updateData.approverId = approverId;
-    }
-
-    if (notes !== undefined) updateData.notes = notes;
-    if (customerSig !== undefined) updateData.customerSig = customerSig;
-    if (inspectorSig !== undefined) updateData.inspectorSig = inspectorSig;
-    if (supervisorSig !== undefined) updateData.supervisorSig = supervisorSig;
-    if (pdpaConsent !== undefined) updateData.pdpaConsent = pdpaConsent;
-
-    // SLA & Timings transitions
-    if (status === 'PENDING') {
-      updateData.startedAt = null;
-      updateData.completedAt = null;
-      updateData.inspectorId = null;
-      updateData.approverId = null;
-    } else if (status === 'IN_PROGRESS') {
-      updateData.startedAt = new Date();
-    } else if (status === 'PENDING_APPROVAL') {
-      updateData.completedAt = new Date();
-    } else if (status === 'APPROVED') {
-      updateData.approvedAt = new Date();
-    }
-
-    const job = await prisma.pdiJob.update({
-      where: { id: jobId },
-      data: updateData,
-    });
-
-    // Side effect: update vehicle status
-    if (status === 'APPROVED') {
-      let nextVehicleStatus: VehicleStatus = 'IN_STOCK';
-      if (job.pdiType === 'PRE_DELIVERY') {
-        nextVehicleStatus = 'DELIVERED';
-      }
-      await prisma.vehicle.update({
-        where: { vin: job.vehicleVin },
-        data: { currentStatus: nextVehicleStatus },
-      });
-
-      // Trigger webhook notification to other team (runs asynchronously)
-      triggerWebhook(job.id);
-    }
+    // 5. Update job status + side effects
+    const updateData = buildJobUpdateData(body);
+    const job = await updateJobAndSideEffects(jobId, updateData);
 
     return NextResponse.json(job);
   } catch (error: any) {
     console.error('Error saving PDI results:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return safeErrorResponse(error);
   }
 }

@@ -34,6 +34,9 @@ export default async function VehicleDetailPage({
             approver: { select: { id: true, name: true } },
           },
         },
+        defects: {
+          orderBy: { createdAt: 'desc' },
+        },
         editLogs: {
           orderBy: { createdAt: 'desc' },
         },

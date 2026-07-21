@@ -1,46 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-
-// Max file size: 5 MB
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-// Allowed MIME types
-const ALLOWED_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/heic',
-  'image/heif',
-  'application/pdf',
-];
-
-// Initialize S3 client for DigitalOcean Spaces (S3-compatible API)
-const s3 = new S3Client({
-  endpoint: process.env.S3_ENDPOINT,
-  region: process.env.S3_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY || '',
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
-  },
-  forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
-});
+import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
+import { safeErrorResponse } from '@/lib/api-error';
+import {
+  MAX_FILE_SIZE, ALLOWED_TYPES,
+  validateMagicBytes, sanitizeFolderPath,
+  generateFileName, uploadToS3,
+} from '@/modules/upload/service';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const session = await requireAuth(req);
+    if (!session) return unauthorizedResponse();
 
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
-    const folder = (formData.get('folder') as string) || 'uploads';
+    const rawFolder = (formData.get('folder') as string) || 'uploads';
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
-    }
+    // Validate folder path
+    const folder = sanitizeFolderPath(rawFolder);
+    if (!folder) return NextResponse.json({ error: 'Invalid folder path' }, { status: 400 });
+    if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
@@ -50,10 +29,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate file type
+    // Validate MIME type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: 'ไฟล์ไม่ใช่รูปภาพ กรุณาอัปโหลดไฟล์ JPEG, PNG, หรือ WebP' },
+        { error: 'ไฟล์ไม่ใช่ประเภทที่รองรับ กรุณาอัปโหลดไฟล์ JPEG, PNG, WebP หรือ PDF' },
         { status: 400 }
       );
     }
@@ -61,43 +40,21 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Generate unique filename with folder structure
-    const now = new Date();
-    const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const timestamp = Date.now();
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_').replace(/\.[^.]+$/, '');
-    
-    // If the folder already contains a job ID or is for signatures, we don't need year-month subfolders
-    const isSpecificFolder = folder.split('/').length > 2 || folder.includes('signature');
-    
-    const fileName = isSpecificFolder
-      ? `${folder}/${timestamp}_${safeName}.${ext}`
-      : `${folder}/${yearMonth}/${timestamp}_${safeName}.${ext}`;
+    // Validate magic bytes
+    if (!validateMagicBytes(buffer)) {
+      return NextResponse.json(
+        { error: 'เนื้อหาไฟล์ไม่ตรงกับประเภทที่อนุญาต กรุณาอัปโหลดไฟล์ที่ถูกต้อง' },
+        { status: 400 }
+      );
+    }
 
-    // Upload to S3
-    const bucketName = process.env.S3_BUCKET || 'space-itake-dev';
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: bucketName,
-        Key: fileName,
-        Body: buffer,
-        ContentType: file.type,
-        ACL: 'public-read',
-      })
-    );
+    // Upload
+    const fileName = generateFileName(folder, file.name);
+    const fileUrl = await uploadToS3(buffer, fileName, file.type);
 
-    // Construct public URL
-    const cleanEndpoint = process.env.S3_ENDPOINT?.replace('https://', '') || 'sgp1.digitaloceanspaces.com';
-    const fileUrl = `https://${bucketName}.${cleanEndpoint}/${fileName}`;
-
-    return NextResponse.json({
-      fileUrl,
-      fileName: file.name,
-      fileSize: file.size,
-    });
+    return NextResponse.json({ fileUrl, fileName: file.name, fileSize: file.size });
   } catch (error: any) {
     console.error('Error during S3 file upload:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return safeErrorResponse(error);
   }
 }

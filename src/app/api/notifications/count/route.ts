@@ -1,37 +1,18 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
+import { getUrgentJobCount } from '@/modules/notifications/service';
 
-// GET /api/notifications/count — Lightweight endpoint for notification badge count
-// Returns only the count + minimal urgent job data (no heavy includes)
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const session = await requireAuth(req);
+  if (!session) return unauthorizedResponse();
+
   try {
-    // Count unresolved incoming jobs
-    const urgentJobs = await prisma.pdiJob.findMany({
-      where: {
-        pdiType: 'INCOMING',
-        status: { in: ['PENDING', 'IN_PROGRESS'] },
-      },
-      select: {
-        id: true,
-        jobNumber: true,
-        pdiType: true,
-        status: true,
-        vehicleVin: true,
-        vehicle: {
-          select: {
-            modelName: true,
-            incomingDeadline: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-    });
+    const userRole = session.user?.role;
+    const userBranchId = session.user?.branchId;
+    const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
 
-    return NextResponse.json({
-      count: urgentJobs.length,
-      jobs: urgentJobs,
-    });
+    const result = await getUrgentJobCount(isBranchRestricted ? userBranchId : undefined);
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('Error fetching notification count:', error);
     return NextResponse.json({ count: 0, jobs: [] });
