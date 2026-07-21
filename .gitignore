@@ -105,11 +105,24 @@ ENV/
 .ipynb_checkpoints/
 
 # -------------------------------------------------------------------------
-# 10. สคริปต์ทดสอบชั่วคราวระดับ Root (Temporary Scratch/Audit Scripts)
+# 10. สคริปต์ทดสอบชั่วคราวและโฟลเดอร์ Scratch (Temporary Scratch/Audit Files)
 # -------------------------------------------------------------------------
+/scratch/
 /analyze_aion_ut.py
 /find_all_vertical_lines_everywhere.py
 /test_why_line_remained.py
 /check_db_jobs.ts
 /comment.txt
+
+# -------------------------------------------------------------------------
+# 11. เครื่องมือภายนอก แคช และการปรับปรุงอื่นๆ (Tools, AI, Deploy & Caches)
+# -------------------------------------------------------------------------
+.gemini/
+.claude/
+.swc/
+.vercel/
+*~
+.mypy_cache/
+.ruff_cache/
+
 
