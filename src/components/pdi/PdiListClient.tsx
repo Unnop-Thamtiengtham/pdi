@@ -241,11 +241,24 @@ export default function PdiListClient({ pdiType, initialJobs, isDbConnected }: P
 
                       <TableCell className="text-xs py-4">{job.inspector?.name || '-'}</TableCell>
                       <TableCell className="text-center whitespace-nowrap py-4">
-                        <Link href={`/pdi/${getPdiRouteSlug(pdiType)}/${job.id}`}>
-                          <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5 whitespace-nowrap">
-                            {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ลงบันทึกตรวจ'}
-                          </Button>
-                        </Link>
+                        <div className="flex items-center justify-center gap-2">
+                          <Link href={`/pdi/${getPdiRouteSlug(pdiType)}/${job.id}`}>
+                            <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5 whitespace-nowrap">
+                              {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ลงบันทึกตรวจ'}
+                            </Button>
+                          </Link>
+                          {pdiType === 'PRE_DELIVERY' && job.status === 'APPROVED' && (
+                            <Link href={`/pdi/predelivery/${job.id}/documents`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs font-semibold px-2.5 whitespace-nowrap border-brand-teal text-brand-teal hover:bg-brand-teal/5"
+                              >
+                                เอกสารส่งมอบ
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

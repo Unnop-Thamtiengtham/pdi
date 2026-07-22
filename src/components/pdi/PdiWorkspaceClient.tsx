@@ -121,7 +121,6 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
               initialResults={job.checklistItems}
               initialBatteryData={job.batteryTestResult || {}}
               initialDefects={job.defects}
-              initialDocuments={job.documents || []}
               onSave={handleSaveResults}
               onSubmit={handleSubmitResults}
               readOnly={readOnly}

@@ -9,7 +9,6 @@ import { Check, X, RefreshCw, AlertCircle, Save, Send, ShieldAlert, ArrowLeft } 
 import BatterySection from './BatterySection';
 import DefectPanel from './DefectPanel';
 import ChecklistItemRow from './ChecklistItemRow';
-import DeliveryDocuments from './DeliveryDocuments';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -73,7 +72,6 @@ interface ChecklistFormProps {
   initialResults?: ChecklistResult[];
   initialBatteryData?: BatteryData;
   initialDefects?: Defect[];
-  initialDocuments?: any[];
   onSave: (results: ChecklistResult[], battery: BatteryData, defects: Defect[]) => Promise<void>;
   onSubmit: (results: ChecklistResult[], battery: BatteryData, defects: Defect[]) => Promise<void>;
   readOnly?: boolean;
@@ -90,7 +88,6 @@ export default function ChecklistForm({
   initialResults = [],
   initialBatteryData = {},
   initialDefects = [],
-  initialDocuments = [],
   onSave,
   onSubmit,
   readOnly = false,
@@ -487,16 +484,7 @@ export default function ChecklistForm({
             readOnly={readOnly}
           />
 
-          {/* Delivery Documents Section (Only for PRE_DELIVERY PDI when approved) */}
-          {pdiType === 'PRE_DELIVERY' && isApproved && (
-            <DeliveryDocuments
-              jobId={jobId}
-              vin={vehicleVin}
-              jobNumber={jobNumber}
-              initialDocuments={initialDocuments}
-              readOnly={false}
-            />
-          )}
+
         </div>
       </div>
     </div>
