@@ -165,6 +165,7 @@ export async function createJob(input: CreateJobInput) {
       salesName: input.salesName,
       salesPhone: input.salesPhone,
       salesBranch: input.salesBranch,
+      customerName: input.customerName,
       customerPhone: input.customerPhone,
     },
   });
