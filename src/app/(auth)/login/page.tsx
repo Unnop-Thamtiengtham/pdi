@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Shield, Lock, User, AlertCircle, Zap } from 'lucide-react';
+import { Shield, Lock, User, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -145,27 +145,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Quick Demo Credentials Help */}
-          <div className="mt-6 p-4 rounded-lg bg-slate-900/40 border border-card-border/30 text-left space-y-2">
-            <div className="flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5 text-brand-teal fill-brand-teal/10" />
-              <span className="text-[10px] font-bold text-brand-teal uppercase tracking-wider">
-                บัญชีสำหรับทดสอบ (Demo Users)
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-400 font-mono">
-              <div>
-                <p className="text-slate-500">ช่างตรวจ (Inspector)</p>
-                <p className="text-white">inspector@pdi.com</p>
-                <p>รหัสผ่าน: password123</p>
-              </div>
-              <div>
-                <p className="text-slate-500">หัวหน้างาน (Supervisor)</p>
-                <p className="text-white">supervisor@pdi.com</p>
-                <p>รหัสผ่าน: password123</p>
-              </div>
-            </div>
-          </div>
+
         </CardContent>
       </Card>
     </div>

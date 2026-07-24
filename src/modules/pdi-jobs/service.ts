@@ -2,6 +2,31 @@ import { prisma } from '@/lib/prisma';
 import { PdiStatus, PdiType, DefectStatus, VehicleStatus } from '@prisma/client';
 import { triggerWebhook } from '@/modules/webhook/service';
 import crypto from 'crypto';
+import { z } from 'zod';
+
+// ──────────────────────────────────────
+// Input Validation Schemas
+// ──────────────────────────────────────
+const checklistResultSchema = z.object({
+  itemId: z.string().min(1),
+  result: z.enum(['PASS', 'FAIL', 'REPAIRED', 'NA']),
+  numericValue: z.number().nullable().optional(),
+  numericValue2: z.number().nullable().optional(),
+  photoUrl: z.string().max(2048).nullable().optional(),
+  remark: z.string().max(1000).nullable().optional(),
+});
+
+const defectSchema = z.object({
+  id: z.string().optional(),
+  checklistItemCode: z.string().max(100).nullable().optional(),
+  description: z.string().min(1).max(2000),
+  cause: z.string().max(2000).nullable().optional(),
+  solution: z.string().max(2000).nullable().optional(),
+  severity: z.enum(['NORMAL', 'CRITICAL']).default('NORMAL'),
+  status: z.enum(['OPEN', 'IN_REPAIR', 'RESOLVED', 'CLOSED']).default('OPEN'),
+  photoUrls: z.array(z.string().max(2048)).default([]),
+  photoUrl: z.string().max(2048).nullable().optional(),
+});
 
 // ──────────────────────────────────────
 // Constants
@@ -68,7 +93,7 @@ export async function listJobs(params: ListJobsParams, branchFilter?: string) {
         vehicle: { include: { branch: true } },
         inspector: { select: { id: true, name: true } },
         approver: { select: { id: true, name: true } },
-        defects: true,
+        _count: { select: { defects: true } },
       },
       orderBy: { createdAt: 'desc' },
       skip,
@@ -176,30 +201,44 @@ export async function validateUserExists(userId: string): Promise<boolean> {
 }
 
 export async function saveChecklistResults(jobId: string, results: any[]) {
-  await prisma.$transaction(
-    results.map((r: any) =>
-      prisma.checklistResult.upsert({
-        where: { jobId_itemId: { jobId, itemId: r.itemId } },
-        update: {
-          result: r.result,
-          numericValue: r.numericValue !== undefined ? r.numericValue : null,
-          numericValue2: r.numericValue2 !== undefined ? r.numericValue2 : null,
-          photoUrl: r.photoUrl || null,
-          remark: r.remark || null,
-          checkedAt: new Date(),
-        },
-        create: {
-          jobId,
-          itemId: r.itemId,
-          result: r.result,
-          numericValue: r.numericValue !== undefined ? r.numericValue : null,
-          numericValue2: r.numericValue2 !== undefined ? r.numericValue2 : null,
-          photoUrl: r.photoUrl || null,
-          remark: r.remark || null,
-        },
-      })
-    )
-  );
+  // Validate all results before saving
+  const validated = results.map((r, index) => {
+    const parsed = checklistResultSchema.safeParse(r);
+    if (!parsed.success) {
+      throw new Error(`ข้อมูล Checklist รายการที่ ${index + 1} ไม่ถูกต้อง: ${parsed.error.issues[0]?.message}`);
+    }
+    return parsed.data;
+  });
+
+  // Batch upserts in chunks of 50 to avoid oversized transactions
+  const BATCH_SIZE = 50;
+  for (let i = 0; i < validated.length; i += BATCH_SIZE) {
+    const batch = validated.slice(i, i + BATCH_SIZE);
+    await prisma.$transaction(
+      batch.map((r) =>
+        prisma.checklistResult.upsert({
+          where: { jobId_itemId: { jobId, itemId: r.itemId } },
+          update: {
+            result: r.result,
+            numericValue: r.numericValue !== undefined ? r.numericValue : null,
+            numericValue2: r.numericValue2 !== undefined ? r.numericValue2 : null,
+            photoUrl: r.photoUrl || null,
+            remark: r.remark || null,
+            checkedAt: new Date(),
+          },
+          create: {
+            jobId,
+            itemId: r.itemId,
+            result: r.result,
+            numericValue: r.numericValue !== undefined ? r.numericValue : null,
+            numericValue2: r.numericValue2 !== undefined ? r.numericValue2 : null,
+            photoUrl: r.photoUrl || null,
+            remark: r.remark || null,
+          },
+        })
+      )
+    );
+  }
 }
 
 export async function saveBatteryResults(jobId: string, batteryData: any) {
@@ -234,24 +273,55 @@ export async function saveBatteryResults(jobId: string, batteryData: any) {
 }
 
 export async function saveDefects(jobId: string, vehicleVin: string, defects: any[]) {
-  await prisma.defect.deleteMany({ where: { jobId } });
-  if (defects.length > 0) {
-    await prisma.defect.createMany({
-      data: defects.map((d: any, index: number) => ({
-        jobId,
+  // Validate all defects before saving
+  const validated = defects.map((d, index) => {
+    const parsed = defectSchema.safeParse(d);
+    if (!parsed.success) {
+      throw new Error(`ข้อมูลจุดบกพร่องรายการที่ ${index + 1} ไม่ถูกต้อง: ${parsed.error.issues[0]?.message}`);
+    }
+    return parsed.data;
+  });
+
+  // Get existing defect IDs for this job
+  const existingDefects = await prisma.defect.findMany({
+    where: { jobId },
+    select: { id: true },
+  });
+  const existingIds = new Set(existingDefects.map(d => d.id));
+
+  // Separate into updates and creates
+  const incomingIds = new Set(validated.filter(d => d.id).map(d => d.id!));
+  const toDelete = [...existingIds].filter(id => !incomingIds.has(id));
+
+  await prisma.$transaction(async (tx) => {
+    // Delete removed defects
+    if (toDelete.length > 0) {
+      await tx.defect.deleteMany({ where: { id: { in: toDelete } } });
+    }
+
+    // Upsert remaining defects
+    for (let i = 0; i < validated.length; i++) {
+      const d = validated[i];
+      const defectData = {
         vehicleVin,
-        defectNo: index + 1,
+        defectNo: i + 1,
         checklistItemCode: d.checklistItemCode || null,
         description: d.description,
         cause: d.cause || null,
         solution: d.solution || null,
         severity: d.severity || 'NORMAL',
         status: (d.status as DefectStatus) || ('OPEN' as DefectStatus),
-        photoUrls: d.photoUrls || (d.photoUrl ? [d.photoUrl] : []),
+        photoUrls: d.photoUrls?.length ? d.photoUrls : (d.photoUrl ? [d.photoUrl] : []),
         resolvedAt: d.status === 'RESOLVED' || d.status === 'CLOSED' ? new Date() : null,
-      })),
-    });
-  }
+      };
+
+      if (d.id && existingIds.has(d.id)) {
+        await tx.defect.update({ where: { id: d.id }, data: defectData });
+      } else {
+        await tx.defect.create({ data: { jobId, ...defectData } });
+      }
+    }
+  });
 }
 
 export async function markDefectsInRepair(jobId: string) {

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { ArrowLeft, Calendar, UserCheck, Shield, Clipboard, Car, Edit, Clock, Wrench, Camera, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Calendar, UserCheck, Shield, Clipboard, Car, Edit, Clock, Wrench, Camera, CheckCircle2, AlertTriangle, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { formatDateTime, formatLocalDate, getPdiRouteSlug } from '@/lib/utils';
 import { MODEL_NAMES } from '@/types/pdi';
@@ -16,6 +16,7 @@ import { useVehicleDetail } from './hooks/useVehicleDetail';
 import { EditVehicleDialog } from './components/EditVehicleDialog';
 import { LtmTriggerDialog } from './components/LtmTriggerDialog';
 import { PdTriggerDialog } from './components/PdTriggerDialog';
+import { DeleteVehicleDialog } from './components/DeleteVehicleDialog';
 import { ImageLightbox } from './components/ImageLightbox';
 
 interface VehicleDetailClientProps {
@@ -29,6 +30,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
   const { data: session } = useSession();
   const userRole = session?.user?.role || 'INSPECTOR';
   const canCreateJobs = userRole !== 'INSPECTOR';
+  const canDelete = userRole === 'SUPER_ADMIN' || userRole === 'MASTER';
 
   const dbBranches = branches && branches.length > 0 ? branches : [{ id: 'mock-branch', code: 'MBR', name: 'มีนบุรี' }];
 
@@ -86,6 +88,12 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
     handleTriggerLtm,
     handleTriggerPd,
     handleEditVehicle,
+    isDeleteOpen,
+    setIsDeleteOpen,
+    deleteConfirmVin,
+    setDeleteConfirmVin,
+    deleteLoading,
+    handleDeleteVehicle,
   } = useVehicleDetail({ initialVehicle, vin, isDbConnected, dbBranches: branches });
 
   const hasPassedIncoming = (vehicle.pdiJobs || []).some(
@@ -125,6 +133,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                   </Badge>
                 </div>
               </div>
+              <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"
                 size="sm"
@@ -134,6 +143,18 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                 <Edit className="w-3.5 h-3.5 text-slate-500" />
                 <span>แก้ไข</span>
               </Button>
+              {canDelete && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 text-[11px] h-7 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 cursor-pointer"
+                  onClick={() => setIsDeleteOpen(true)}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>ลบ</span>
+                </Button>
+              )}
+              </div>
             </CardHeader>
             <CardContent className="p-4 space-y-4 text-xs">
               <div className="space-y-1.5 border-b border-slate-100 pb-3">
@@ -548,6 +569,23 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
       <ImageLightbox
         imageUrl={previewImageUrl}
         onClose={() => setPreviewImageUrl(null)}
+      />
+
+      {/* Delete Vehicle Confirmation Dialog */}
+      <DeleteVehicleDialog
+        open={isDeleteOpen}
+        onOpenChange={(open) => {
+          setIsDeleteOpen(open);
+          if (!open) setDeleteConfirmVin('');
+        }}
+        onConfirm={handleDeleteVehicle}
+        vin={vin}
+        modelName={vehicle.modelName || ''}
+        confirmVin={deleteConfirmVin}
+        setConfirmVin={setDeleteConfirmVin}
+        loading={deleteLoading}
+        pdiJobCount={vehicle.pdiJobs?.length || 0}
+        defectCount={vehicle.defects?.length || 0}
       />
     </div>
   );

@@ -42,6 +42,11 @@ export function useVehicleDetail({ initialVehicle, vin, isDbConnected, dbBranche
   const [editBranchId, setEditBranchId] = useState(initialVehicle.branchId || '');
   const [editLoading, setEditLoading] = useState(false);
 
+  // Delete Vehicle state
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteConfirmVin, setDeleteConfirmVin] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   // Image Preview Lightbox state
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
@@ -265,6 +270,40 @@ export function useVehicleDetail({ initialVehicle, vin, isDbConnected, dbBranche
     }
   };
 
+  // Delete Vehicle Submit
+  const handleDeleteVehicle = async () => {
+    setDeleteLoading(true);
+    try {
+      if (isDbConnected) {
+        const res = await fetch(`/api/vehicles/${vin}`, {
+          method: 'DELETE',
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to delete vehicle');
+        }
+
+        toast.success('ลบรถยนต์ออกจากระบบสำเร็จ', {
+          description: `VIN ${vin} ถูกลบออกจากระบบแล้ว`,
+        });
+        setIsDeleteOpen(false);
+        setDeleteConfirmVin('');
+        router.push('/vehicles');
+      } else {
+        toast.success('[Mock Mode] ลบรถยนต์ออกจากระบบสำเร็จ');
+        setIsDeleteOpen(false);
+        setDeleteConfirmVin('');
+        router.push('/vehicles');
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`ไม่สามารถลบรถยนต์ได้: ${err.message}`);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   return {
     vehicle,
     loading,
@@ -318,5 +357,11 @@ export function useVehicleDetail({ initialVehicle, vin, isDbConnected, dbBranche
     handleTriggerLtm,
     handleTriggerPd,
     handleEditVehicle,
+    isDeleteOpen,
+    setIsDeleteOpen,
+    deleteConfirmVin,
+    setDeleteConfirmVin,
+    deleteLoading,
+    handleDeleteVehicle,
   };
 }

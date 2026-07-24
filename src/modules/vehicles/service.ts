@@ -12,6 +12,7 @@ export async function getVehicleByVin(vin: string) {
     include: {
       pdiJobs: {
         orderBy: { createdAt: 'desc' },
+        take: 50,
         include: {
           inspector: { select: { id: true, name: true, employeeId: true } },
           approver: { select: { id: true, name: true, employeeId: true } },
@@ -307,6 +308,26 @@ export async function bulkImportVehicles(validatedVehicles: ValidatedImportVehic
   });
 
   return validatedVehicles.length;
+}
+
+// ──────────────────────────────────────
+// DELETE — Remove vehicle (hard delete)
+// ──────────────────────────────────────
+export async function deleteVehicle(vin: string) {
+  const existing = await prisma.vehicle.findUnique({
+    where: { vin },
+    select: { vin: true, modelName: true },
+  });
+
+  if (!existing) return { error: 'Vehicle not found', status: 404 };
+
+  // Prisma cascade (onDelete: Cascade) will automatically remove:
+  // PdiJob → ChecklistResult, Defect, JobDocument, BatteryTestResult
+  // Defect (direct relation)
+  // VehicleEditLog
+  await prisma.vehicle.delete({ where: { vin } });
+
+  return { data: { vin: existing.vin, modelName: existing.modelName }, status: 200 };
 }
 
 // ──────────────────────────────────────
