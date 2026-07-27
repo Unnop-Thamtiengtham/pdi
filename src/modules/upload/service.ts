@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import crypto from 'crypto';
 
 // ──────────────────────────────────────
 // S3 Client Singleton
@@ -63,16 +64,21 @@ export function sanitizeFolderPath(rawFolder: string): string | null {
 // ──────────────────────────────────────
 export async function uploadToS3(buffer: Buffer, fileName: string, contentType: string) {
   const bucketName = process.env.S3_BUCKET || 'space-itake-dev';
+  const disableAcl = process.env.S3_DISABLE_ACL === 'true';
 
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: bucketName,
-      Key: fileName,
-      Body: buffer,
-      ContentType: contentType,
-      ACL: 'public-read',
-    })
-  );
+  const uploadParams: any = {
+    Bucket: bucketName,
+    Key: fileName,
+    Body: buffer,
+    ContentType: contentType,
+  };
+
+  // Only apply ACL if not disabled in settings (some buckets block public ACLs)
+  if (!disableAcl) {
+    uploadParams.ACL = 'public-read';
+  }
+
+  await s3.send(new PutObjectCommand(uploadParams));
 
   const cleanEndpoint = process.env.S3_ENDPOINT?.replace('https://', '') || 'sgp1.digitaloceanspaces.com';
   return `https://${bucketName}.${cleanEndpoint}/${fileName}`;
@@ -83,7 +89,12 @@ export function generateFileName(folder: string, originalName: string): string {
   const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const timestamp = Date.now();
   const ext = originalName.split('.').pop()?.toLowerCase() || 'jpg';
-  const safeName = originalName.replace(/[^a-zA-Z0-9.]/g, '_').replace(/\.[^.]+$/, '');
+  
+  let safeName = originalName.replace(/[^a-zA-Z0-9.]/g, '_').replace(/\.[^.]+$/, '');
+  // If originalName contains only non-alphanumeric characters (e.g. Thai characters), fallback to attachment with random string
+  if (/^_*$/.test(safeName)) {
+    safeName = `attachment_${crypto.randomBytes(4).toString('hex')}`;
+  }
 
   const isSpecificFolder = folder.split('/').length > 2 || folder.includes('signature');
 

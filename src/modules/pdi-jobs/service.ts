@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma';
 import { PdiStatus, PdiType, DefectStatus, VehicleStatus } from '@prisma/client';
-import { triggerWebhook } from '@/modules/webhook/service';
 import crypto from 'crypto';
 import { z } from 'zod';
 
@@ -201,7 +200,7 @@ export async function validateUserExists(userId: string): Promise<boolean> {
   return !!user;
 }
 
-export async function saveChecklistResults(jobId: string, results: any[]) {
+export async function saveChecklistResults(jobId: string, results: any[], tx: any = prisma) {
   // Validate all results before saving
   const validated = results.map((r, index) => {
     const parsed = checklistResultSchema.safeParse(r);
@@ -215,35 +214,39 @@ export async function saveChecklistResults(jobId: string, results: any[]) {
   const BATCH_SIZE = 50;
   for (let i = 0; i < validated.length; i += BATCH_SIZE) {
     const batch = validated.slice(i, i + BATCH_SIZE);
-    await prisma.$transaction(
-      batch.map((r) =>
-        prisma.checklistResult.upsert({
-          where: { jobId_itemId: { jobId, itemId: r.itemId } },
-          update: {
-            result: r.result,
-            numericValue: r.numericValue !== undefined ? r.numericValue : null,
-            numericValue2: r.numericValue2 !== undefined ? r.numericValue2 : null,
-            photoUrl: r.photoUrl || null,
-            remark: r.remark || null,
-            checkedAt: new Date(),
-          },
-          create: {
-            jobId,
-            itemId: r.itemId,
-            result: r.result,
-            numericValue: r.numericValue !== undefined ? r.numericValue : null,
-            numericValue2: r.numericValue2 !== undefined ? r.numericValue2 : null,
-            photoUrl: r.photoUrl || null,
-            remark: r.remark || null,
-          },
-        })
-      )
+    const operations = batch.map((r) =>
+      tx.checklistResult.upsert({
+        where: { jobId_itemId: { jobId, itemId: r.itemId } },
+        update: {
+          result: r.result,
+          numericValue: r.numericValue !== undefined ? r.numericValue : null,
+          numericValue2: r.numericValue2 !== undefined ? r.numericValue2 : null,
+          photoUrl: r.photoUrl || null,
+          remark: r.remark || null,
+          checkedAt: new Date(),
+        },
+        create: {
+          jobId,
+          itemId: r.itemId,
+          result: r.result,
+          numericValue: r.numericValue !== undefined ? r.numericValue : null,
+          numericValue2: r.numericValue2 !== undefined ? r.numericValue2 : null,
+          photoUrl: r.photoUrl || null,
+          remark: r.remark || null,
+        },
+      })
     );
+
+    if (typeof tx.$transaction === 'function') {
+      await tx.$transaction(operations);
+    } else {
+      await Promise.all(operations);
+    }
   }
 }
 
-export async function saveBatteryResults(jobId: string, batteryData: any) {
-  await prisma.batteryTestResult.upsert({
+export async function saveBatteryResults(jobId: string, batteryData: any, tx: any = prisma) {
+  await tx.batteryTestResult.upsert({
     where: { jobId },
     update: {
       mainVoltage: batteryData.mainVoltage,
@@ -273,7 +276,7 @@ export async function saveBatteryResults(jobId: string, batteryData: any) {
   });
 }
 
-export async function saveDefects(jobId: string, vehicleVin: string, defects: any[]) {
+export async function saveDefects(jobId: string, vehicleVin: string, defects: any[], tx: any = prisma) {
   // Validate all defects before saving
   const validated = defects.map((d, index) => {
     const parsed = defectSchema.safeParse(d);
@@ -284,20 +287,20 @@ export async function saveDefects(jobId: string, vehicleVin: string, defects: an
   });
 
   // Get existing defect IDs for this job
-  const existingDefects = await prisma.defect.findMany({
+  const existingDefects = await tx.defect.findMany({
     where: { jobId },
     select: { id: true },
   });
-  const existingIds = new Set(existingDefects.map(d => d.id));
+  const existingIds = new Set<string>(existingDefects.map((d: any) => d.id));
 
   // Separate into updates and creates
-  const incomingIds = new Set(validated.filter(d => d.id).map(d => d.id!));
-  const toDelete = [...existingIds].filter(id => !incomingIds.has(id));
+  const incomingIds = new Set<string>(validated.filter((d: any) => d.id).map((d: any) => d.id!));
+  const toDelete = [...existingIds].filter((id: string) => !incomingIds.has(id));
 
-  await prisma.$transaction(async (tx) => {
+  const runDatabaseOperations = async (client: any) => {
     // Delete removed defects
     if (toDelete.length > 0) {
-      await tx.defect.deleteMany({ where: { id: { in: toDelete } } });
+      await client.defect.deleteMany({ where: { id: { in: toDelete } } });
     }
 
     // Upsert remaining defects
@@ -317,23 +320,31 @@ export async function saveDefects(jobId: string, vehicleVin: string, defects: an
       };
 
       if (d.id && existingIds.has(d.id)) {
-        await tx.defect.update({ where: { id: d.id }, data: defectData });
+        await client.defect.update({ where: { id: d.id }, data: defectData });
       } else {
-        await tx.defect.create({ data: { jobId, ...defectData } });
+        await client.defect.create({ data: { jobId, ...defectData } });
       }
     }
-  });
+  };
+
+  if (typeof tx.$transaction === 'function') {
+    await tx.$transaction(async (innerTx: any) => {
+      await runDatabaseOperations(innerTx);
+    });
+  } else {
+    await runDatabaseOperations(tx);
+  }
 }
 
-export async function markDefectsInRepair(jobId: string) {
-  await prisma.defect.updateMany({
+export async function markDefectsInRepair(jobId: string, tx: any = prisma) {
+  await tx.defect.updateMany({
     where: { jobId, status: 'OPEN' },
     data: { status: 'IN_REPAIR' },
   });
 }
 
-export async function completeRepair(jobId: string, repairPhotos: any[]) {
-  const activeDefects = await prisma.defect.findMany({
+export async function completeRepair(jobId: string, repairPhotos: any[], tx: any = prisma) {
+  const activeDefects = await tx.defect.findMany({
     where: { jobId, status: { in: ['OPEN', 'IN_REPAIR'] } },
   });
 
@@ -351,7 +362,7 @@ export async function completeRepair(jobId: string, repairPhotos: any[]) {
   // Save repair photos & resolve
   for (const defect of activeDefects) {
     const photos = repairPhotos?.find((p: any) => p.defectId === defect.id);
-    await prisma.defect.update({
+    await tx.defect.update({
       where: { id: defect.id },
       data: {
         repairPhotoUrls: photos?.photoUrls || [],
@@ -362,7 +373,7 @@ export async function completeRepair(jobId: string, repairPhotos: any[]) {
   }
 
   // Set FAIL checklist results to REPAIRED
-  await prisma.checklistResult.updateMany({
+  await tx.checklistResult.updateMany({
     where: { jobId, result: 'FAIL' },
     data: { result: 'REPAIRED' },
   });
@@ -407,8 +418,8 @@ export function buildJobUpdateData(input: UpdateJobInput): Record<string, any> {
   return updateData;
 }
 
-export async function updateJobAndSideEffects(jobId: string, updateData: Record<string, any>) {
-  const job = await prisma.pdiJob.update({
+export async function updateJobAndSideEffects(jobId: string, updateData: Record<string, any>, tx: any = prisma) {
+  const job = await tx.pdiJob.update({
     where: { id: jobId },
     data: updateData,
   });
@@ -419,13 +430,10 @@ export async function updateJobAndSideEffects(jobId: string, updateData: Record<
     if (job.pdiType === 'PRE_DELIVERY') {
       nextVehicleStatus = 'DELIVERED';
     }
-    await prisma.vehicle.update({
+    await tx.vehicle.update({
       where: { vin: job.vehicleVin },
       data: { currentStatus: nextVehicleStatus },
     });
-
-    // Trigger webhook notification (async, fire-and-forget)
-    triggerWebhook(job.id);
   }
 
   return job;

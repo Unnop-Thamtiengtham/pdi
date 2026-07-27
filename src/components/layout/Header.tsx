@@ -76,7 +76,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
       window.removeEventListener('pdi-job-updated', handleJobUpdate);
       clearInterval(interval);
     };
-  }, [pathname]);
+  }, []);
 
   return (
     <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-20 w-full print:hidden">

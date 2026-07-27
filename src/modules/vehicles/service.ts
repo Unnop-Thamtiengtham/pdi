@@ -335,41 +335,63 @@ export async function deleteVehicle(vin: string) {
 // ──────────────────────────────────────
 export async function startIncomingPdi(vins: string[]) {
   const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const now = new Date();
+  const incomingDeadline = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  // Clean and deduplicate vins in request
+  const uniqueVins = Array.from(new Set(vins.map(v => v.trim().toUpperCase())));
+  if (uniqueVins.length === 0) return 0;
 
   const results = await prisma.$transaction(async (tx) => {
-    const jobs = [];
-    for (const vin of vins) {
-      const vehicle = await tx.vehicle.findUnique({ where: { vin } });
-      if (!vehicle) throw new Error(`Vehicle with VIN ${vin} not found`);
+    // 1. Fetch all matching vehicles in bulk
+    const vehicles = await tx.vehicle.findMany({
+      where: { vin: { in: uniqueVins } },
+      select: { vin: true },
+    });
+    const foundVins = new Set(vehicles.map(v => v.vin.toUpperCase()));
 
-      const existingJob = await tx.pdiJob.findFirst({
-        where: { vehicleVin: vin, pdiType: 'INCOMING' },
-      });
-      if (existingJob) continue;
-
-      const now = new Date();
-      const incomingDeadline = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      const rand = crypto.randomBytes(4).toString('hex').toUpperCase();
-      const jobNumber = `JO-INC-${todayStr}-${rand}`;
-
-      const job = await tx.pdiJob.create({
-        data: {
-          jobNumber,
-          pdiType: 'INCOMING',
-          status: 'PENDING',
-          vehicleVin: vin,
-          scheduledDate: incomingDeadline,
-        },
-      });
-
-      await tx.vehicle.update({
-        where: { vin },
-        data: { arrivedAt: now, incomingDeadline },
-      });
-
-      jobs.push(job);
+    // Verify all requested VINs exist in the database
+    for (const vin of uniqueVins) {
+      if (!foundVins.has(vin)) {
+        throw new Error(`Vehicle with VIN ${vin} not found`);
+      }
     }
-    return jobs;
+
+    // 2. Fetch existing incoming PDI jobs in bulk
+    const existingJobs = await tx.pdiJob.findMany({
+      where: {
+        vehicleVin: { in: uniqueVins },
+        pdiType: 'INCOMING',
+      },
+      select: { vehicleVin: true },
+    });
+    const existingJobVins = new Set(existingJobs.map(j => j.vehicleVin.toUpperCase()));
+
+    // 3. Filter only VINs that don't have an incoming job yet
+    const vinsToStart = uniqueVins.filter(vin => !existingJobVins.has(vin));
+    if (vinsToStart.length === 0) return [];
+
+    // 4. Generate jobs payload for createMany
+    const jobDataArray = vinsToStart.map(vin => {
+      const rand = crypto.randomBytes(4).toString('hex').toUpperCase();
+      return {
+        jobNumber: `JO-INC-${todayStr}-${rand}`,
+        pdiType: 'INCOMING' as const,
+        status: 'PENDING' as const,
+        vehicleVin: vin,
+        scheduledDate: incomingDeadline,
+      };
+    });
+
+    // 5. Execute bulk operations
+    await tx.pdiJob.createMany({ data: jobDataArray });
+
+    await tx.vehicle.updateMany({
+      where: { vin: { in: vinsToStart } },
+      data: { arrivedAt: now, incomingDeadline },
+    });
+
+    return jobDataArray;
   });
 
   return results.length;

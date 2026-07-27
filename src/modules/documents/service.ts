@@ -33,13 +33,12 @@ export async function saveDocument(
 }
 
 export async function deleteDocument(jobId: string, docType: DocumentType) {
-  const doc = await prisma.jobDocument.findFirst({
+  const deleteResult = await prisma.jobDocument.deleteMany({
     where: { jobId, docType },
   });
 
-  if (!doc) return { error: 'Document not found', status: 404 };
+  if (deleteResult.count === 0) return { error: 'Document not found', status: 404 };
 
-  await prisma.jobDocument.delete({ where: { id: doc.id } });
   return { data: { success: true, message: 'Document deleted successfully' }, status: 200 };
 }
 

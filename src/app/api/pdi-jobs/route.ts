@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
 import { safeErrorResponse } from '@/lib/api-error';
+import { prisma } from '@/lib/prisma';
+import { triggerWebhook } from '@/modules/webhook/service';
 import {
   getJobById,
   listJobs,
@@ -140,30 +142,59 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'เซสชันผู้อนุมัติไม่พบในฐานข้อมูล กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่อีกครั้ง' }, { status: 400 });
     }
 
-    // 1. Checklist results
-    if (body.results?.length) await saveChecklistResults(jobId, body.results);
+    let shouldTriggerWebhook = false;
 
-    // 2. Battery data
-    if (body.batteryData) await saveBatteryResults(jobId, body.batteryData);
-
-    // 3. Defects
-    if (body.defects) await saveDefects(jobId, existingJob.vehicleVin, body.defects);
-
-    // 4. Repair flow
-    if (body.sentToRepairAt) await markDefectsInRepair(jobId);
-    if (body.repairCompleted) {
-      const repairError = await completeRepair(jobId, body.repairPhotos);
-      if (repairError) {
-        return NextResponse.json({ error: repairError.error }, { status: repairError.status });
+    // Wrap in a single transaction to ensure ACID integrity
+    const job = await prisma.$transaction(async (tx) => {
+      // 1. Checklist results
+      if (body.results?.length) {
+        await saveChecklistResults(jobId, body.results, tx);
       }
-    }
 
-    // 5. Update job status + side effects
-    const updateData = buildJobUpdateData(body);
-    const job = await updateJobAndSideEffects(jobId, updateData);
+      // 2. Battery data
+      if (body.batteryData) {
+        await saveBatteryResults(jobId, body.batteryData, tx);
+      }
+
+      // 3. Defects
+      if (body.defects) {
+        await saveDefects(jobId, existingJob.vehicleVin, body.defects, tx);
+      }
+
+      // 4. Repair flow
+      if (body.sentToRepairAt) {
+        await markDefectsInRepair(jobId, tx);
+      }
+      if (body.repairCompleted) {
+        const repairError = await completeRepair(jobId, body.repairPhotos, tx);
+        if (repairError) {
+          throw new Error(`__REPAIR_ERROR__:${repairError.error}`);
+        }
+      }
+
+      // 5. Update job status + side effects
+      const updateData = buildJobUpdateData(body);
+      const updatedJob = await updateJobAndSideEffects(jobId, updateData, tx);
+
+      if (updateData.status === 'APPROVED') {
+        shouldTriggerWebhook = true;
+      }
+
+      return updatedJob;
+    });
+
+    if (shouldTriggerWebhook) {
+      after(() => {
+        triggerWebhook(job.id);
+      });
+    }
 
     return NextResponse.json(job);
   } catch (error: any) {
+    if (error instanceof Error && error.message.startsWith('__REPAIR_ERROR__:')) {
+      const message = error.message.replace('__REPAIR_ERROR__:', '');
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
     console.error('Error saving PDI results:', error);
     return safeErrorResponse(error);
   }

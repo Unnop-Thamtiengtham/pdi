@@ -47,7 +47,7 @@ export async function createUser(input: CreateUserInput) {
     return { error: `Invalid role: ${input.role}`, status: 400 };
   }
 
-  const passwordHash = bcrypt.hashSync(input.password, 10);
+  const passwordHash = await bcrypt.hash(input.password, 10);
 
   const newUser = await prisma.user.create({
     data: {
@@ -101,7 +101,7 @@ export async function updateUser(input: UpdateUserInput) {
     updateData.email = input.email.trim();
   }
   if (input.password) {
-    updateData.passwordHash = bcrypt.hashSync(input.password, 10);
+    updateData.passwordHash = await bcrypt.hash(input.password, 10);
   }
   if (input.role !== undefined) {
     const validRoles = Object.values(UserRole);

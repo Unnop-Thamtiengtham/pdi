@@ -27,13 +27,13 @@ export const config = {
     /*
      * Match all request paths except for the ones starting with:
      * - login (authentication page)
-     * - api/auth (NextAuth API routes)
+     * - api (API routes, auth handled by route handlers)
      * - api-docs (Swagger documentation)
      * - _next/static (static files)
      * - _next/image (image optimization)
      * - favicon.ico, icon.svg (browser icons)
      * - public folder files
      */
-    '/((?!login|api/auth|api-docs|_next/static|_next/image|favicon\\.ico|icon\\.svg|images|file\\.svg|globe\\.svg|next\\.svg|vercel\\.svg|window\\.svg|swagger\\.json).*)',
+    '/((?!login|api|api-docs|_next/static|_next/image|favicon\\.ico|icon\\.svg|images|file\\.svg|globe\\.svg|next\\.svg|vercel\\.svg|window\\.svg|swagger\\.json).*)',
   ],
 };
