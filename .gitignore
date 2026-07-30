@@ -83,6 +83,7 @@ yarn-error.log*
 *.xlsx
 *.xls
 *.csv
+/public/uploads/
 
 # -------------------------------------------------------------------------
 # 8. ฐานข้อมูลโลคอล (Local Databases) - ห้ามอัพขึ้น Git
@@ -113,6 +114,10 @@ ENV/
 /test_why_line_remained.py
 /check_db_jobs.ts
 /comment.txt
+/scratch_*
+/temp_*
+/test_*.ts
+/test_*.js
 
 # -------------------------------------------------------------------------
 # 11. เครื่องมือภายนอก แคช และการปรับปรุงอื่นๆ (Tools, AI, Deploy & Caches)
