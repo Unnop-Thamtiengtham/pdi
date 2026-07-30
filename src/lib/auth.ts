@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
           (req?.headers?.['x-real-ip'] as string) ||
           'unknown';
 
-        const rateLimitResult = checkRateLimit(ip);
+        const rateLimitResult = await checkRateLimit(ip);
         if (rateLimitResult.limited) {
           throw new Error(
             `คุณพยายามเข้าสู่ระบบมากเกินไป กรุณารอ ${Math.ceil((rateLimitResult.retryAfterSeconds || 60) / 60)} นาทีแล้วลองใหม่อีกครั้ง`
@@ -60,7 +60,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Successful login — reset rate limit counter for this IP
-        resetRateLimit(ip);
+        await resetRateLimit(ip);
 
         return {
           id: user.id,

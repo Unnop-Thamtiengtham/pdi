@@ -343,3 +343,15 @@ model VehicleEditLog {
 
   @@index([vehicleVin])
 }
+
+// ──────────────────────────────────────
+// LOGIN ATTEMPT (ระบบจำกัดสิทธิ์ล็อกอิน)
+// ──────────────────────────────────────
+
+model LoginAttempt {
+  id           String    @id @default(cuid())
+  ip           String    @unique
+  attempts     Int       @default(1)
+  blockedUntil DateTime?
+  updatedAt    DateTime  @updatedAt
+}
