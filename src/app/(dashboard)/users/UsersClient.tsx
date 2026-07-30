@@ -10,6 +10,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 // Import refactored modules
 import { useUsers } from './hooks/useUsers';
 import { UserFormCard } from './components/UserFormCard';
+import { ConfirmDeleteUserDialog } from './components/ConfirmDeleteUserDialog';
 
 interface Branch {
   id: string;
@@ -56,6 +57,9 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
     handleEditClick,
     handleCancelEdit,
     handleDeleteClick,
+    handleConfirmDelete,
+    handleCancelDelete,
+    userToDelete,
     handleSubmit,
   } = useUsers({ initialUsers });
 
@@ -229,6 +233,18 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
         </div>
 
       </div>
+
+      {/* Custom Confirmation Dialog for Deleting Users */}
+      <ConfirmDeleteUserDialog
+        open={userToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) handleCancelDelete();
+        }}
+        onConfirm={handleConfirmDelete}
+        userName={userToDelete?.name || ''}
+        employeeId={userToDelete?.employeeId || ''}
+        loading={loading}
+      />
     </div>
   );
 }

@@ -30,6 +30,7 @@ export function useUsers({ initialUsers }: UseUsersProps) {
 
   // Edit Mode state
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
+  const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
 
   // Form states
   const [employeeId, setEmployeeId] = useState('');
@@ -67,14 +68,17 @@ export function useUsers({ initialUsers }: UseUsersProps) {
     setIsActive(true);
   };
 
-  const handleDeleteClick = async (u: UserData) => {
+  const handleDeleteClick = (u: UserData) => {
     if (u.role === 'MASTER') {
       toast.error('ไม่สามารถลบผู้ใช้งานสิทธิ์ MASTER ได้');
       return;
     }
+    setUserToDelete(u);
+  };
 
-    const confirmDelete = window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้งาน "${u.name}" (${u.employeeId}) ออกจากระบบ? การกระทำนี้ไม่สามารถย้อนกลับได้`);
-    if (!confirmDelete) return;
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+    const u = userToDelete;
 
     setLoading(true);
     try {
@@ -94,6 +98,7 @@ export function useUsers({ initialUsers }: UseUsersProps) {
         handleCancelEdit();
       }
 
+      setUserToDelete(null);
       router.refresh();
 
       const fetchUsers = await fetch('/api/users');
@@ -106,6 +111,10 @@ export function useUsers({ initialUsers }: UseUsersProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setUserToDelete(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -187,6 +196,9 @@ export function useUsers({ initialUsers }: UseUsersProps) {
     handleEditClick,
     handleCancelEdit,
     handleDeleteClick,
+    handleConfirmDelete,
+    handleCancelDelete,
+    userToDelete,
     handleSubmit,
   };
 }
