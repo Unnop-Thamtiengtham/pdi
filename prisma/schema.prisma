@@ -380,3 +380,37 @@ model AuditLog {
   @@index([targetType, targetId])
 }
 
+// ──────────────────────────────────────
+// WEBHOOK SETTING (การตั้งค่า Webhook)
+// ──────────────────────────────────────
+
+model WebhookSetting {
+  id          String            @id @default(cuid())
+  name        String            // ชื่อการเชื่อมต่อ (เช่น "ERP", "ประกันภัย")
+  url         String            // URL ปลายทาง
+  secret      String?           // Token ลับ
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  deliveries  WebhookDelivery[]
+}
+
+// ──────────────────────────────────────
+// WEBHOOK DELIVERY (ประวัติการยิง Webhook)
+// ──────────────────────────────────────
+
+model WebhookDelivery {
+  id            String         @id @default(cuid())
+  webhookId     String
+  webhook       WebhookSetting @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  event         String         // ประเภทเหตุการณ์ เช่น "pdi.status_update"
+  status        Int            // HTTP status code (เช่น 200, 500)
+  requestBody   String         // Payload JSON ที่ส่งออก
+  responseBody  String?        // สิ่งที่ปลายทางตอบกลับมา
+  createdAt     DateTime       @default(now())
+
+  @@index([webhookId])
+}
+
+

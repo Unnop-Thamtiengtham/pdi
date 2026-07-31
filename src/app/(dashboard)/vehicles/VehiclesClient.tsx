@@ -208,7 +208,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                             <span className="text-slate-400 font-mono text-xs">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="font-mono text-xs text-slate-800 font-medium py-4 select-all">
+                        <TableCell className="font-mono text-xs text-slate-800 font-medium py-4 select-all whitespace-nowrap">
                           <div>{veh.vin}</div>
                           {veh.motorBatteryNumber && (
                             <div className="text-[10px] text-slate-500 font-sans mt-0.5 font-normal leading-normal">
