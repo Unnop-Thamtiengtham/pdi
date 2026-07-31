@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
+import { requireAuth } from '@/lib/api-auth';
 import { safeErrorResponse } from '@/lib/api-error';
 import { listUsers, createUser, updateUser, deleteUser } from '@/modules/users/service';
 import { createAuditLog } from '@/modules/audit/service';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
     }
     const users = await listUsers();
     return NextResponse.json(users);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching users:', error);
     return safeErrorResponse(error);
   }
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(result.data, { status: result.status });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating user:', error);
     return safeErrorResponse(error);
   }
@@ -68,7 +69,7 @@ export async function PATCH(req: NextRequest) {
     });
 
     return NextResponse.json(result.data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating user:', error);
     return safeErrorResponse(error);
   }
@@ -82,6 +83,16 @@ export async function DELETE(req: NextRequest) {
     }
     const userId = new URL(req.url).searchParams.get('userId');
     if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
+
+    // Fetch user details before deleting for Audit Log use
+    const userToDelete = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, employeeId: true },
+    });
+    if (!userToDelete) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     const result = await deleteUser(userId);
     if ('error' in result) return NextResponse.json({ error: result.error }, { status: result.status });
 
@@ -90,12 +101,12 @@ export async function DELETE(req: NextRequest) {
       session,
       action: 'DELETE_USER',
       targetType: 'User',
-      targetId: result.data.id,
-      details: `ลบบัญชีผู้ใช้งานออกจากระบบ: ${result.data.name} (รหัสพนักงาน: ${result.data.employeeId})`,
+      targetId: userToDelete.id,
+      details: `ลบบัญชีผู้ใช้งานออกจากระบบ: ${userToDelete.name} (รหัสพนักงาน: ${userToDelete.employeeId})`,
     });
 
     return NextResponse.json(result.data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting user:', error);
     return safeErrorResponse(error);
   }

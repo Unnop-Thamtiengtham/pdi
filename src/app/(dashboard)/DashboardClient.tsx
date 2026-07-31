@@ -40,14 +40,13 @@ function computeCountdown(deadline: string | Date | null, now: number) {
   };
 }
 
-// SlaTimerRow now receives `now` from parent — no internal interval
 function SlaTimerRow({ job, now }: { job: any; now: number }) {
   const deadline = job.scheduledDate || job.vehicle?.incomingDeadline;
   const { timeLeft, isUrgent, isExpired } = computeCountdown(deadline, now);
 
   if (isExpired) {
     return (
-      <Badge variant="danger" className="animate-pulse font-mono">
+      <Badge variant="danger" className="animate-pulse font-mono" suppressHydrationWarning={true}>
         {timeLeft}
       </Badge>
     );
@@ -57,6 +56,7 @@ function SlaTimerRow({ job, now }: { job: any; now: number }) {
     <Badge
       variant={isUrgent ? 'warning' : 'success'}
       className="font-mono"
+      suppressHydrationWarning={true}
     >
       {timeLeft || 'กำลังคำนวณ...'}
     </Badge>
@@ -139,7 +139,7 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
   const [activeTab, setActiveTab] = useState<'ALL' | 'INCOMING' | 'LONG_TERM' | 'PRE_DELIVERY'>('ALL');
 
   // Single timer tick shared across all SLA countdown rows
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
