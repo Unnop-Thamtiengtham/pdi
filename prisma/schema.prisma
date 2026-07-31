@@ -355,3 +355,28 @@ model LoginAttempt {
   blockedUntil DateTime?
   updatedAt    DateTime  @updatedAt
 }
+
+// ──────────────────────────────────────
+// AUDIT LOG (บันทึกกิจกรรมผู้ใช้งาน)
+// ──────────────────────────────────────
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?  // ID ของผู้ใช้งาน (เป็น Nullable ในกรณีที่เป็นการทำงานของระบบอัตโนมัติ)
+  userEmail   String?  // เก็บรหัสอีเมล/ชื่อ เพื่อป้องกันกรณีที่บัญชีผู้ใช้งานนั้นถูกลบออกไปภายหลัง
+  userName    String?  
+  userRole    String?  
+  
+  action      String   // เช่น "LOGIN", "CREATE_USER", "DELETE_VEHICLE", "APPROVE_PDI_JOB"
+  targetType  String   // ประเภทข้อมูล เช่น "Vehicle", "User", "PdiJob"
+  targetId    String?  // ID/Key ของข้อมูลนั้น เช่น เลข VIN หรือ User ID
+  
+  details     String?  // บันทึกรายละเอียดเพิ่มเติมในรูปแบบ Text หรือ JSON String (เช่น ข้อมูลเก่า -> ข้อมูลใหม่)
+  ipAddress   String?  // IP เครื่องที่เรียกทำรายการ
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([targetType, targetId])
+}
+
