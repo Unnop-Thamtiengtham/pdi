@@ -3,6 +3,7 @@ import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
 import { safeErrorResponse } from '@/lib/api-error';
 import { prisma } from '@/lib/prisma';
 import { triggerWebhook } from '@/modules/webhook/service';
+import { createAuditLog } from '@/modules/audit/service';
 import {
   getJobById,
   listJobs,
@@ -95,6 +96,16 @@ export async function POST(req: NextRequest) {
     if ('error' in result) {
       return NextResponse.json({ error: result.error }, { status: result.status });
     }
+
+    await createAuditLog({
+      req,
+      session,
+      action: 'CREATE_PDI_JOB',
+      targetType: 'PdiJob',
+      targetId: result.data.id,
+      details: `สร้างใบงาน PDI ใหม่: เลขที่ ${result.data.jobNumber} ประเภท: ${body.pdiType} สำหรับรถยนต์ VIN: ${body.vehicleVin}`,
+    });
+
     return NextResponse.json(result.data, { status: result.status });
   } catch (error: any) {
     console.error('Error creating PDI job:', error);
@@ -188,6 +199,18 @@ export async function PATCH(req: NextRequest) {
         triggerWebhook(job.id);
       });
     }
+
+    await createAuditLog({
+      req,
+      session,
+      action: 'UPDATE_PDI_JOB',
+      targetType: 'PdiJob',
+      targetId: job.id,
+      details: `อัปเดตใบงาน PDI เลขที่ ${job.jobNumber}: เปลี่ยนสถานะเป็น ${job.status}` +
+        (body.results?.length ? `, บันทึกผล Checklist ${body.results.length} รายการ` : '') +
+        (body.defects?.length ? `, บันทึกข้อบกพร่อง ${body.defects.length} รายการ` : '') +
+        (body.repairCompleted ? `, บันทึกซ่อมแซมเสร็จสิ้น` : ''),
+    });
 
     return NextResponse.json(job);
   } catch (error: any) {

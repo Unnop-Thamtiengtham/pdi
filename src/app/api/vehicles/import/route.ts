@@ -3,6 +3,7 @@ import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
 import { safeErrorResponse } from '@/lib/api-error';
 import { validateImportBatch } from '@/modules/vehicles/validation';
 import { bulkImportVehicles } from '@/modules/vehicles/service';
+import { createAuditLog } from '@/modules/audit/service';
 
 export async function POST(req: NextRequest) {
   const session = await requireAuth(req);
@@ -35,6 +36,14 @@ export async function POST(req: NextRequest) {
 
     // Bulk insert
     const count = await bulkImportVehicles(validated);
+
+    await createAuditLog({
+      req,
+      session,
+      action: 'IMPORT_VEHICLES',
+      targetType: 'Vehicle',
+      details: `นำเข้ารถยนต์แบบกลุ่ม (Bulk Import) จำนวน ${count} คัน`,
+    });
 
     return NextResponse.json({
       success: true,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
 import { safeErrorResponse } from '@/lib/api-error';
 import { updateVehicle, deleteVehicle, getVehicleByVin } from '@/modules/vehicles/service';
+import { createAuditLog } from '@/modules/audit/service';
 
 // Roles allowed to update vehicle details
 const ALLOWED_UPDATE_ROLES = new Set(['INSPECTOR', 'SUPERVISOR', 'SUPER_ADMIN', 'MASTER']);
@@ -44,6 +45,16 @@ export async function PUT(
 
     const result = await updateVehicle(vin, body, editorName);
     if ('error' in result) return NextResponse.json({ error: result.error }, { status: result.status });
+
+    await createAuditLog({
+      req,
+      session,
+      action: 'UPDATE_VEHICLE',
+      targetType: 'Vehicle',
+      targetId: vin,
+      details: `แก้ไขข้อมูลรถยนต์: ${Object.keys(body).join(', ')}`,
+    });
+
     return NextResponse.json(result.data);
   } catch (error: any) {
     console.error('Error updating vehicle details:', error);
@@ -78,6 +89,15 @@ export async function DELETE(
     if ('error' in result) {
       return NextResponse.json({ error: result.error }, { status: result.status });
     }
+
+    await createAuditLog({
+      req,
+      session,
+      action: 'DELETE_VEHICLE',
+      targetType: 'Vehicle',
+      targetId: result.data.vin,
+      details: `ลบรถยนต์ออกจากระบบ: รุ่น ${result.data.modelName} (VIN: ${result.data.vin})`,
+    });
 
     return NextResponse.json({
       message: `ลบรถยนต์ VIN ${result.data.vin} (${result.data.modelName}) ออกจากระบบแล้ว`,

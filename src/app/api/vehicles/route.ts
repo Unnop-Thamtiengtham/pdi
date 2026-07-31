@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
 import { safeErrorResponse } from '@/lib/api-error';
 import { getVehicleByVin, listVehicles, createVehicleWithIncomingJob } from '@/modules/vehicles/service';
+import { createAuditLog } from '@/modules/audit/service';
 
 // GET /api/vehicles
 export async function GET(req: NextRequest) {
@@ -60,6 +61,16 @@ export async function POST(req: NextRequest) {
 
     const result = await createVehicleWithIncomingJob(body);
     if ('error' in result) return NextResponse.json({ error: result.error }, { status: result.status });
+
+    await createAuditLog({
+      req,
+      session,
+      action: 'CREATE_VEHICLE',
+      targetType: 'Vehicle',
+      targetId: body.vin,
+      details: `เพิ่มรถยนต์ใหม่: รุ่น ${body.modelName} (VIN: ${body.vin}) สาขา: ${body.branchId}`,
+    });
+
     return NextResponse.json(result.data, { status: result.status });
   } catch (error: any) {
     console.error('Error creating vehicle:', error);
