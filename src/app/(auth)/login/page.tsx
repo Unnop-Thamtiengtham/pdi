@@ -35,6 +35,8 @@ export default function LoginPage() {
 
       if (res?.error) {
         setError(res.error);
+        setUsername('');
+        setPassword('');
       } else {
         router.push('/');
         router.refresh();
@@ -42,6 +44,8 @@ export default function LoginPage() {
     } catch (err) {
       console.error(err);
       setError('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+      setUsername('');
+      setPassword('');
     } finally {
       setLoading(false);
     }
