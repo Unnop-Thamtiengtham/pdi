@@ -508,7 +508,7 @@ export default function WebhooksClient({ initialWebhooks }: WebhooksClientProps)
       <Dialog open={isLogsOpen} onOpenChange={setIsLogsOpen}>
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between w-full">
+            <DialogTitle className="flex items-center justify-between w-full pr-8">
               <div className="flex items-center gap-2 text-slate-800">
                 <Activity className="w-5 h-5 text-indigo-600" />
                 <span>ประวัติการยิงข้อมูลสำหรับ: {logsWebhook?.name}</span>
