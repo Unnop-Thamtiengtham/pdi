@@ -378,6 +378,7 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([targetType, targetId])
+  @@index([createdAt])
 }
 
 // ──────────────────────────────────────
@@ -410,7 +411,7 @@ model WebhookDelivery {
   responseBody  String?        // สิ่งที่ปลายทางตอบกลับมา
   createdAt     DateTime       @default(now())
 
-  @@index([webhookId])
+  @@index([webhookId, createdAt])
 }
 
 

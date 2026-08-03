@@ -55,10 +55,9 @@ export async function triggerWebhook(jobId: string) {
       return;
     }
 
-    // Trigger dispatches asynchronously without blocking the thread
-    for (const hook of webhooksToSend) {
-      dispatchSingleWebhook(hook, payload);
-    }
+    // Trigger dispatches asynchronously and await all of them to complete
+    const dispatches = webhooksToSend.map((hook) => dispatchSingleWebhook(hook, payload));
+    await Promise.all(dispatches);
 
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : 'Unknown error';

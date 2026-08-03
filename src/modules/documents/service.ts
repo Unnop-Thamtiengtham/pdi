@@ -44,9 +44,11 @@ export async function deleteDocument(jobId: string, docType: DocumentType) {
 
 export async function proxyDownload(targetUrl: string, allowedEndpoints: string[]) {
   const urlObj = new URL(targetUrl);
-  const isAllowed = allowedEndpoints.some((endpoint) =>
-    urlObj.hostname.includes(endpoint.replace('https://', '').replace('http://', ''))
-  );
+  const isAllowed = allowedEndpoints.some((endpoint) => {
+    const allowedHost = endpoint.replace(/^https?:\/\//, '').toLowerCase();
+    const currentHost = urlObj.hostname.toLowerCase();
+    return currentHost === allowedHost || currentHost.endsWith('.' + allowedHost);
+  });
 
   if (!isAllowed) {
     console.warn('Blocked download proxy request to untrusted domain:', urlObj.hostname);

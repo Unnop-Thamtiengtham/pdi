@@ -43,28 +43,19 @@ export async function getUrgentJobCount(branchFilter?: string) {
         pdiType: true,
         status: true,
         vehicleVin: true,
+        vehicle: {
+          select: {
+            vin: true,
+            modelName: true,
+            incomingDeadline: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: 20,
     });
 
-    if (urgentJobs.length === 0) {
-      return { count: 0, jobs: [] };
-    }
-
-    const vins = Array.from(new Set(urgentJobs.map(j => j.vehicleVin)));
-    const vehicles = await prisma.vehicle.findMany({
-      where: { vin: { in: vins } },
-      select: { vin: true, modelName: true, incomingDeadline: true },
-    });
-    const vehicleMap = new Map(vehicles.map(v => [v.vin, v]));
-
-    const jobsWithVehicles = urgentJobs.map(job => ({
-      ...job,
-      vehicle: vehicleMap.get(job.vehicleVin) || null,
-    }));
-
-    return { count: jobsWithVehicles.length, jobs: jobsWithVehicles };
+    return { count: urgentJobs.length, jobs: urgentJobs };
   })();
 
   // Cache the promise

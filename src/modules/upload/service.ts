@@ -84,11 +84,24 @@ export async function uploadToS3(buffer: Buffer, fileName: string, contentType: 
   return `https://${bucketName}.${cleanEndpoint}/${fileName}`;
 }
 
-export function generateFileName(folder: string, originalName: string): string {
+export function generateFileName(folder: string, originalName: string, contentType?: string): string {
   const now = new Date();
   const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const timestamp = Date.now();
-  const ext = originalName.split('.').pop()?.toLowerCase() || 'jpg';
+
+  const MIME_TO_EXT: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/heic': 'heic',
+    'image/heif': 'heif',
+    'application/pdf': 'pdf',
+  };
+
+  let ext = contentType ? (MIME_TO_EXT[contentType.toLowerCase()] || '') : '';
+  if (!ext) {
+    ext = originalName.split('.').pop()?.toLowerCase() || 'jpg';
+  }
   
   let safeName = originalName.replace(/[^a-zA-Z0-9.]/g, '_').replace(/\.[^.]+$/, '');
   // If originalName contains only non-alphanumeric characters (e.g. Thai characters), fallback to attachment with random string

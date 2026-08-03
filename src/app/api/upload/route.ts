@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Upload
-    const fileName = generateFileName(folder, file.name);
+    const fileName = generateFileName(folder, file.name, file.type);
     const fileUrl = await uploadToS3(buffer, fileName, file.type);
 
     return NextResponse.json({ fileUrl, fileName: file.name, fileSize: file.size });
