@@ -455,13 +455,7 @@ body {
   scrollbar-width: none;  /* Firefox */
 }
 
-/* Center Sonner toast horizontally inside the main content area (accounting for the 260px sidebar on large screens) */
-@media (min-width: 1024px) {
-  [data-sonner-toaster] {
-    left: calc(50% + 130px) !important;
-    transform: translateX(-50%) !important;
-  }
-}
+
 
 /* Ensure toaster container is centered on mobile and tablet */
 @media (max-width: 1023px) {
