@@ -146,13 +146,14 @@ export default function WebhooksClient({ initialWebhooks }: WebhooksClientProps)
       });
 
       const result = await res.json();
+      const cleanResponse = (result.response || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
       if (result.success) {
         toast.success(`เชื่อมต่อสำเร็จ (Status Code: ${result.status})`, {
-          description: `เซิร์ฟเวอร์ปลายทางตอบรับเรียบร้อย: ${result.response || 'No body text'}`,
+          description: 'ระบบเชื่อมต่อกับเซิร์ฟเวอร์ปลายทางเรียบร้อยแล้ว',
         });
       } else {
         toast.error(`เชื่อมต่อล้มเหลว (Status Code: ${result.status})`, {
-          description: `Error: ${result.response || 'เซิร์ฟเวอร์ปฏิเสธการเชื่อมต่อ'}`,
+          description: `ไม่สามารถเชื่อมต่อได้: ${cleanResponse || 'เซิร์ฟเวอร์ปฏิเสธการเชื่อมต่อ'}`,
         });
       }
     } catch {

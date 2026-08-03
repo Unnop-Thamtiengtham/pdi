@@ -49,11 +49,13 @@ export async function POST(req: NextRequest) {
 
       clearTimeout(timeoutId);
       const resText = await res.text();
+      // Strip HTML tags to prevent raw HTML from rendering as plain text in the client alert toast
+      const cleanResponse = resText.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 
       return NextResponse.json({
         success: res.ok,
         status: res.status,
-        response: resText.slice(0, 500),
+        response: cleanResponse.slice(0, 200),
       });
     } catch (err: unknown) {
       clearTimeout(timeoutId);
