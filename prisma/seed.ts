@@ -83,7 +83,15 @@ async function main() {
     },
   });
 
-  console.log('🏢 Created branches:', branchKJN.code, branchLBD.code, branchPBL.code, branchMBR.code, branchMHC.code, branchSLY.code, branchAYT.code);
+  const branchPPD = await prisma.branch.create({
+    data: {
+      code: 'PPD',
+      name: 'Aion พระประแดง',
+      address: 'ถนนสุขสวัสดิ์ อำเภอพระประแดง สมุทรปราการ',
+    },
+  });
+
+  console.log('🏢 Created branches:', branchKJN.code, branchLBD.code, branchPBL.code, branchMBR.code, branchMHC.code, branchSLY.code, branchAYT.code, branchPPD.code);
 
   // 3. Create Users
   const passwordHash = bcrypt.hashSync('password123', 10);

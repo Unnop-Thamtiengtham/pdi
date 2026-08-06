@@ -32,6 +32,7 @@ export default function RepairsClient({ initialJobs, isDbConnected, branches = [
     { id: '5', code: 'MHC', name: 'Aion มหาชัย' },
     { id: '6', code: 'SLY', name: 'Aion สุราษฎร์ธานี' },
     { id: '7', code: 'AYT', name: 'Aion อยุธยา' },
+    { id: '8', code: 'PPD', name: 'Aion พระประแดง' },
   ];
 
   // Destructure hook state and handlers
