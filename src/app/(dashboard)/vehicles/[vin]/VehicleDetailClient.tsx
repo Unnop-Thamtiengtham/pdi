@@ -30,7 +30,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
   const { data: session } = useSession();
   const userRole = session?.user?.role || 'INSPECTOR';
   const canCreateJobs = userRole !== 'INSPECTOR';
-  const canDelete = userRole === 'SUPER_ADMIN' || userRole === 'MASTER';
+  const canDelete = userRole === 'MASTER';
 
   const dbBranches = branches && branches.length > 0 ? branches : [{ id: 'mock-branch', code: 'MBR', name: 'มีนบุรี' }];
 

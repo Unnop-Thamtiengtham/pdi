@@ -19,7 +19,7 @@ export default async function DashboardPage() {
 
   const userRole = session?.user?.role;
   const userBranchId = session?.user?.branchId;
-  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userBranchId;
 
   const jobWhere = isBranchRestricted ? { vehicle: { branchId: userBranchId } } : {};
 

@@ -97,14 +97,7 @@ async function main() {
   const passwordHash = bcrypt.hashSync('password123', 10);
 
   const users = [
-    {
-      employeeId: 'EMP-SUPERADMIN',
-      name: 'superadmin',
-      email: 'superadmin@pdi.com',
-      passwordHash,
-      role: UserRole.SUPER_ADMIN,
-      branchId: branchMBR.id,
-    },
+
     {
       employeeId: 'EMP-SALE',
       name: 'sale',

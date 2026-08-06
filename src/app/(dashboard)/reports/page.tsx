@@ -12,9 +12,9 @@ export default async function ReportsPage() {
     redirect('/login');
   }
 
-  // Restrict access to roles SUPER_ADMIN, SUPERVISOR and MASTER
+  // Restrict access to roles SUPERVISOR and MASTER
   const userRole = session.user?.role;
-  if (userRole !== 'SUPER_ADMIN' && userRole !== 'SUPERVISOR' && userRole !== 'MASTER') {
+  if (userRole !== 'SUPERVISOR' && userRole !== 'MASTER') {
     redirect('/');
   }
 
@@ -22,7 +22,7 @@ export default async function ReportsPage() {
   let isDbConnected = true;
 
   const userBranchId = session.user?.branchId;
-  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userBranchId;
 
   const jobWhere: any = {
     status: 'APPROVED',

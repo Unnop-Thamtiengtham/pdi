@@ -5,7 +5,7 @@ import { updateVehicle, deleteVehicle, getVehicleByVin } from '@/modules/vehicle
 import { createAuditLog } from '@/modules/audit/service';
 
 // Roles allowed to update vehicle details
-const ALLOWED_UPDATE_ROLES = new Set(['INSPECTOR', 'SUPERVISOR', 'SUPER_ADMIN', 'MASTER']);
+const ALLOWED_UPDATE_ROLES = new Set(['INSPECTOR', 'SUPERVISOR', 'MASTER']);
 
 export async function PUT(
   req: NextRequest,
@@ -31,7 +31,7 @@ export async function PUT(
     const body = await req.json();
 
     // Branch restriction: non-admin roles can only update vehicles in their branch
-    const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+    const isBranchRestricted = userRole !== 'MASTER' && userBranchId;
     if (isBranchRestricted) {
       // Verify the vehicle belongs to the user's branch
       const vehicle = await getVehicleByVin(vin);
@@ -63,7 +63,7 @@ export async function PUT(
 }
 
 // Roles allowed to delete vehicles
-const ALLOWED_DELETE_ROLES = new Set(['SUPER_ADMIN', 'MASTER']);
+const ALLOWED_DELETE_ROLES = new Set(['MASTER']);
 
 export async function DELETE(
   req: NextRequest,
@@ -74,10 +74,10 @@ export async function DELETE(
 
   const userRole = session.user?.role;
 
-  // Role-based authorization: only SUPER_ADMIN and MASTER can delete
+  // Role-based authorization: only MASTER can delete
   if (!userRole || !ALLOWED_DELETE_ROLES.has(userRole)) {
     return NextResponse.json(
-      { error: 'คุณไม่มีสิทธิ์ลบรถยนต์ เฉพาะ Super Admin ขึ้นไปเท่านั้น' },
+      { error: 'คุณไม่มีสิทธิ์ลบรถยนต์ เฉพาะ Master เท่านั้น' },
       { status: 403 }
     );
   }

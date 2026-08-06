@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
   const userRole = session.user?.role;
   const userBranchId = session.user?.branchId;
-  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userBranchId;
 
   try {
     const body = await req.json();

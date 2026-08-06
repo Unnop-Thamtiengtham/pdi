@@ -111,7 +111,7 @@ export async function updateUser(input: UpdateUserInput) {
     updateData.role = input.role as UserRole;
   }
   if (input.branchId !== undefined) {
-    updateData.branchId = input.role === 'MASTER' || input.role === 'SUPER_ADMIN' ? null : input.branchId || null;
+    updateData.branchId = input.role === 'MASTER' ? null : input.branchId || null;
   }
   if (input.isActive !== undefined) {
     updateData.isActive = input.isActive;

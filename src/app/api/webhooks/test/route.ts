@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
 import { safeErrorResponse } from '@/lib/api-error';
 
-// Roles allowed to test webhook connection
-const ALLOWED_ROLES = new Set(['MASTER', 'SUPER_ADMIN']);
+const ALLOWED_ROLES = new Set(['MASTER']);
 
 // POST /api/webhooks/test
 export async function POST(req: NextRequest) {

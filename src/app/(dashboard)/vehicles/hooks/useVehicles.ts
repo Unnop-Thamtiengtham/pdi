@@ -35,7 +35,7 @@ interface UseVehiclesOptions {
 export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVehiclesOptions) {
   const { data: session } = useSession();
   const userRole = session?.user?.role || 'INSPECTOR';
-  const canSendIncoming = userRole === 'SUPER_ADMIN' || userRole === 'SUPERVISOR' || userRole === 'MASTER';
+  const canSendIncoming = userRole === 'SUPERVISOR' || userRole === 'MASTER';
 
   const [vehicles, setVehicles] = useState(
     isDbConnected

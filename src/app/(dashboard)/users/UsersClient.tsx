@@ -67,8 +67,6 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
     switch (roleStr) {
       case 'MASTER':
         return 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-50';
-      case 'SUPER_ADMIN':
-        return 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-50';
       case 'SALE':
         return 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50';
       case 'SUPERVISOR':
@@ -83,8 +81,6 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
     switch (roleStr) {
       case 'MASTER':
         return 'Master';
-      case 'SUPER_ADMIN':
-        return 'Super Admin';
       case 'SALE':
         return 'Sales';
       case 'SUPERVISOR':

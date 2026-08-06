@@ -157,14 +157,13 @@ export function UserFormCard({
                 <option value="INSPECTOR">Inspector</option>
                 <option value="SUPERVISOR">Supervisor / QC</option>
                 <option value="SALE">Sales</option>
-                <option value="SUPER_ADMIN">Super Admin</option>
                 <option value="MASTER">Master</option>
               </select>
             </div>
           </div>
 
           {/* Branch Select (Hidden for global roles) */}
-          {role !== 'MASTER' && role !== 'SUPER_ADMIN' && (
+          {role !== 'MASTER' && (
             <div className="space-y-1.5">
               <Label htmlFor="branch" className="text-xs font-semibold text-slate-700">สังกัดสาขา (Branch) *</Label>
               <div className="relative">

@@ -3,8 +3,7 @@ import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
 import { safeErrorResponse } from '@/lib/api-error';
 import { prisma } from '@/lib/prisma';
 
-// Roles allowed to manage webhooks
-const ALLOWED_ROLES = new Set(['MASTER', 'SUPER_ADMIN']);
+const ALLOWED_ROLES = new Set(['MASTER']);
 
 function isAuthorized(role?: string) {
   return role && ALLOWED_ROLES.has(role);

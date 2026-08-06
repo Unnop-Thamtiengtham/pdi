@@ -40,7 +40,7 @@ export default async function PredeliveryJobDocumentsPage({
 
   const userRole = session?.user?.role;
   const userBranchId = session?.user?.branchId;
-  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userBranchId;
 
   if (isDbConnected && !jobId.startsWith('mock-')) {
     if (!job) {

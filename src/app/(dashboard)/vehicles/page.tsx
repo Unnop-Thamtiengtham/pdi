@@ -18,7 +18,7 @@ export default async function VehiclesPage() {
 
   const userRole = session?.user?.role;
   const userBranchId = session?.user?.branchId;
-  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userBranchId;
 
   const vehicleWhere = isBranchRestricted ? { branchId: userBranchId } : {};
 

@@ -98,7 +98,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   // Filter items by user role if authenticated
   const userRole = session?.user?.role || 'INSPECTOR';
   const filteredNavItems = navItems.filter((item) => {
-    if (userRole === 'SUPER_ADMIN' || userRole === 'MASTER') return true;
+    if (userRole === 'MASTER') return true;
     return item.roles.includes(userRole);
   });
 

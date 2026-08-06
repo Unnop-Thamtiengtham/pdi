@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   try {
     const userRole = session.user?.role;
     const userBranchId = session.user?.branchId;
-    const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+    const isBranchRestricted = userRole !== 'MASTER' && userBranchId;
 
     const result = await getUrgentJobCount(isBranchRestricted ? userBranchId : undefined);
     return NextResponse.json(result);

@@ -140,7 +140,7 @@ export function useUsers({ initialUsers }: UseUsersProps) {
         email: email.trim(),
         password: password || undefined,
         role,
-        branchId: role === 'MASTER' || role === 'SUPER_ADMIN' ? null : branchId || null,
+        branchId: role === 'MASTER' ? null : branchId || null,
         isActive: editingUser ? isActive : true,
       };
 

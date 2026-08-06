@@ -3,8 +3,7 @@ import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
 import { safeErrorResponse } from '@/lib/api-error';
 import { prisma } from '@/lib/prisma';
 
-// Roles allowed to view webhook deliveries log
-const ALLOWED_ROLES = new Set(['MASTER', 'SUPER_ADMIN']);
+const ALLOWED_ROLES = new Set(['MASTER']);
 
 // GET /api/webhooks/deliveries
 export async function GET(req: NextRequest) {

@@ -28,8 +28,8 @@ export function usePdiWorkspace({ jobId, initialJob, isDbConnected }: UsePdiWork
 
   // Derived role flags
   const userRole = session?.user?.role || 'INSPECTOR';
-  const isInspector = userRole === 'INSPECTOR' || userRole === 'SALE' || userRole === 'SUPER_ADMIN' || userRole === 'MASTER';
-  const isQC = userRole === 'SUPERVISOR' || userRole === 'SALE' || userRole === 'SUPER_ADMIN' || userRole === 'MASTER';
+  const isInspector = userRole === 'INSPECTOR' || userRole === 'SALE' || userRole === 'MASTER';
+  const isQC = userRole === 'SUPERVISOR' || userRole === 'SALE' || userRole === 'MASTER';
   const isIncomingTickingBlocked = job?.pdiType === 'INCOMING' && userRole === 'SALE';
   const isStartJobBlocked = userRole === 'SALE';
   const readOnly = job?.status === 'APPROVED' || job?.status === 'PENDING_APPROVAL' || isIncomingTickingBlocked;

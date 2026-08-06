@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   const userRole = session.user?.role;
   const userBranchId = session.user?.branchId;
-  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userBranchId;
 
   try {
     const jobId = req.nextUrl.searchParams.get('id');
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
 
   const userRole = session.user?.role;
   const userBranchId = session.user?.branchId;
-  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userBranchId;
 
   try {
     const body = await req.json();
@@ -120,7 +120,7 @@ export async function PATCH(req: NextRequest) {
 
   const userRole = session.user?.role;
   const userBranchId = session.user?.branchId;
-  const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+  const isBranchRestricted = userRole !== 'MASTER' && userBranchId;
 
   try {
     const body = await req.json();
@@ -140,7 +140,7 @@ export async function PATCH(req: NextRequest) {
 
     // Role guard for approve/reject
     if (status === 'APPROVED' || status === 'REJECTED') {
-      if (userRole !== 'SUPERVISOR' && userRole !== 'SUPER_ADMIN' && userRole !== 'MASTER') {
+      if (userRole !== 'SUPERVISOR' && userRole !== 'MASTER') {
         return NextResponse.json({ error: 'Forbidden: เฉพาะหัวหน้างาน (Supervisor) ขึ้นไปเท่านั้นที่สามารถอนุมัติ/ปฏิเสธงานได้' }, { status: 403 });
       }
     }

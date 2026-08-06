@@ -12,9 +12,9 @@ export default async function WebhooksPage() {
     redirect('/login');
   }
 
-  // Only MASTER and SUPER_ADMIN roles are allowed to access settings
+  // Only MASTER role is allowed to access settings
   const userRole = session.user?.role;
-  if (userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN') {
+  if (userRole !== 'MASTER') {
     redirect('/');
   }
 

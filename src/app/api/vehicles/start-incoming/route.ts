@@ -4,7 +4,7 @@ import { safeErrorResponse } from '@/lib/api-error';
 import { startIncomingPdi } from '@/modules/vehicles/service';
 import { prisma } from '@/lib/prisma';
 
-const ALLOWED_ROLES = new Set(['INSPECTOR', 'SUPERVISOR', 'SUPER_ADMIN', 'MASTER']);
+const ALLOWED_ROLES = new Set(['INSPECTOR', 'SUPERVISOR', 'MASTER']);
 
 export async function POST(req: NextRequest) {
   const session = await requireAuth(req);
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const cleanVins = vins.map(v => String(v).trim().toUpperCase());
 
     // 2. BOLA Check: Restrict access to branch vehicles for branch-restricted users
-    const isBranchRestricted = userRole !== 'MASTER' && userRole !== 'SUPER_ADMIN' && userBranchId;
+    const isBranchRestricted = userRole !== 'MASTER' && userBranchId;
     if (isBranchRestricted) {
       const vehicles = await prisma.vehicle.findMany({
         where: { vin: { in: cleanVins } },
