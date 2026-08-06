@@ -153,7 +153,9 @@ export function UserFormCard({
                 className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-shadow"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
+                required
               >
+                <option value="">-- เลือกบทบาทในระบบ --</option>
                 <option value="INSPECTOR">Inspector</option>
                 <option value="SUPERVISOR">Supervisor / QC</option>
                 <option value="SALE">Sales</option>

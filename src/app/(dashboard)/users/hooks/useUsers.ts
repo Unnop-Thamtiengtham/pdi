@@ -37,7 +37,7 @@ export function useUsers({ initialUsers }: UseUsersProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('INSPECTOR');
+  const [role, setRole] = useState('');
   const [branchId, setBranchId] = useState('');
   const [isActive, setIsActive] = useState(true);
 
@@ -63,7 +63,7 @@ export function useUsers({ initialUsers }: UseUsersProps) {
     setName('');
     setEmail('');
     setPassword('');
-    setRole('INSPECTOR');
+    setRole('');
     setBranchId('');
     setIsActive(true);
   };
