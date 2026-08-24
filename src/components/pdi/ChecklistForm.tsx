@@ -9,6 +9,7 @@ import { Check, X, RefreshCw, AlertCircle, Save, Send, ShieldAlert, ArrowLeft } 
 import BatterySection from './BatterySection';
 import DefectPanel from './DefectPanel';
 import ChecklistItemRow from './ChecklistItemRow';
+import { PdiWorkspaceProvider } from './context/PdiWorkspaceContext';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -341,7 +342,8 @@ export default function ChecklistForm({
   const progressPercent = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
 
   return (
-    <div className="space-y-6">
+    <PdiWorkspaceProvider value={{ results, readOnly, onResultChange: handleResultChange, onNumericChange: handleNumericChange }}>
+      <div className="space-y-6">
       {/* Top sticky actions block */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl border border-slate-200 bg-white shadow-sm gap-4 no-print">
         <div className="flex items-center gap-3">
@@ -457,19 +459,12 @@ export default function ChecklistForm({
                 <p className="text-xs text-slate-500">ทำเครื่องหมายผ่าน หรือ บันทึกปัญหา หากไม่เป็นไปตามมาตรฐาน</p>
               </CardHeader>
               <CardContent className="divide-y divide-slate-100">
-                {filteredItems.map((item) => {
-                  const res = results[item.id] || { itemId: item.id, itemCode: item.itemCode, result: 'PASS' };
-                  return (
-                    <ChecklistItemRow
-                      key={item.id}
-                      item={item}
-                      res={res}
-                      readOnly={readOnly}
-                      onResultChange={handleResultChange}
-                      onNumericChange={handleNumericChange}
-                    />
-                  );
-                })}
+                {filteredItems.map((item) => (
+                  <ChecklistItemRow
+                    key={item.id}
+                    item={item}
+                  />
+                ))}
               </CardContent>
             </Card>
           )}
@@ -488,5 +483,6 @@ export default function ChecklistForm({
         </div>
       </div>
     </div>
+  </PdiWorkspaceProvider>
   );
 }

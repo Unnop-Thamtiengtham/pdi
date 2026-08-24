@@ -2,48 +2,18 @@
 
 import React from 'react';
 import { Check, X, RefreshCw } from 'lucide-react';
-
-interface ChecklistItem {
-  id: string;
-  category: string;
-  categoryOrder: number;
-  itemCode: string;
-  itemName: string;
-  itemOrder: number;
-  isMandatory: boolean;
-  hasPhoto: boolean;
-  hasNumeric: boolean;
-  numericUnit?: string | null;
-  numericMin?: number | null;
-  numericMax?: number | null;
-  notes?: string | null;
-}
-
-interface ChecklistResult {
-  itemId: string;
-  itemCode: string;
-  result: 'PASS' | 'FAIL' | 'REPAIRED' | 'NA';
-  numericValue?: number | null;
-  numericValue2?: number | null;
-  photoUrl?: string | null;
-  remark?: string | null;
-}
+import { usePdiWorkspaceContext, ChecklistItem } from './context/PdiWorkspaceContext';
 
 interface ChecklistItemRowProps {
   item: ChecklistItem;
-  res: ChecklistResult;
-  readOnly: boolean;
-  onResultChange: (itemId: string, itemCode: string, checkResult: 'PASS' | 'FAIL' | 'REPAIRED' | 'NA') => void;
-  onNumericChange: (itemId: string, item: ChecklistItem, val: number | null) => void;
 }
 
 const ChecklistItemRow = React.memo(function ChecklistItemRow({
   item,
-  res,
-  readOnly,
-  onResultChange,
-  onNumericChange,
 }: ChecklistItemRowProps) {
+  const { results, readOnly, onResultChange, onNumericChange } = usePdiWorkspaceContext();
+  const res = results[item.id] || { itemId: item.id, itemCode: item.itemCode, result: 'PASS' };
+
   return (
     <div className={`py-4 first:pt-0 last:pb-0 flex justify-between gap-4 ${item.hasNumeric ? 'flex-row items-center' : 'flex-col md:flex-row md:items-center'}`}>
       <div className="space-y-1 flex-1">

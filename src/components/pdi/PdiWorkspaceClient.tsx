@@ -138,7 +138,9 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
             )}
 
             {/* Print Report Action (Only visible when APPROVED) */}
-            {job.status === 'APPROVED' && <ApprovedPrintCard />}
+            {job.status === 'APPROVED' && (
+              <ApprovedPrintCard jobId={job.id} modelCode={job.vehicle.modelCode} />
+            )}
           </>
         )}
       </div>

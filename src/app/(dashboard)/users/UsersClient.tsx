@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { IdCard, Edit, Trash2 } from 'lucide-react';
+import { IdCard, Edit, Trash2, UserPlus } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 
 // Import refactored modules
 import { useUsers } from './hooks/useUsers';
-import { UserFormCard } from './components/UserFormCard';
+import { UserFormDialog } from './components/UserFormDialog';
 import { ConfirmDeleteUserDialog } from './components/ConfirmDeleteUserDialog';
 
 interface Branch {
@@ -35,6 +35,8 @@ interface UsersClientProps {
 }
 
 export default function UsersClient({ initialUsers, branches }: UsersClientProps) {
+  const [isFormOpen, setIsFormOpen] = React.useState(false);
+
   // Destructure hook state and handlers
   const {
     users,
@@ -101,37 +103,23 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
             ลงทะเบียนพนักงานใหม่ กำหนดสิทธิ์บทบาทและสาขาที่สังกัด รวมถึงจัดการสถานะการเปิด/ปิดบัญชีใช้งาน
           </p>
         </div>
+        <Button
+          type="button"
+          onClick={() => {
+            handleCancelEdit();
+            setIsFormOpen(true);
+          }}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-xl flex items-center gap-1.5 cursor-pointer self-start md:self-auto text-xs"
+        >
+          <UserPlus className="w-4 h-4" />
+          <span>เพิ่มผู้ใช้งานใหม่</span>
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Left: User Registration Form Card */}
-        <div className="lg:col-span-4">
-          <UserFormCard
-            editingUser={editingUser}
-            employeeId={employeeId}
-            setEmployeeId={setEmployeeId}
-            name={name}
-            setName={setName}
-            email={email}
-            setEmail={setEmail}
-            password={password}
-            setPassword={setPassword}
-            role={role}
-            setRole={setRole}
-            branchId={branchId}
-            setBranchId={setBranchId}
-            isActive={isActive}
-            setIsActive={setIsActive}
-            loading={loading}
-            onCancelEdit={handleCancelEdit}
-            onSubmit={handleSubmit}
-            branches={branches}
-          />
-        </div>
+      <div className="grid grid-cols-1 gap-6 items-start">
 
-        {/* Right: Existing Users Table */}
-        <div className="lg:col-span-8">
+        {/* Existing Users Table */}
+        <div className="w-full">
           <Card className="shadow-sm border-slate-200 bg-white">
             <CardHeader className="border-b border-slate-100 pb-4">
               <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
@@ -200,7 +188,10 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleEditClick(u)}
+                                onClick={() => {
+                                  handleEditClick(u);
+                                  setIsFormOpen(true);
+                                }}
                                 className="border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:text-slate-800 h-8 px-3 rounded-xl flex items-center gap-1.5 cursor-pointer"
                               >
                                 <Edit className="w-3.5 h-3.5" />
@@ -240,6 +231,40 @@ export default function UsersClient({ initialUsers, branches }: UsersClientProps
         userName={userToDelete?.name || ''}
         employeeId={userToDelete?.employeeId || ''}
         loading={loading}
+      />
+
+      {/* User Form Dialog (Add/Edit) */}
+      <UserFormDialog
+        open={isFormOpen}
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) handleCancelEdit();
+        }}
+        editingUser={editingUser}
+        employeeId={employeeId}
+        setEmployeeId={setEmployeeId}
+        name={name}
+        setName={setName}
+        email={email}
+        setEmail={setEmail}
+        password={password}
+        setPassword={setPassword}
+        role={role}
+        setRole={setRole}
+        branchId={branchId}
+        setBranchId={setBranchId}
+        isActive={isActive}
+        setIsActive={setIsActive}
+        loading={loading}
+        onCancel={() => {
+          handleCancelEdit();
+          setIsFormOpen(false);
+        }}
+        onSubmit={async (e) => {
+          await handleSubmit(e);
+          setIsFormOpen(false);
+        }}
+        branches={branches}
       />
     </div>
   );

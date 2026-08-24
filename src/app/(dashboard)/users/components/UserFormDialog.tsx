@@ -1,6 +1,6 @@
 import React from 'react';
-import { User, Mail, Lock, Shield, Building, UserPlus, Power, X } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { User, Mail, Lock, Shield, Building, UserPlus, Power } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,9 @@ interface Branch {
   code: string;
 }
 
-interface UserFormCardProps {
+interface UserFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   editingUser: any;
   employeeId: string;
   setEmployeeId: (val: string) => void;
@@ -28,12 +30,14 @@ interface UserFormCardProps {
   isActive: boolean;
   setIsActive: (val: boolean) => void;
   loading: boolean;
-  onCancelEdit: () => void;
+  onCancel: () => void;
   onSubmit: (e: React.FormEvent) => void;
   branches: Branch[];
 }
 
-export function UserFormCard({
+export function UserFormDialog({
+  open,
+  onOpenChange,
   editingUser,
   employeeId,
   setEmployeeId,
@@ -50,20 +54,27 @@ export function UserFormCard({
   isActive,
   setIsActive,
   loading,
-  onCancelEdit,
+  onCancel,
   onSubmit,
   branches,
-}: UserFormCardProps) {
+}: UserFormDialogProps) {
   return (
-    <Card className="shadow-sm border-slate-200 bg-white">
-      <CardHeader className="border-b border-slate-100 pb-4">
-        <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-          <UserPlus className="w-4 h-4 text-indigo-600" />
-          <span>{editingUser ? 'แก้ไขข้อมูลผู้ใช้งาน' : 'ลงทะเบียนผู้ใช้งานใหม่'}</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-5">
-        <form onSubmit={onSubmit} className="space-y-4">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md bg-white border-slate-200">
+        <DialogHeader className="border-b border-slate-100 pb-3">
+          <DialogTitle className="flex items-center gap-2 text-slate-800 font-bold">
+            <UserPlus className="w-5 h-5 text-indigo-600" />
+            <span>{editingUser ? 'แก้ไขข้อมูลผู้ใช้งาน' : 'ลงทะเบียนผู้ใช้งานใหม่'}</span>
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-500">
+            {editingUser 
+              ? 'แก้ไขข้อมูลบัญชีผู้ใช้งาน สิทธิ์บทบาทหน้าที่ และการเปิด/ปิดบัญชีใช้งาน' 
+              : 'กรอกรายละเอียดพนักงานใหม่เพื่อทำการลงทะเบียนและกำหนดสิทธิ์เข้าใช้งานระบบ'
+            }
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={onSubmit} className="space-y-4 py-2">
           
           {/* Employee ID */}
           <div className="space-y-1.5">
@@ -211,37 +222,30 @@ export function UserFormCard({
             </div>
           )}
 
-          {/* Submit and Cancel Actions */}
-          {editingUser ? (
-            <div className="grid grid-cols-2 gap-2 mt-4">
+          {/* Actions */}
+          <DialogFooter className="border-t border-slate-100 pt-3 mt-4">
+            <DialogClose asChild>
               <Button
                 type="button"
                 variant="outline"
-                onClick={onCancelEdit}
-                className="w-full py-2 rounded-lg border-slate-200 hover:bg-slate-50 font-semibold text-slate-700 cursor-pointer"
+                onClick={onCancel}
+                className="py-2 rounded-lg border-slate-200 hover:bg-slate-50 font-semibold text-slate-700 cursor-pointer"
+                disabled={loading}
               >
                 ยกเลิก
               </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow-sm transition-colors cursor-pointer"
-              >
-                {loading ? 'บันทึก...' : 'บันทึกแก้ไข'}
-              </Button>
-            </div>
-          ) : (
+            </DialogClose>
             <Button
               type="submit"
               disabled={loading}
-              className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors cursor-pointer"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow-sm transition-colors cursor-pointer"
             >
-              {loading ? 'กำลังบันทึก...' : 'ลงทะเบียนผู้ใช้งาน'}
+              {loading ? 'กำลังบันทึก...' : editingUser ? 'บันทึกแก้ไข' : 'ลงทะเบียนผู้ใช้งาน'}
             </Button>
-          )}
+          </DialogFooter>
 
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
