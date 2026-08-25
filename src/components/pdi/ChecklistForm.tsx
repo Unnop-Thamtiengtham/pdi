@@ -201,7 +201,7 @@ export default function ChecklistForm({
             ...prev,
             {
               checklistItemCode: itemCode,
-              description: `พบปัญหาบริเวณ: ${itemName}`,
+              description: `จุดบกพร่องบริเวณ: ${itemName}`,
               severity: 'NORMAL',
               status: 'OPEN',
             }

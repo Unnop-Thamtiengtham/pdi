@@ -89,3 +89,28 @@ export async function resetRateLimit(ip: string): Promise<void> {
     // Ignore error if record already deleted
   }
 }
+
+const rateLimitCache = new Map<string, { count: number; expiresAt: number }>();
+
+/**
+ * Basic in-memory rate limiter to prevent API abuse (DoS / Brute-force).
+ * Returns true if request is allowed, false if rate limit is exceeded.
+ */
+export function rateLimit(ip: string, limit = 60, windowMs = 60000): boolean {
+  const now = Date.now();
+  const key = `rate:${ip}`;
+  
+  const record = rateLimitCache.get(key);
+  
+  if (!record || record.expiresAt < now) {
+    rateLimitCache.set(key, { count: 1, expiresAt: now + windowMs });
+    return true;
+  }
+  
+  if (record.count >= limit) {
+    return false;
+  }
+  
+  record.count++;
+  return true;
+}

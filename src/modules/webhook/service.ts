@@ -1,4 +1,52 @@
 import { prisma } from '@/lib/prisma';
+import dns from 'dns/promises';
+
+/**
+ * Checks if a resolved IP address belongs to loopback, private, or link-local ranges.
+ */
+function isPrivateIp(ip: string): boolean {
+  // IPv4 Loopback (127.0.0.0/8)
+  if (ip.startsWith('127.')) return true;
+
+  // IPv4 Private (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+  if (ip.startsWith('10.')) return true;
+  if (ip.startsWith('192.168.')) return true;
+  if (ip.startsWith('172.')) {
+    const parts = ip.split('.');
+    const secondOctet = parseInt(parts[1], 10);
+    if (secondOctet >= 16 && secondOctet <= 31) return true;
+  }
+
+  // IPv4 Link-local / AWS / DO Metadata Server (169.254.0.0/16)
+  if (ip.startsWith('169.254.')) return true;
+
+  // IPv6 Loopback (::1)
+  if (ip === '::1' || ip === '0:0:0:0:0:0:0:1') return true;
+
+  // IPv6 Link-local (fe80::/10)
+  if (ip.toLowerCase().startsWith('fe80:')) return true;
+
+  // IPv6 Unique Local Address (fc00::/7)
+  if (ip.toLowerCase().startsWith('fc') || ip.toLowerCase().startsWith('fd')) return true;
+
+  return false;
+}
+
+/**
+ * Validates if the target URL is safe against SSRF attacks.
+ */
+async function isSafeUrl(urlStr: string): Promise<boolean> {
+  try {
+    const url = new URL(urlStr);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+
+    // Resolve hostname to IP
+    const lookup = await dns.lookup(url.hostname);
+    return !isPrivateIp(lookup.address);
+  } catch {
+    return false;
+  }
+}
 
 export async function triggerWebhook(jobId: string) {
   try {
@@ -70,6 +118,25 @@ async function dispatchSingleWebhook(
   payload: { event: string; vin: string; pdiType: string; status: string; updatedAt: string }
 ) {
   const { id, url, secret } = hook;
+
+  // SSRF Protection filter
+  const isSafe = await isSafeUrl(url);
+  if (!isSafe) {
+    console.error(`[Webhook] Blocked unsafe target URL (SSRF Prevention): ${url}`);
+    if (id) {
+      await prisma.webhookDelivery.create({
+        data: {
+          webhookId: id,
+          event: payload.event,
+          status: 400,
+          requestBody: JSON.stringify(payload),
+          responseBody: 'Blocked by SSRF protection filter (loopback/private IP).',
+        },
+      });
+    }
+    return;
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5000);
 

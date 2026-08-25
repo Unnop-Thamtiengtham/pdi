@@ -71,6 +71,11 @@ export default function PdfCoordinatePickerPage() {
               flat[`bat_${k}`] = v;
             });
           }
+          if (data.defects) {
+            Object.entries(data.defects).forEach(([k, v]: [string, any]) => {
+              flat[`defect_${k}`] = v;
+            });
+          }
           if (Object.keys(flat).length > 0) {
             setMappedCoords(flat);
             setSaveStatus(`โหลดพิกัดที่บันทึกไว้แล้ว ${Object.keys(flat).length} จุด`);
@@ -110,10 +115,11 @@ export default function PdfCoordinatePickerPage() {
   }, [activeFieldIdx, pixelToPdf, fields]);
 
   const buildOutput = () => {
-    const output: any = { metadata: {}, checklist: {}, battery: {} };
+    const output: any = { metadata: {}, checklist: {}, battery: {}, defects: {} };
     Object.entries(mappedCoords).forEach(([id, coords]) => {
       if (id.startsWith('meta_')) output.metadata[id.replace('meta_', '')] = coords;
       else if (id.startsWith('bat_')) output.battery[id.replace('bat_', '')] = coords;
+      else if (id.startsWith('defect_')) output.defects[id.replace('defect_', '')] = coords;
       else output.checklist[id] = coords;
     });
     return output;

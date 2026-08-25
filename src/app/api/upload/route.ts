@@ -7,8 +7,19 @@ import {
   generateFileName, uploadToS3,
 } from '@/modules/upload/service';
 
+import { rateLimit } from '@/lib/rate-limit';
+
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+    // Limit to 20 upload requests per minute per IP
+    if (!rateLimit(ip, 20, 60000)) {
+      return NextResponse.json(
+        { error: 'คุณอัปโหลดไฟล์บ่อยเกินไป กรุณารอ 1 นาทีแล้วลองใหม่อีกครั้ง' },
+        { status: 429 }
+      );
+    }
+
     const session = await requireAuth(req);
     if (!session) return unauthorizedResponse();
 

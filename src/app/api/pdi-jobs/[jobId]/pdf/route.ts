@@ -5,12 +5,14 @@ import fontkit from '@pdf-lib/fontkit';
 import fs from 'fs';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
+
 // ── COORDINATE MAPPING FOR AION V / V5 ──────────────────
 // Page size: 595.32 x 841.92 (standard A4)
 // Y=0 is bottom of page, Y=842 is top
 // Coordinates are loaded from the JSON file saved by the PDF Picker tool.
 // If no saved file exists, hardcoded defaults are used.
-function loadSavedCoordinates(modelCode: string): { metadata?: any; checklist?: any; battery?: any } {
+function loadSavedCoordinates(modelCode: string): { metadata?: any; checklist?: any; battery?: any; defects?: any; signatures?: any } {
   try {
     const isYp = modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES';
     const isHt = modelCode === 'HYPTEC_HT' || modelCode === 'HYPTEC_HT8';
@@ -153,8 +155,8 @@ function getCoordinates(modelCode: string) {
     metadata: { ...DEFAULT_COORDINATES.metadata, ...(saved.metadata || {}) },
     checklist: { ...DEFAULT_COORDINATES.checklist, ...(saved.checklist || {}) } as Record<string, { x: number, y: number }>,
     battery: { ...DEFAULT_COORDINATES.battery, ...(saved.battery || {}) },
-    defects: DEFAULT_COORDINATES.defects,
-    signatures: DEFAULT_COORDINATES.signatures,
+    defects: { ...DEFAULT_COORDINATES.defects, ...(saved.defects || {}) },
+    signatures: { ...DEFAULT_COORDINATES.signatures, ...(saved.signatures || {}) },
   };
 }
 
@@ -190,7 +192,7 @@ export async function GET(
     // Load coordinates (from saved JSON or defaults)
     const COORDINATES = getCoordinates(modelCode);
 
-    const isSupported = ['AION_V', 'AION_V5', 'AION_YP', 'AION_YP5', 'AION_UT', 'HYPTEC_HT', 'HYPTEC_HT8'].includes(modelCode);
+    const isSupported = ['AION_V', 'AION_V5', 'AION_YP', 'AION_YP5', 'AION_UT', 'HYPTEC_HT', 'HYPTEC_HT8', 'AION_ES'].includes(modelCode);
 
     if (!isSupported) {
       return NextResponse.json({ 
@@ -340,17 +342,28 @@ export async function GET(
 
     // 7. Nonconforming Defects table
     const def = COORDINATES.defects;
+    const getValY = (val: any) => typeof val === 'number' ? val : val?.y;
+    const getValX = (val: any) => typeof val === 'number' ? val : val?.x;
+
+    const row1Y = getValY(def.row1Y) ?? 175;
+    const row2Y = getValY(def.row2Y) ?? 162;
+    const row3Y = getValY(def.row3Y) ?? 149;
+    const colCode = getValX(def.colCode) ?? 155;
+    const colDesc = getValX(def.colDesc) ?? 260;
+    const colAction = getValX(def.colAction) ?? 435;
+
     for (let i = 0; i < 3; i++) {
       const defect = job.defects?.[i];
       if (defect) {
-        const rowY = i === 0 ? def.row1Y : i === 1 ? def.row2Y : def.row3Y;
-        page.drawText(defect.checklistItemCode || '-', { x: def.colCode, y: rowY, size: 7, font: thaiFont });
-        page.drawText(defect.description || '', { x: def.colDesc, y: rowY, size: 7, font: thaiFont });
+        const rowY = i === 0 ? row1Y : i === 1 ? row2Y : row3Y;
+        const descriptionText = (defect.description || '').replace('พบปัญหาบริเวณ:', 'จุดบกพร่องบริเวณ:');
+        page.drawText(defect.checklistItemCode || '-', { x: colCode, y: rowY, size: 7, font: thaiFont });
+        page.drawText(descriptionText, { x: colDesc, y: rowY, size: 7, font: thaiFont });
         
         const actionStr = defect.status === 'RESOLVED' || defect.status === 'CLOSED' 
           ? 'แก้ไขเรียบร้อยแล้ว' 
           : 'ส่งซ่อม/แก้ไข';
-        page.drawText(actionStr, { x: def.colAction, y: rowY, size: 7, font: thaiFont });
+        page.drawText(actionStr, { x: colAction, y: rowY, size: 7, font: thaiFont });
       }
     }
 
@@ -381,11 +394,17 @@ export async function GET(
 
     // 9. Save PDF and return as download stream
     const pdfBytes = await pdfDoc.save();
+    console.log(`[PDF] Generated PDF for VIN ${job.vehicleVin} using coordinates:`, {
+      defects: COORDINATES.defects
+    });
     return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename=pdi_report_${job.vehicleVin}.pdf`,
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       }
     });
 

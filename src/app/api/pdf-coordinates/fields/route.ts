@@ -51,11 +51,21 @@ export async function GET(req: NextRequest) {
       { id: 'meta_jobNumber', itemCode: 'meta_jobNumber', itemName: 'เลขใบงาน', category: 'ข้อมูลรถ (Metadata)' },
     ];
 
+    const defectFields = [
+      { id: 'defect_row1Y', itemCode: 'defect_row1Y', itemName: 'แนวตั้ง แถวปัญหา 1 (Y)', category: 'ตารางรายการปัญหา (Defects)' },
+      { id: 'defect_row2Y', itemCode: 'defect_row2Y', itemName: 'แนวตั้ง แถวปัญหา 2 (Y)', category: 'ตารางรายการปัญหา (Defects)' },
+      { id: 'defect_row3Y', itemCode: 'defect_row3Y', itemName: 'แนวตั้ง แถวปัญหา 3 (Y)', category: 'ตารางรายการปัญหา (Defects)' },
+      { id: 'defect_colCode', itemCode: 'defect_colCode', itemName: 'แนวนอน คอลัมน์รหัสตรวจสอบ (X)', category: 'ตารางรายการปัญหา (Defects)' },
+      { id: 'defect_colDesc', itemCode: 'defect_colDesc', itemName: 'แนวนอน คอลัมน์ปัญหาที่พบ (X)', category: 'ตารางรายการปัญหา (Defects)' },
+      { id: 'defect_colAction', itemCode: 'defect_colAction', itemName: 'แนวนอน คอลัมน์สาเหตุและการแก้ไข (X)', category: 'ตารางรายการปัญหา (Defects)' },
+    ];
+
     return NextResponse.json({
       modelCode,
       templateId: template.id,
       fields: [
         ...metadataFields,
+        ...defectFields,
         ...template.items.map(item => ({
           id: item.itemCode,
           itemCode: item.itemCode,
@@ -67,6 +77,7 @@ export async function GET(req: NextRequest) {
       ],
       grouped: {
         'ข้อมูลรถ (Metadata)': metadataFields,
+        'ตารางรายการปัญหา (Defects)': defectFields,
         ...grouped,
       },
     });

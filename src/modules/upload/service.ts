@@ -24,25 +24,36 @@ export const ALLOWED_TYPES = [
   'image/heic', 'image/heif', 'application/pdf',
 ];
 
-// Magic bytes signatures for file type validation
+// Magic bytes signatures for standard file types validation
 const MAGIC_SIGNATURES: { type: string; bytes: number[]; offset?: number }[] = [
   { type: 'image/jpeg', bytes: [0xFF, 0xD8, 0xFF] },
   { type: 'image/png', bytes: [0x89, 0x50, 0x4E, 0x47] },
   { type: 'image/webp', bytes: [0x52, 0x49, 0x46, 0x46] },
   { type: 'application/pdf', bytes: [0x25, 0x50, 0x44, 0x46] },
-  { type: 'image/heic', bytes: [0x66, 0x74, 0x79, 0x70], offset: 4 },
-  { type: 'image/heif', bytes: [0x66, 0x74, 0x79, 0x70], offset: 4 },
 ];
 
 // ──────────────────────────────────────
 // Validation Helpers
 // ──────────────────────────────────────
 export function validateMagicBytes(buffer: Buffer): boolean {
-  if (buffer.length < 8) return false;
-  return MAGIC_SIGNATURES.some(sig => {
+  if (buffer.length < 12) return false;
+
+  // 1. Check standard types (jpeg, png, webp, pdf)
+  const isStandard = MAGIC_SIGNATURES.some(sig => {
     const offset = sig.offset || 0;
     return sig.bytes.every((byte, i) => buffer[offset + i] === byte);
   });
+  if (isStandard) return true;
+
+  // 2. Check HEIC/HEIF box container (must start with "ftyp" at offset 4, then have allowed brands at offset 8)
+  const isFtyp = buffer[4] === 0x66 && buffer[5] === 0x74 && buffer[6] === 0x79 && buffer[7] === 0x70;
+  if (isFtyp) {
+    const brand = buffer.toString('ascii', 8, 12).toLowerCase();
+    const allowedHeicBrands = ['heic', 'heix', 'hevc', 'heim', 'heis', 'hevd', 'hevm', 'hevs', 'mif1', 'msf1'];
+    return allowedHeicBrands.includes(brand);
+  }
+
+  return false;
 }
 
 export function sanitizeFolderPath(rawFolder: string): string | null {
