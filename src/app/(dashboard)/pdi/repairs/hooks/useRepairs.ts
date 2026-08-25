@@ -30,8 +30,7 @@ export function useRepairs({ initialJobs, isDbConnected, dbBranches, session }: 
   const [repairPhotos, setRepairPhotos] = useState<Record<string, string[]>>({});
   const [photoUploading, setPhotoUploading] = useState<Record<string, boolean>>({});
 
-  // Print state
-  const [printJob, setPrintJob] = useState<any | null>(null);
+
 
   // Fallback mock data when DB is not connected
   const getMockJobs = () => {
@@ -76,16 +75,7 @@ export function useRepairs({ initialJobs, isDbConnected, dbBranches, session }: 
     setJobs(isDbConnected ? initialJobs : getMockJobs());
   }, [initialJobs, isDbConnected]);
 
-  // Handle printing
-  useEffect(() => {
-    if (printJob) {
-      const timer = setTimeout(() => {
-        window.print();
-        setPrintJob(null);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [printJob]);
+
 
   // Filter jobs based on search term
   const filteredJobs = jobs.filter((job) => {
@@ -189,9 +179,7 @@ export function useRepairs({ initialJobs, isDbConnected, dbBranches, session }: 
     }
   };
 
-  const handlePrint = (job: any) => {
-    setPrintJob(job);
-  };
+
 
   const handleCompleteRepair = (job: any) => {
     setConfirmJob(job);
@@ -307,7 +295,6 @@ export function useRepairs({ initialJobs, isDbConnected, dbBranches, session }: 
     photoUploading,
     handleOpenRepairModal,
     handleSubmitRepair,
-    handlePrint,
     handleCompleteRepair,
     handleRepairPhotoUpload,
     handleRemoveRepairPhoto,

@@ -4,7 +4,6 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import ChecklistForm from './ChecklistForm';
-import PdiPrintReport from './PdiPrintReport';
 import SupervisorApprovalCard from './components/SupervisorApprovalCard';
 import ApprovedPrintCard from './components/ApprovedPrintCard';
 import { usePdiWorkspace } from './hooks/usePdiWorkspace';
@@ -62,19 +61,8 @@ export default function PdiWorkspaceClient({ jobId, initialJob, isDbConnected }:
 
   return (
     <div className="space-y-6">
-      {/* Full Print Report (Only visible in Print preview) */}
-      <PdiPrintReport
-        job={job}
-        templateItems={templateItems}
-        signatures={{
-          customer: customerSig,
-          inspector: inspectorSig,
-          supervisor: supervisorSig,
-        }}
-      />
-
       {/* Main workspace layout */}
-      <div className="print:hidden space-y-6">
+      <div className="space-y-6">
         {job.status === 'PENDING' ? (
           <Card className="max-w-lg mx-auto text-center p-8 space-y-6 mt-12 border border-slate-200 shadow-sm">
             <div className="w-16 h-16 rounded-full bg-brand-teal/10 border border-brand-teal/20 flex items-center justify-center text-brand-teal mx-auto animate-pulse">

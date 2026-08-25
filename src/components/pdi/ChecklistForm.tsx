@@ -78,6 +78,17 @@ interface ChecklistFormProps {
   readOnly?: boolean;
 }
 
+const getCategoryCode = (item: ChecklistItem) => {
+  // First try matching by exact category name
+  const byName = CHECKLIST_CATEGORIES.find(cat => cat.name === item.category);
+  if (byName) return byName.code;
+  // Then try matching by categoryOrder
+  const byOrder = CHECKLIST_CATEGORIES.find(cat => cat.order === item.categoryOrder);
+  if (byOrder) return byOrder.code;
+  // Final fallback: use categoryOrder as a unique key
+  return `CAT_${item.categoryOrder}`;
+};
+
 export default function ChecklistForm({
   jobId,
   modelCode,
@@ -94,7 +105,30 @@ export default function ChecklistForm({
   readOnly = false,
 }: ChecklistFormProps) {
   // State management
-  const [results, setResults] = useState<Record<string, ChecklistResult>>({});
+  const categories = Array.from(new Set(templateItems.map(i => getCategoryCode(i))));
+
+  const [results, setResults] = useState<Record<string, ChecklistResult>>(() => {
+    const resMap: Record<string, ChecklistResult> = {};
+    templateItems.forEach(item => {
+      resMap[item.id] = {
+        itemId: item.id,
+        itemCode: item.itemCode,
+        result: 'PASS',
+        numericValue: null,
+        numericValue2: null,
+        photoUrl: null,
+        remark: null,
+      };
+    });
+    initialResults.forEach(r => {
+      resMap[r.itemId] = {
+        ...resMap[r.itemId],
+        ...r,
+      };
+    });
+    return resMap;
+  });
+
   const [batteryData, setBatteryData] = useState<BatteryData>(() => {
     const data = { ...initialBatteryData };
     
@@ -113,15 +147,20 @@ export default function ChecklistForm({
     return data;
   });
   const [defects, setDefects] = useState<Defect[]>(initialDefects);
-  const [activeCategory, setActiveCategory] = useState<string>('EXTERIOR');
+  const [activeCategory, setActiveCategory] = useState<string>(categories[0] || 'EXTERIOR');
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Load initial results
-  useEffect(() => {
-    const resMap: Record<string, ChecklistResult> = {};
+  // Sync state if props change during rendering
+  const [prevInitialResults, setPrevInitialResults] = useState(initialResults);
+  const [prevTemplateItems, setPrevTemplateItems] = useState(templateItems);
+  const [prevCategories, setPrevCategories] = useState(categories);
+
+  if (initialResults !== prevInitialResults || templateItems !== prevTemplateItems) {
+    setPrevInitialResults(initialResults);
+    setPrevTemplateItems(templateItems);
     
-    // Initialize with template defaults (all pass initially)
+    const resMap: Record<string, ChecklistResult> = {};
     templateItems.forEach(item => {
       resMap[item.id] = {
         itemId: item.id,
@@ -133,29 +172,21 @@ export default function ChecklistForm({
         remark: null,
       };
     });
-
-    // Merge actual initial results
     initialResults.forEach(r => {
       resMap[r.itemId] = {
         ...resMap[r.itemId],
         ...r,
       };
     });
-
     setResults(resMap);
-  }, [templateItems, initialResults]);
+  }
 
-  // Map categoryOrder → code, falling back to the category name from the item itself
-  const getCategoryCode = (item: ChecklistItem) => {
-    // First try matching by exact category name
-    const byName = CHECKLIST_CATEGORIES.find(cat => cat.name === item.category);
-    if (byName) return byName.code;
-    // Then try matching by categoryOrder
-    const byOrder = CHECKLIST_CATEGORIES.find(cat => cat.order === item.categoryOrder);
-    if (byOrder) return byOrder.code;
-    // Final fallback: use categoryOrder as a unique key
-    return `CAT_${item.categoryOrder}`;
-  };
+  if (categories.join(',') !== prevCategories.join(',')) {
+    setPrevCategories(categories);
+    if (categories.length > 0 && !categories.includes(activeCategory)) {
+      setActiveCategory(categories[0]);
+    }
+  }
 
   // Group items by category using categoryOrder for reliable matching
   const getCategoryName = (code: string) => {
@@ -165,15 +196,6 @@ export default function ChecklistForm({
     const item = templateItems.find(i => getCategoryCode(i) === code);
     return item ? item.category : code;
   };
-
-  const categories = Array.from(new Set(templateItems.map(i => getCategoryCode(i))));
-
-  // Select first available category if activeCategory is not in the categories list (e.g. for LONG_TERM jobs)
-  useEffect(() => {
-    if (categories.length > 0 && !(categories as string[]).includes(activeCategory)) {
-      setActiveCategory(categories[0]);
-    }
-  }, [categories, activeCategory]);
 
   const filteredItems = templateItems.filter(item => getCategoryCode(item) === activeCategory);
 

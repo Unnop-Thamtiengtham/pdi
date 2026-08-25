@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
-import { Search, Printer, FileText, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Search, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { formatDateTime, getPdiRouteSlug } from '@/lib/utils';
 

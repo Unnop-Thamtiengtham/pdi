@@ -49,6 +49,12 @@ export default function DeliveryDocuments({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isMerging, setIsMerging] = useState(false);
 
+  const [prevInitialDocuments, setPrevInitialDocuments] = useState(initialDocuments);
+  if (initialDocuments !== prevInitialDocuments) {
+    setPrevInitialDocuments(initialDocuments);
+    setDocuments(initialDocuments);
+  }
+
   const convertImageToJpgBytes = async (blob: Blob): Promise<ArrayBuffer> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -166,10 +172,7 @@ export default function DeliveryDocuments({
     }
   };
 
-  // Sync state if initialDocuments changes
-  useEffect(() => {
-    setDocuments(initialDocuments);
-  }, [initialDocuments]);
+  // initialDocuments sync is handled during rendering to avoid synchronous setState inside useEffect
 
   // Find document by type
   const getDocByType = (docType: string) => {

@@ -11,6 +11,7 @@ interface FieldItem {
 
 export default function PdfCoordinatePickerPage() {
   const [modelCode, setModelCode] = useState('AION_V');
+  const [prevModelCode, setPrevModelCode] = useState('AION_V');
 
   // Resolve PDF and image dimensions dynamically based on selected model
   const isUt = modelCode === 'AION_UT';
@@ -33,9 +34,14 @@ export default function PdfCoordinatePickerPage() {
   const [grouped, setGrouped] = useState<Record<string, FieldItem[]>>({});
   const [loading, setLoading] = useState(true);
 
+  if (modelCode !== prevModelCode) {
+    setPrevModelCode(modelCode);
+    setLoading(true);
+    setMappedCoords({});
+  }
+
   // Load checklist fields from database
   useEffect(() => {
-    setLoading(true);
     fetch(`/api/pdf-coordinates/fields?modelCode=${modelCode}`)
       .then(res => res.json())
       .then(data => {
@@ -50,7 +56,6 @@ export default function PdfCoordinatePickerPage() {
 
   // Load saved coordinates
   useEffect(() => {
-    setMappedCoords({});
     fetch(`/api/pdf-coordinates?modelCode=${modelCode}`)
       .then(res => res.json())
       .then(data => {

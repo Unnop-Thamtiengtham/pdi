@@ -6,9 +6,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Wrench, Search, ShieldAlert, Printer } from 'lucide-react';
+import { Wrench, Search, ShieldAlert } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { getPdiRouteSlug } from '@/lib/utils';
 
 // Import refactored modules
 import { useRepairs } from './hooks/useRepairs';
@@ -60,7 +59,6 @@ export default function RepairsClient({ initialJobs, isDbConnected, branches = [
     photoUploading,
     handleOpenRepairModal,
     handleSubmitRepair,
-    handlePrint,
     handleCompleteRepair,
     handleRepairPhotoUpload,
     handleRemoveRepairPhoto,
@@ -169,15 +167,7 @@ export default function RepairsClient({ initialJobs, isDbConnected, branches = [
 
                         <TableCell className="text-center py-4">
                           <div className="flex justify-center items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              title="พิมพ์ใบสั่งซ่อม"
-                              className="h-8 w-8 p-0 border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
-                              onClick={() => handlePrint(job)}
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                            </Button>
+                             
                             {job.sentToRepairAt ? (
                               <>
                                 <Button

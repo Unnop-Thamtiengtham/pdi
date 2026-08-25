@@ -58,7 +58,7 @@ export default async function DashboardPage() {
             </div>
           </div>
           <div className="text-xs font-mono bg-slate-900 border border-card-border px-3 py-1.5 rounded-lg text-slate-400 select-all max-w-xs truncate">
-            DATABASE_URL="postgresql://..."
+            DATABASE_URL=&quot;postgresql://...&quot;
           </div>
         </div>
       )}

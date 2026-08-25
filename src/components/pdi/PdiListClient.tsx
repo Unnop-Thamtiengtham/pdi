@@ -10,6 +10,95 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { getPdiRouteSlug } from '@/lib/utils';
 
+const MOCK_JOBS_BY_TYPE: Record<string, any[]> = {
+  INCOMING: [
+    {
+      id: 'mock-inc-1',
+      jobNumber: 'JO-INC-20260609-001',
+      pdiType: 'INCOMING',
+      status: 'PENDING',
+      vehicleVin: 'LNAT4AB34T5G05011',
+      vehicle: {
+        modelName: 'AION V',
+        colorName: 'Space Gray',
+        incomingDeadline: new Date(Date.now() + 1.5 * 60 * 60 * 1000).toISOString(),
+        branch: { name: 'มีนบุรี' }
+      },
+      inspector: null,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'mock-inc-2',
+      jobNumber: 'JO-INC-20260609-002',
+      pdiType: 'INCOMING',
+      status: 'PENDING_APPROVAL',
+      vehicleVin: 'LNAT4AB34T5G05022',
+      vehicle: {
+        modelName: 'HYPTEC HT',
+        colorName: 'Rose Gold',
+        incomingDeadline: new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString(),
+        branch: { name: 'มีนบุรี' }
+      },
+      inspector: { name: 'สมชาย ช่างตรวจ' },
+      createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+    }
+  ],
+  LONG_TERM: [
+    {
+      id: 'mock-ltm-1',
+      jobNumber: 'JO-LTM-20260609-001',
+      pdiType: 'LONG_TERM',
+      ltmInterval: 30,
+      status: 'IN_PROGRESS',
+      vehicleVin: 'LNAT4AB34T5G05033',
+      vehicle: { modelName: 'AION Y Plus', colorName: 'Lucky Gold', branch: { name: 'มีนบุรี' } },
+      inspector: { name: 'สมชาย ช่างตรวจ' },
+      scheduledDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'mock-ltm-2',
+      jobNumber: 'JO-LTM-20260609-002',
+      pdiType: 'LONG_TERM',
+      ltmInterval: 60,
+      status: 'APPROVED',
+      vehicleVin: 'LNAT4AB34T5G05044',
+      vehicle: { modelName: 'AION ES', colorName: 'Classic Black', branch: { name: 'มีนบุรี' } },
+      inspector: { name: 'สมชาย ช่างตรวจ' },
+      scheduledDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    }
+  ],
+  PRE_DELIVERY: [
+    {
+      id: 'mock-pd-1',
+      jobNumber: 'JO-PD-20260609-001',
+      pdiType: 'PRE_DELIVERY',
+      status: 'PENDING',
+      vehicleVin: 'LNAT4AB34T5G05055',
+      vehicle: { modelName: 'HYPTEC SSR', colorName: 'Flame Red', branch: { name: 'มีนบุรี' } },
+      customerName: 'คุณสมศักดิ์ รวยยศ',
+      salesName: 'สุดสวย บริการดี',
+      targetDeliveryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+      inspector: null,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'mock-pd-2',
+      jobNumber: 'JO-PD-20260609-002',
+      pdiType: 'PRE_DELIVERY',
+      status: 'IN_PROGRESS',
+      vehicleVin: 'LNAT4AB34T5G05066',
+      vehicle: { modelName: 'GAC M8', colorName: 'Pearl White', branch: { name: 'มีนบุรี' } },
+      customerName: 'คุณอารีย์ มั่งมี',
+      salesName: 'ชื่นใจ ยิ้มแย้ม',
+      targetDeliveryDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+      inspector: { name: 'สมชาย ช่างตรวจ' },
+      createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+    }
+  ]
+};
+
 interface PdiListClientProps {
   pdiType: 'INCOMING' | 'LONG_TERM' | 'PRE_DELIVERY';
   initialJobs: any[];
@@ -18,93 +107,7 @@ interface PdiListClientProps {
 
 export default function PdiListClient({ pdiType, initialJobs, isDbConnected }: PdiListClientProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Custom mock fallbacks based on PDI type
-  const getMockJobs = () => {
-    const today = new Date();
-    if (pdiType === 'INCOMING') {
-      return [
-        {
-          id: 'mock-inc-1',
-          jobNumber: 'JO-INC-20260609-001',
-          pdiType: 'INCOMING',
-          status: 'PENDING',
-          vehicleVin: 'LNAT4AB34T5G05011',
-          vehicle: { modelName: 'AION V', colorName: 'Space Gray', incomingDeadline: new Date(Date.now() + 1.5 * 60 * 60 * 1000).toISOString(), branch: { name: 'มีนบุรี' } },
-          inspector: null,
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'mock-inc-2',
-          jobNumber: 'JO-INC-20260609-002',
-          pdiType: 'INCOMING',
-          status: 'PENDING_APPROVAL',
-          vehicleVin: 'LNAT4AB34T5G05022',
-          vehicle: { modelName: 'HYPTEC HT', colorName: 'Rose Gold', incomingDeadline: new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString(), branch: { name: 'มีนบุรี' } },
-          inspector: { name: 'สมชาย ช่างตรวจ' },
-          createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-        }
-      ];
-    }
-    if (pdiType === 'LONG_TERM') {
-      return [
-        {
-          id: 'mock-ltm-1',
-          jobNumber: 'JO-LTM-20260609-001',
-          pdiType: 'LONG_TERM',
-          ltmInterval: 30,
-          status: 'IN_PROGRESS',
-          vehicleVin: 'LNAT4AB34T5G05033',
-          vehicle: { modelName: 'AION Y Plus', colorName: 'Lucky Gold', branch: { name: 'มีนบุรี' } },
-          inspector: { name: 'สมชาย ช่างตรวจ' },
-          scheduledDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'mock-ltm-2',
-          jobNumber: 'JO-LTM-20260609-002',
-          pdiType: 'LONG_TERM',
-          ltmInterval: 60,
-          status: 'APPROVED',
-          vehicleVin: 'LNAT4AB34T5G05044',
-          vehicle: { modelName: 'AION ES', colorName: 'Classic Black', branch: { name: 'มีนบุรี' } },
-          inspector: { name: 'สมชาย ช่างตรวจ' },
-          scheduledDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        }
-      ];
-    }
-    return [
-      {
-        id: 'mock-pd-1',
-        jobNumber: 'JO-PD-20260609-001',
-        pdiType: 'PRE_DELIVERY',
-        status: 'PENDING',
-        vehicleVin: 'LNAT4AB34T5G05055',
-        vehicle: { modelName: 'HYPTEC SSR', colorName: 'Flame Red', branch: { name: 'มีนบุรี' } },
-        customerName: 'คุณสมศักดิ์ รวยยศ',
-        salesName: 'สุดสวย บริการดี',
-        targetDeliveryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-        inspector: null,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: 'mock-pd-2',
-        jobNumber: 'JO-PD-20260609-002',
-        pdiType: 'PRE_DELIVERY',
-        status: 'IN_PROGRESS',
-        vehicleVin: 'LNAT4AB34T5G05066',
-        vehicle: { modelName: 'GAC M8', colorName: 'Pearl White', branch: { name: 'มีนบุรี' } },
-        customerName: 'คุณอารีย์ มั่งมี',
-        salesName: 'ชื่นใจ ยิ้มแย้ม',
-        targetDeliveryDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-        inspector: { name: 'สมชาย ช่างตรวจ' },
-        createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-      }
-    ];
-  };
-
-  const jobs = isDbConnected ? initialJobs : getMockJobs();
+  const jobs = isDbConnected ? initialJobs : (MOCK_JOBS_BY_TYPE[pdiType] || []);
 
   // Filter based on search term
   const filteredJobs = jobs.filter(j => 

@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Printer } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 interface ApprovedPrintCardProps {
   jobId: string;
@@ -26,15 +26,6 @@ export default function ApprovedPrintCard({ jobId, modelCode }: ApprovedPrintCar
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 justify-end">
-          <Button
-            onClick={() => window.print()}
-            variant="outline"
-            className="gap-1.5 text-xs font-semibold border-brand-teal text-brand-teal hover:bg-brand-teal/10 cursor-pointer"
-          >
-            <Printer className="w-4 h-4" />
-            <span>พิมพ์รายงาน PDI / พิมพ์ Job Order</span>
-          </Button>
-
           {isPdfSupported && (
             <a href={`/api/pdi-jobs/${jobId}/pdf`} download>
               <Button

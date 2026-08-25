@@ -15,7 +15,7 @@ export async function checkRateLimit(ip: string): Promise<{
   const now = new Date();
   
   // Find or create the login attempt record for this IP
-  let attempt = await prisma.loginAttempt.findUnique({
+  const attempt = await prisma.loginAttempt.findUnique({
     where: { ip },
   });
 
