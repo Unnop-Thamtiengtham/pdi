@@ -3,6 +3,7 @@ import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
 import { safeErrorResponse } from '@/lib/api-error';
 import { getVehicleByVin, listVehicles, createVehicleWithIncomingJob } from '@/modules/vehicles/service';
 import { createAuditLog } from '@/modules/audit/service';
+import { prisma } from '@/lib/prisma';
 
 // GET /api/vehicles
 export async function GET(req: NextRequest) {
@@ -52,8 +53,19 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+    
+    // Auto-resolve branchCode (e.g. "MBR") to branchId (CUID) if not provided directly
+    if (!body.branchId && body.branchCode) {
+      const branch = await prisma.branch.findUnique({
+        where: { code: String(body.branchCode).trim().toUpperCase() }
+      });
+      if (branch) {
+        body.branchId = branch.id;
+      }
+    }
+
     if (!body.vin || !body.modelCode || !body.modelName || !body.branchId) {
-      return NextResponse.json({ error: 'Missing required fields: vin, modelCode, modelName, branchId' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields: vin, modelCode, modelName, branchId (or branchCode)' }, { status: 400 });
     }
     if (isBranchRestricted && body.branchId !== userBranchId) {
       return NextResponse.json({ error: 'Unauthorized to add vehicles to another branch' }, { status: 403 });
