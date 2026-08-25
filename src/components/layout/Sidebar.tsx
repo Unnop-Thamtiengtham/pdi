@@ -18,7 +18,6 @@ import {
   CheckSquare,
   Wrench,
   Users,
-  Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -85,12 +84,6 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       label: 'จัดการผู้ใช้งาน (Users)',
       href: '/users',
       icon: Users,
-      roles: ['MASTER'],
-    },
-    {
-      label: 'ตั้งค่า Webhook (Webhooks)',
-      href: '/settings/webhooks',
-      icon: Globe,
       roles: ['MASTER'],
     },
   ];

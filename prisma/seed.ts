@@ -449,8 +449,12 @@ async function main() {
           { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_004', itemName: 'อายุขัยสุขภาพแบตเตอรี่ SOH (รอง) [เกณฑ์ ≥ 80%]', itemOrder: 4, hasNumeric: true, numericUnit: '%', numericMin: 80 },
 
           // 11. การตรวจสอบไฟเตือน
-          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'OTA_001', itemName: 'ตรวจสอบและทำการลบรหัสความผิดปกติ (DTC)', itemOrder: 1 },
-          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'OTA_002', itemName: 'ตรวจสอบและอัปเดตเวอร์ชันซอฟต์แวร์หน้าจอกลาง', itemOrder: 2 },
+          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'WRN_001', itemName: 'หน้าปัดมีไฟขึ้นปกติ', itemOrder: 1 },
+          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'WRN_002', itemName: 'หน้าปัดมีไฟเตือนสว่างขึ้น', itemOrder: 2 },
+
+          // 12. วินิจฉัยและการอัพเกรด
+          { category: 'วินิจฉัยและการอัพเกรด', categoryOrder: 12, itemCode: 'OTA_001', itemName: 'ตรวจสอบและการลบรหัสปัญหา', itemOrder: 1 },
+          { category: 'วินิจฉัยและการอัพเกรด', categoryOrder: 12, itemCode: 'OTA_002', itemName: 'อัปเดต OTA ให้เป็นเวอร์ชั่นล่าสุด', itemOrder: 2 },
         );
       } else if (modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES') {
         // ========== AION_YP / AION_YP5 / AION_ES Dedicated Checklist ==========
@@ -674,12 +678,12 @@ async function main() {
           { category: 'ตรวจสอบแบตเตอรี่ 12V', categoryOrder: 10, itemCode: 'BAT_006', itemName: 'แนบรายงานผลการทดสอบแบตเตอรี่', itemOrder: 6, hasPhoto: true },
 
           // 11. การตรวจสอบไฟเตือน
-          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'WRN_001', itemName: 'หน้าปัดแสดงผลปกติ', itemOrder: 1 },
-          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'WRN_002', itemName: 'ไม่มีไฟเตือนผิดปกติ', itemOrder: 2 },
+          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'WRN_001', itemName: 'หน้าปัดมีไฟขึ้นปกติ', itemOrder: 1 },
+          { category: 'การตรวจสอบไฟเตือน', categoryOrder: 11, itemCode: 'WRN_002', itemName: 'หน้าปัดมีไฟเตือนสว่างขึ้น', itemOrder: 2 },
 
           // 12. การวินิจฉัยและการอัปเกรด
-          { category: 'การวินิจฉัยและการอัปเกรด', categoryOrder: 12, itemCode: 'OTA_001', itemName: 'ตรวจสอบและลบรหัสปัญหา (DTC)', itemOrder: 1 },
-          { category: 'การวินิจฉัยและการอัปเกรด', categoryOrder: 12, itemCode: 'OTA_002', itemName: 'ตรวจสอบการอัปเกรด OTA เป็นเวอร์ชันล่าสุด', itemOrder: 2 },
+          { category: 'การวินิจฉัยและการอัปเกรด', categoryOrder: 12, itemCode: 'OTA_001', itemName: 'ตรวจสอบและการลบรหัสปัญหา', itemOrder: 1 },
+          { category: 'การวินิจฉัยและการอัปเกรด', categoryOrder: 12, itemCode: 'OTA_002', itemName: 'อัปเดต OTA ให้เป็นเวอร์ชั่นล่าสุด', itemOrder: 2 },
         );
       } else {
         // Category 1: Exterior

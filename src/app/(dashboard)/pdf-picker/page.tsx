@@ -9,25 +9,26 @@ interface FieldItem {
   category: string;
 }
 
-// PDF page dimensions in points (A4)
-const PDF_WIDTH = 595.32;
-const PDF_HEIGHT = 841.92;
-// Rendered image dimensions (from qlmanage export)
-const IMG_WIDTH = 1414;
-const IMG_HEIGHT = 2000;
-// Display scale
-const DISPLAY_WIDTH = 750;
-const DISPLAY_SCALE = DISPLAY_WIDTH / IMG_WIDTH;
-const DISPLAY_HEIGHT = IMG_HEIGHT * DISPLAY_SCALE;
-
 export default function PdfCoordinatePickerPage() {
+  const [modelCode, setModelCode] = useState('AION_V');
+
+  // Resolve PDF and image dimensions dynamically based on selected model
+  const isUt = modelCode === 'AION_UT';
+  const pdfWidth = isUt ? 612.00 : 595.32;
+  const pdfHeight = isUt ? 792.00 : 841.92;
+  const imgWidth = isUt ? 1545 : 1414;
+  const imgHeight = 2000;
+
+  // Display scale
+  const displayWidth = 750;
+  const displayScale = displayWidth / imgWidth;
+  const displayHeight = imgHeight * displayScale;
   const imgRef = useRef<HTMLImageElement>(null);
   const [mousePos, setMousePos] = useState<{ pdfX: number; pdfY: number } | null>(null);
   const [activeFieldIdx, setActiveFieldIdx] = useState(0);
   const [mappedCoords, setMappedCoords] = useState<Record<string, { x: number; y: number }>>({});
   const [saveStatus, setSaveStatus] = useState<string>('');
   const [exportText, setExportText] = useState('');
-  const [modelCode, setModelCode] = useState('AION_V');
   const [fields, setFields] = useState<FieldItem[]>([]);
   const [grouped, setGrouped] = useState<Record<string, FieldItem[]>>({});
   const [loading, setLoading] = useState(true);
@@ -80,12 +81,12 @@ export default function PdfCoordinatePickerPage() {
   }, [modelCode]);
 
   const pixelToPdf = useCallback((pixelX: number, pixelY: number) => {
-    const origX = pixelX / DISPLAY_SCALE;
-    const origY = pixelY / DISPLAY_SCALE;
-    const pdfX = Math.round((origX / IMG_WIDTH) * PDF_WIDTH);
-    const pdfY = Math.round(PDF_HEIGHT - (origY / IMG_HEIGHT) * PDF_HEIGHT);
+    const origX = pixelX / displayScale;
+    const origY = pixelY / displayScale;
+    const pdfX = Math.round((origX / imgWidth) * pdfWidth);
+    const pdfY = Math.round(pdfHeight - (origY / imgHeight) * pdfHeight);
     return { pdfX, pdfY };
-  }, []);
+  }, [displayScale, imgWidth, pdfWidth, pdfHeight, imgHeight]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLImageElement>) => {
     const img = imgRef.current;
@@ -172,6 +173,7 @@ export default function PdfCoordinatePickerPage() {
           <option value="AION_V5">AION V5</option>
           <option value="AION_YP">AION YP</option>
           <option value="AION_YP5">AION YP5</option>
+          <option value="AION_ES">AION ES</option>
           <option value="AION_UT">AION UT</option>
           <option value="HYPTEC_HT">Hyptec HT</option>
           <option value="HYPTEC_HT8">Hyptec HT8</option>
@@ -198,23 +200,23 @@ export default function PdfCoordinatePickerPage() {
                   ? '/templates/aion-ut-pdi.pdf.png'
                   : modelCode === 'HYPTEC_HT' || modelCode === 'HYPTEC_HT8'
                     ? '/templates/hyptec-ht-pdi.pdf.png'
-                    : modelCode === 'AION_YP' || modelCode === 'AION_YP5'
+                    : modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES'
                       ? '/templates/aion-yp-pdi.pdf.png'
                       : '/templates/aion-v-pdi.pdf.png'
               }
               alt="PDF Template"
-              width={DISPLAY_WIDTH}
-              height={DISPLAY_HEIGHT}
+              width={displayWidth}
+              height={displayHeight}
               className="cursor-crosshair block"
-              style={{ width: DISPLAY_WIDTH, height: DISPLAY_HEIGHT }}
+              style={{ width: displayWidth, height: displayHeight }}
               onMouseMove={handleMouseMove}
               onClick={handleClick}
               draggable={false}
             />
             {/* Render placed markers */}
             {Object.entries(mappedCoords).map(([id, coords]) => {
-              const dispX = (coords.x / PDF_WIDTH) * DISPLAY_WIDTH;
-              const dispY = ((PDF_HEIGHT - coords.y) / PDF_HEIGHT) * DISPLAY_HEIGHT;
+              const dispX = (coords.x / pdfWidth) * displayWidth;
+              const dispY = ((pdfHeight - coords.y) / pdfHeight) * displayHeight;
               return (
                 <div
                   key={id}

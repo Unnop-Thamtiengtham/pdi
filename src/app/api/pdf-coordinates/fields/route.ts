@@ -51,14 +51,6 @@ export async function GET(req: NextRequest) {
       { id: 'meta_jobNumber', itemCode: 'meta_jobNumber', itemName: 'เลขใบงาน', category: 'ข้อมูลรถ (Metadata)' },
     ];
 
-    // เฉพาะฟิลด์ที่ไม่มีใน Checklist Template — ช่องติ๊กเพิ่มเติมบนแบบฟอร์ม
-    const extraFields = [
-      { id: 'bat_instrumentNormal', itemCode: 'bat_instrumentNormal', itemName: 'หน้าปัดไฟเตือนปกติ □ (ช่องติ๊ก)', category: 'ตรวจสอบไฟเตือน/วินิจฉัย' },
-      { id: 'bat_instrumentWarning', itemCode: 'bat_instrumentWarning', itemName: 'หน้าปัดไฟเตือนผิดปกติ □ (ช่องติ๊ก)', category: 'ตรวจสอบไฟเตือน/วินิจฉัย' },
-      { id: 'bat_diagErase', itemCode: 'bat_diagErase', itemName: 'ลบรหัสความผิดพลาด □ (ช่องติ๊ก)', category: 'ตรวจสอบไฟเตือน/วินิจฉัย' },
-      { id: 'bat_diagOta', itemCode: 'bat_diagOta', itemName: 'อัพเดท OTA □ (ช่องติ๊ก)', category: 'ตรวจสอบไฟเตือน/วินิจฉัย' },
-    ];
-
     return NextResponse.json({
       modelCode,
       templateId: template.id,
@@ -72,12 +64,10 @@ export async function GET(req: NextRequest) {
           hasNumeric: item.hasNumeric,
           numericUnit: item.numericUnit,
         })),
-        ...extraFields,
       ],
       grouped: {
         'ข้อมูลรถ (Metadata)': metadataFields,
         ...grouped,
-        'ตรวจสอบไฟเตือน/วินิจฉัย': extraFields,
       },
     });
   } catch (error: any) {

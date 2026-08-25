@@ -11,7 +11,7 @@ interface ApprovedPrintCardProps {
 }
 
 export default function ApprovedPrintCard({ jobId, modelCode }: ApprovedPrintCardProps) {
-  const isPdfSupported = ['AION_V', 'AION_V5', 'AION_YP', 'AION_YP5', 'AION_UT', 'HYPTEC_HT', 'HYPTEC_HT8'].includes(modelCode);
+  const isPdfSupported = ['AION_V', 'AION_V5', 'AION_YP', 'AION_YP5', 'AION_UT', 'HYPTEC_HT', 'HYPTEC_HT8', 'AION_ES'].includes(modelCode);
 
   return (
     <Card className="border border-success/20 bg-success/5 shadow-sm no-print">

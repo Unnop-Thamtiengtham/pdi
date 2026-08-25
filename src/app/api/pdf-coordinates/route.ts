@@ -4,7 +4,7 @@ import path from 'path';
 
 function getCoordsFilePath(modelCode: string | null): string {
   const code = (modelCode || 'AION_V').toUpperCase();
-  const isYp = code === 'AION_YP' || code === 'AION_YP5';
+  const isYp = code === 'AION_YP' || code === 'AION_YP5' || code === 'AION_ES';
   const isHt = code === 'HYPTEC_HT' || code === 'HYPTEC_HT8';
   const isUt = code === 'AION_UT';
   const filename = isUt

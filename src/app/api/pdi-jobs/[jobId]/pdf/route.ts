@@ -12,13 +12,16 @@ import path from 'path';
 // If no saved file exists, hardcoded defaults are used.
 function loadSavedCoordinates(modelCode: string): { metadata?: any; checklist?: any; battery?: any } {
   try {
-    const isYp = modelCode === 'AION_YP' || modelCode === 'AION_YP5';
+    const isYp = modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES';
     const isHt = modelCode === 'HYPTEC_HT' || modelCode === 'HYPTEC_HT8';
-    const filename = isHt 
-      ? 'hyptec-ht-coordinates.json' 
-      : isYp 
-        ? 'aion-yp-coordinates.json' 
-        : 'aion-v-coordinates.json';
+    const isUt = modelCode === 'AION_UT';
+    const filename = isUt
+      ? 'aion-ut-coordinates.json'
+      : isHt 
+        ? 'hyptec-ht-coordinates.json' 
+        : isYp 
+          ? 'aion-yp-coordinates.json' 
+          : 'aion-v-coordinates.json';
     const filePath = path.join(process.cwd(), 'public', 'templates', filename);
     if (fs.existsSync(filePath)) {
       return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
@@ -196,7 +199,7 @@ export async function GET(
     }
 
     // 2. Resolve Template & Font Paths
-    const isYp = modelCode === 'AION_YP' || modelCode === 'AION_YP5';
+    const isYp = modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES';
     const isHt = modelCode === 'HYPTEC_HT' || modelCode === 'HYPTEC_HT8';
     const isUt = modelCode === 'AION_UT';
     const templateName = isUt
@@ -322,39 +325,16 @@ export async function GET(
       }
     });
 
-    // 6. Fill Battery 12V test data
+    // 6. Fill Battery 12V test data (Only non-checklist values like tirePressure)
     const bat = job.batteryTest as any;
     if (bat) {
       const bCoords = COORDINATES.battery;
       const getValStr = (val: number | null | undefined, unit: string) => 
         val !== undefined && val !== null ? `${val} ${unit}` : '___';
 
-      const isSingleBattery = isYp || modelCode === 'AION_UT';
-      if (isSingleBattery) {
-        // AION YP / YP5 / UT (Single battery with SOC/CCA)
-        if (bCoords.mainVoltage) page.drawText(getValStr(bat.mainVoltage, 'V'), { x: bCoords.mainVoltage.x, y: bCoords.mainVoltage.y, size: 8, font: thaiFont });
-        if (bCoords.mainSoh) page.drawText(getValStr(bat.mainSoh, '%'), { x: bCoords.mainSoh.x, y: bCoords.mainSoh.y, size: 8, font: thaiFont });
-        if (bCoords.mainSoc) page.drawText(getValStr(bat.mainSoc, '%'), { x: bCoords.mainSoc.x, y: bCoords.mainSoc.y, size: 8, font: thaiFont });
-        if (bCoords.mainCca) page.drawText(getValStr(bat.mainCca, 'A'), { x: bCoords.mainCca.x, y: bCoords.mainCca.y, size: 8, font: thaiFont });
-        if (bCoords.tirePressure) page.drawText(getValStr(bat.tirePressure, 'psi'), { x: bCoords.tirePressure.x, y: bCoords.tirePressure.y, size: 8, font: thaiFont });
-      } else {
-        // AION V / V5 (Dual batteries)
-        if (bCoords.mainVoltage) page.drawText(getValStr(bat.mainVoltage, 'V'), { x: bCoords.mainVoltage.x, y: bCoords.mainVoltage.y, size: 8, font: thaiFont });
-        if (bCoords.secVoltage) page.drawText(getValStr(bat.secVoltage, 'V'), { x: bCoords.secVoltage.x, y: bCoords.secVoltage.y, size: 8, font: thaiFont });
-        if (bCoords.mainSoh) page.drawText(getValStr(bat.mainSoh, '%'), { x: bCoords.mainSoh.x, y: bCoords.mainSoh.y, size: 8, font: thaiFont });
-        if (bCoords.secSoh) page.drawText(getValStr(bat.secSoh, '%'), { x: bCoords.secSoh.x, y: bCoords.secSoh.y, size: 8, font: thaiFont });
-        if (bCoords.tirePressure) page.drawText(getValStr(bat.tirePressure, 'psi'), { x: bCoords.tirePressure.x, y: bCoords.tirePressure.y, size: 8, font: thaiFont });
-
-        // ช่องติ๊ก: ไฟเตือนหน้าปัด (AION V เฉพาะ)
-        if (bat.terminalCheck === 'FAIL') {
-          if (bCoords.instrumentWarning) drawVectorCheck(bCoords.instrumentWarning.x, bCoords.instrumentWarning.y);
-        } else {
-          if (bCoords.instrumentNormal) drawVectorCheck(bCoords.instrumentNormal.x, bCoords.instrumentNormal.y);
-        }
-        
-        // ช่องติ๊ก: วินิจฉัย/OTA (AION V เฉพาะ)
-        if (bCoords.diagErase) drawVectorCheck(bCoords.diagErase.x, bCoords.diagErase.y);
-        if (bCoords.diagOta) drawVectorCheck(bCoords.diagOta.x, bCoords.diagOta.y);
+      const hasTirePressureInChecklist = modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES';
+      if (bCoords && bCoords.tirePressure && !hasTirePressureInChecklist) {
+        page.drawText(getValStr(bat.tirePressure, 'psi'), { x: bCoords.tirePressure.x, y: bCoords.tirePressure.y, size: 8, font: thaiFont });
       }
     }
 
