@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Clock, CheckCircle, AlertCircle, Play, ShieldAlert, ArrowUpRight, Search, Calendar } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { getPdiRouteSlug } from '@/lib/utils';

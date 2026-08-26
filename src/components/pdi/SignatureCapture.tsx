@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Eraser, Check } from 'lucide-react';
+import { Eraser } from 'lucide-react';
 
 interface SignatureCaptureProps {
   value?: string | null; // Base64 data URL
@@ -18,7 +18,14 @@ export default function SignatureCapture({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSigned, setHasSigned] = useState(!!value);
+  const [prevValue, setPrevValue] = useState(value);
   const lastValueRef = useRef<string | null | undefined>(value);
+
+  // Sync state during rendering when value changes
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setHasSigned(!!value);
+  }
 
   // Initialize Canvas resolution and initial value on mount
   useEffect(() => {
@@ -51,9 +58,9 @@ export default function SignatureCapture({
         ctx.drawImage(img, 0, 0);
       };
       img.src = value;
-      setHasSigned(true);
       lastValueRef.current = value;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle external changes to value
@@ -86,9 +93,6 @@ export default function SignatureCapture({
         ctx.drawImage(img, 0, 0);
       };
       img.src = value;
-      setHasSigned(true);
-    } else {
-      setHasSigned(false);
     }
   }, [value]);
 
