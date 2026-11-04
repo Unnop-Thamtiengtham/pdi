@@ -202,7 +202,9 @@ export default function PdiListClient({ pdiType, initialJobs, isDbConnected }: P
                       <TableCell className="font-mono text-xs text-slate-800 font-medium py-4 select-all">{job.jobNumber}</TableCell>
                       <TableCell className="font-mono text-xs py-4 select-all">{job.vehicleVin}</TableCell>
                       <TableCell className="text-xs py-4">{job.vehicle?.modelName}</TableCell>
-                      <TableCell className="text-xs py-4">{job.vehicle?.branch?.name || '-'}</TableCell>
+                      <TableCell className="text-xs py-4 font-mono font-semibold text-slate-700 whitespace-nowrap" title={job.vehicle?.branch?.name}>
+                        {job.vehicle?.branch?.code || job.vehicle?.branch?.name || '-'}
+                      </TableCell>
                       <TableCell className="text-center whitespace-nowrap py-4">
                         {job.status === 'PENDING' && <Badge variant="default">รอตรวจ</Badge>}
                         {job.status === 'IN_PROGRESS' && <Badge variant="info">กำลังตรวจ</Badge>}

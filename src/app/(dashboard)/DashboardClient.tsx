@@ -369,7 +369,9 @@ export default function DashboardClient({ initialJobs, isDbConnected }: Dashboar
                     <TableRow key={job.id} className="hover:bg-slate-50/50 transition-colors">
                       <TableCell className="font-mono text-xs text-slate-800 font-medium py-4 select-all">{job.jobNumber}</TableCell>
                       <TableCell className="text-xs py-4">{job.vehicle?.modelName}</TableCell>
-                      <TableCell className="text-xs py-4">{job.vehicle?.branch?.name || '-'}</TableCell>
+                      <TableCell className="text-xs py-4 font-mono font-semibold text-slate-700 whitespace-nowrap" title={job.vehicle?.branch?.name}>
+                        {job.vehicle?.branch?.code || job.vehicle?.branch?.name || '-'}
+                      </TableCell>
                       <TableCell className="font-mono text-xs py-4 select-all">{job.vehicleVin}</TableCell>
                       <TableCell className="py-4">
                         <Badge variant="outline" className="text-xs">

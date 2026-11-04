@@ -136,7 +136,9 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
       const q = searchQuery.toLowerCase();
       const vinMatch = veh.vin.toLowerCase().includes(q);
       const modelMatch = (veh.modelName || '').toLowerCase().includes(q);
-      const branchMatch = (veh.branch?.name || '').toLowerCase().includes(q);
+      const branchMatch =
+        (veh.branch?.name || '').toLowerCase().includes(q) ||
+        (veh.branch?.code || '').toLowerCase().includes(q);
       const warehouseMatch = (veh.warehouse || '').toLowerCase().includes(q);
       const floorplanMatch = (veh.floorplan || '').toLowerCase().includes(q);
       const lotMatch = (veh.lotNumber || '').toLowerCase().includes(q);

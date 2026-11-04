@@ -101,8 +101,8 @@ export default function ApprovalsClient({ initialJobs, isDbConnected }: Approval
                       <TableCell className="text-xs font-semibold py-4">
                         {job.vehicle?.modelName || 'ไม่พบรุ่นรถ'}
                       </TableCell>
-                      <TableCell className="text-xs py-4">
-                        {job.vehicle?.branch?.name || '-'}
+                      <TableCell className="text-xs py-4 font-mono font-semibold text-slate-700 whitespace-nowrap" title={job.vehicle?.branch?.name}>
+                        {job.vehicle?.branch?.code || job.vehicle?.branch?.name || '-'}
                       </TableCell>
                       <TableCell className="font-mono text-xs text-slate-600 font-medium py-4 select-all">
                         {job.vehicleVin}

@@ -192,111 +192,26 @@ async function main() {
 
   console.log('👤 Created test users.');
 
-  // 4. Create Vehicles
+  // 4. Create Vehicles (2 sample vehicles)
   const now = new Date();
 
   const vehiclesData = [
     {
       vin: 'LNBSCCAK4RD100101',
       modelCode: 'AION_V',
-      modelName: 'AION V Plus',
+      modelName: 'AION V',
       colorCode: 'PW01',
       colorName: 'Pearl White',
       exteriorColor: 'ขาวมุก (Pearl White)',
       interiorColor: 'ดำ-เทา (Black-Grey)',
-      productionYear: 2025,
-      branchId: branchMBR.id,
-      warehouse: 'คลัง A',
-      floorplan: 'Zone 1',
-      arrivedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
-      incomingDeadline: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
-      currentStatus: VehicleStatus.IN_STOCK,
-      motorBatteryNumber: 'TZ220XS-BAT-V-001',
-    },
-    {
-      vin: 'LNBSCCAK5RD100201',
-      modelCode: 'AION_V5',
-      modelName: 'AION V 5',
-      colorCode: 'SL01',
-      colorName: 'Sleek Silver',
-      exteriorColor: 'เงิน (Sleek Silver)',
-      interiorColor: 'เทา-ขาว (Grey-White)',
-      productionYear: 2026,
-      branchId: branchKJN.id,
-      warehouse: 'คลัง B',
-      floorplan: 'Zone 2',
-      arrivedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
-      incomingDeadline: new Date(now.getTime()),
-      currentStatus: VehicleStatus.IN_STOCK,
-      motorBatteryNumber: 'TZ220XS-BAT-V5-005',
-    },
-    {
-      vin: 'LNBSCCAK3RD300101',
-      modelCode: 'AION_UT',
-      modelName: 'AION UT',
-      colorCode: 'BL01',
-      colorName: 'Baby Blue',
-      exteriorColor: 'ฟ้าอ่อน (Baby Blue)',
-      interiorColor: 'ขาว-ครีม (White-Cream)',
-      productionYear: 2026,
-      branchId: branchLBD.id,
-      warehouse: 'คลัง A',
-      floorplan: 'Zone UT',
-      arrivedAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
-      incomingDeadline: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
-      currentStatus: VehicleStatus.IN_STOCK,
-      motorBatteryNumber: 'TZ180XS-BAT-UT-007',
-    },
-    {
-      vin: 'LNBSCCAK7RD200205',
-      modelCode: 'AION_YP',
-      modelName: 'AION Y Plus',
-      colorCode: 'SG02',
-      colorName: 'Starry Grey',
-      exteriorColor: 'เทาดาว (Starry Grey)',
-      interiorColor: 'ครีม-น้ำตาล (Cream-Brown)',
-      productionYear: 2025,
-      branchId: branchMBR.id,
-      warehouse: 'คลัง A',
-      floorplan: 'Zone 2',
-      arrivedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
-      incomingDeadline: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
-      currentStatus: VehicleStatus.IN_STOCK,
-      motorBatteryNumber: 'TZ220XS-BAT-YP-002',
-    },
-    {
-      vin: 'LNBSCCAK8RD200305',
-      modelCode: 'AION_YP5',
-      modelName: 'AION Y Plus 5',
-      colorCode: 'BK01',
-      colorName: 'Midnight Black',
-      exteriorColor: 'ดำ (Midnight Black)',
-      interiorColor: 'ดำ-ส้ม (Black-Orange)',
       productionYear: 2026,
       branchId: branchMBR.id,
-      warehouse: 'คลัง C',
-      floorplan: 'Zone A',
-      arrivedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
-      incomingDeadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
-      currentStatus: VehicleStatus.IN_STOCK,
-      motorBatteryNumber: 'TZ220XS-BAT-YP5-004',
-    },
-    {
-      vin: 'LNBSCCAK6RD100999',
-      modelCode: 'AION_ES',
-      modelName: 'AION ES',
-      colorCode: 'PW02',
-      colorName: 'Pearl White',
-      exteriorColor: 'ขาวมุก (Pearl White)',
-      interiorColor: 'ดำ (Black)',
-      productionYear: 2025,
-      branchId: branchLBD.id,
-      warehouse: 'คลัง D',
+      warehouse: 'คลัง A',
       floorplan: 'Zone 1',
       arrivedAt: new Date(now.getTime()),
       incomingDeadline: new Date(now.getTime() + 24 * 60 * 60 * 1000),
       currentStatus: VehicleStatus.IN_STOCK,
-      motorBatteryNumber: 'TZ180XS-BAT-ES-006',
+      motorBatteryNumber: 'TZ220XS-BAT-V-001',
     },
     {
       vin: 'LNBHHTCK3RD300310',
@@ -306,65 +221,15 @@ async function main() {
       colorName: 'Midnight Blue',
       exteriorColor: 'น้ำเงินเข้ม (Midnight Blue)',
       interiorColor: 'ดำ-แดง (Black-Red)',
-      productionYear: 2025,
-      branchId: branchKJN.id,
+      productionYear: 2026,
+      branchId: branchMBR.id,
       warehouse: 'คลัง B',
       floorplan: 'Zone 1',
-      arrivedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
-      incomingDeadline: new Date(now.getTime()),
+      arrivedAt: new Date(now.getTime()),
+      incomingDeadline: new Date(now.getTime() + 24 * 60 * 60 * 1000),
       currentStatus: VehicleStatus.IN_STOCK,
       motorBatteryNumber: 'TZ230XS-BAT-HT-003',
     },
-    {
-      vin: 'LNBHHTCK4RD400401',
-      modelCode: 'HYPTEC_HT8',
-      modelName: 'HYPTEC HT 8',
-      colorCode: 'RD01',
-      colorName: 'Ruby Red',
-      exteriorColor: 'แดง (Ruby Red)',
-      interiorColor: 'ดำ-น้ำตาล (Black-Brown)',
-      productionYear: 2026,
-      branchId: branchLBD.id,
-      warehouse: 'คลัง E',
-      floorplan: 'Zone HT8',
-      arrivedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
-      incomingDeadline: new Date(now.getTime()),
-      currentStatus: VehicleStatus.IN_STOCK,
-      motorBatteryNumber: 'TZ230XS-BAT-HT8-008',
-    },
-    {
-      vin: 'LNBSSR12345678901',
-      modelCode: 'HYPTEC_SSR',
-      modelName: 'HYPTEC SSR',
-      colorCode: 'YL01',
-      colorName: 'Hyper Yellow',
-      exteriorColor: 'เหลืองสปอร์ต (Hyper Yellow)',
-      interiorColor: 'คาร์บอนดำ (Carbon Black)',
-      productionYear: 2026,
-      branchId: branchMBR.id,
-      warehouse: 'คลังพิเศษ',
-      floorplan: 'Zone Supercar',
-      arrivedAt: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000),
-      incomingDeadline: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
-      currentStatus: VehicleStatus.IN_STOCK,
-      motorBatteryNumber: 'TZ250XS-BAT-SSR-009',
-    },
-    {
-      vin: 'LNBM8MHEV98765432',
-      modelCode: 'GAC_M8',
-      modelName: 'GAC M8',
-      colorCode: 'GR01',
-      colorName: 'Graphite Grey',
-      exteriorColor: 'เทาเข้ม (Graphite Grey)',
-      interiorColor: 'แดง-ทอง (Red-Gold)',
-      productionYear: 2026,
-      branchId: branchMBR.id,
-      warehouse: 'คลังโชว์รูม',
-      floorplan: 'Zone VIP',
-      arrivedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
-      incomingDeadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
-      currentStatus: VehicleStatus.IN_STOCK,
-    }
   ];
   const todayStr = now.toISOString().slice(0, 10).replace(/-/g, '');
 
@@ -389,7 +254,7 @@ async function main() {
     });
   }
 
-  console.log(`🚗 Created ${vehiclesData.length} sample vehicles representing all models.`);
+  console.log(`🚗 Created ${vehiclesData.length} sample vehicles.`);
 
   // 5. Create Checklist Templates for all models and all types
   const models = ['AION_V', 'AION_V5', 'AION_UT', 'AION_YP', 'AION_YP5', 'AION_ES', 'HYPTEC_HT', 'HYPTEC_HT8', 'HYPTEC_SSR', 'GAC_M8'];
@@ -1174,58 +1039,6 @@ async function main() {
       });
     }
   }
-
-  // 5. Create 1 Mock Vehicle for each model
-  console.log('🚗 Seeding 1 mock vehicle for each model...');
-  const mockVehicles = [
-    { modelCode: 'AION_V', modelName: 'AION V', vin: 'VIN-AION-V-001' },
-    { modelCode: 'AION_V5', modelName: 'AION V 5', vin: 'VIN-AION-V5-001' },
-    { modelCode: 'AION_UT', modelName: 'AION UT', vin: 'VIN-AION-UT-001' },
-    { modelCode: 'AION_YP', modelName: 'AION Y Plus', vin: 'VIN-AION-YP-001' },
-    { modelCode: 'AION_YP5', modelName: 'AION Y Plus 5', vin: 'VIN-AION-YP5-001' },
-    { modelCode: 'AION_ES', modelName: 'AION ES', vin: 'VIN-AION-ES-001' },
-    { modelCode: 'HYPTEC_HT', modelName: 'HYPTEC HT', vin: 'VIN-HYPTEC-HT-001' },
-    { modelCode: 'HYPTEC_HT8', modelName: 'HYPTEC HT 8', vin: 'VIN-HYPTEC-HT8-001' },
-    { modelCode: 'GAC_M8', modelName: 'GAC M8', vin: 'VIN-GAC-M8-001' },
-  ];
-
-  for (const v of mockVehicles) {
-    const arrivedAt = new Date();
-    const incomingDeadline = new Date(arrivedAt.getTime() + 24 * 60 * 60 * 1000);
-    await prisma.vehicle.create({
-      data: {
-        vin: v.vin,
-        modelCode: v.modelCode,
-        modelName: v.modelName,
-        motorBatteryNumber: 'MOCK-MOTOR-BAT-123456',
-        colorCode: 'COL-WHT',
-        colorName: 'White',
-        exteriorColor: 'White',
-        interiorColor: 'Black',
-        productionYear: 2026,
-        branchId: branchMBR.id,
-        warehouse: 'มีนบุรี A',
-        floorplan: 'Zone A-1',
-        lotNumber: 'LOT-MOCK-INC',
-        arrivedAt,
-        incomingDeadline,
-        currentStatus: 'IN_STOCK',
-      },
-    });
-
-    const rand = Math.floor(100000 + Math.random() * 900000);
-    const jobNumber = `JO-INC-${todayStr}-${rand}`;
-    await prisma.pdiJob.create({
-      data: {
-        jobNumber,
-        pdiType: 'INCOMING',
-        status: 'PENDING',
-        vehicleVin: v.vin,
-        scheduledDate: incomingDeadline,
-      },
-    });
-  }
-  console.log('🚗 Finished seeding mock vehicles.');
 
   console.log('📝 Created checklist templates for all 10 models across 3 PDI types.');
   console.log('✅ Database seeding finished successfully.');

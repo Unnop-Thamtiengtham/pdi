@@ -158,8 +158,8 @@ export default function RepairsClient({ initialJobs, isDbConnected, branches = [
                         <TableCell className="py-4 font-mono text-[10px] text-slate-500 font-semibold select-all">
                           {job.vehicleVin}
                         </TableCell>
-                        <TableCell className="text-xs py-4 text-slate-700 font-medium">
-                          {job.vehicle?.branch?.name || '-'}
+                        <TableCell className="text-xs py-4 font-mono text-slate-700 font-semibold whitespace-nowrap" title={job.vehicle?.branch?.name}>
+                          {job.vehicle?.branch?.code || job.vehicle?.branch?.name || '-'}
                         </TableCell>
                         <TableCell className="text-xs py-4 text-slate-650 font-medium">
                           {job.inspector?.name || '-'}

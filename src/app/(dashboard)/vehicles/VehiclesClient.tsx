@@ -223,7 +223,9 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                           <div className="text-slate-500 text-[10px]">ใน: {veh.interiorColor || '-'}</div>
                         </TableCell>
                         <TableCell className="text-xs font-mono py-4">{veh.productionYear || '-'}</TableCell>
-                        <TableCell className="text-xs py-4 font-semibold text-slate-700">{veh.branch?.name || '-'}</TableCell>
+                        <TableCell className="text-xs py-4 font-mono font-semibold text-slate-700 whitespace-nowrap" title={veh.branch?.name}>
+                          {veh.branch?.code || veh.branch?.name || '-'}
+                        </TableCell>
                         <TableCell className="text-xs py-4">
                           <div className="text-slate-700 font-semibold">{veh.warehouse || '-'}</div>
                           <div className="text-slate-500 text-[10px]">ตำแหน่งจอด: {veh.floorplan || '-'}</div>
