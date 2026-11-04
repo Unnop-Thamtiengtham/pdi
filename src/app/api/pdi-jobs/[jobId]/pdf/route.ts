@@ -401,7 +401,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename=pdi_report_${job.vehicleVin}.pdf`,
+        'Content-Disposition': `attachment; filename="pdi_report_${job.vehicleVin}_${job.pdiType.toLowerCase()}.pdf"`,
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',
