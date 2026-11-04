@@ -199,7 +199,7 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
         'คลังสินค้าโกดัง': 'คลังท่าเรือแหลมฉบัง',
         'โซน/ตำแหน่งจอด': 'Zone A-3',
         'เลขล็อต/เลขล็อค': 'LOT-2026-01',
-        'รหัสสาขา (Branch Code)': 'MBR'
+        'รหัสสาขา (Branch Code)': 'GI02'
       }
     ];
 
@@ -219,7 +219,7 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
       { code: 'GAC_M8', name: 'GAC M8' },
     ];
 
-    const dbBranches = branches && branches.length > 0 ? branches : [{ code: 'MBR', name: 'มีนบุรี' }];
+    const dbBranches = branches && branches.length > 0 ? branches : [{ code: 'GI02', name: 'บริษัท โกลด์ อินทิเกรท มีนบุรี จำกัด' }];
     const maxRows = Math.max(dbBranches.length, modelCodes.length);
     const referenceData = [];
 

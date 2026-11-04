@@ -27,71 +27,126 @@ async function main() {
   console.log('🗑️  Cleaned up old records.');
 
   // 2. Create Branches
+  const branchGI = await prisma.branch.create({
+    data: {
+      code: 'GI',
+      name: 'บริษัท โกลด์ อินทิเกรท จำกัด',
+      address: 'สำนักงานใหญ่ กรุงเทพฯ',
+    },
+  });
+
   const branchKJN = await prisma.branch.create({
     data: {
-      code: 'KJN',
-      name: 'Aion กาญจนาฯ',
-      address: 'ถนนกาญจนาภิเษก กรุงเทพฯ',
-    },
-  });
-
-  const branchLBD = await prisma.branch.create({
-    data: {
-      code: 'LBD',
-      name: 'Aion เลียบด่วนฯ',
-      address: 'ถนนประดิษฐ์มนูธรรม (เลียบด่วนรามอินทรา) กรุงเทพฯ',
-    },
-  });
-
-  const branchPBL = await prisma.branch.create({
-    data: {
-      code: 'PBL',
-      name: 'Aion พิบูลฯ',
-      address: 'ถนนพิบูลสงคราม นนทบุรี',
+      code: 'GI01',
+      name: 'บริษัท โกลด์อินทิเกรท กาญจนาภิเษก – บางแค จำกัด',
+      address: 'ถนนกาญจนาภิเษก - บางแค กรุงเทพฯ',
     },
   });
 
   const branchMBR = await prisma.branch.create({
     data: {
-      code: 'MBR',
-      name: 'Aion มีนบุรี',
-      address: '123 ถนนสุวินทวงศ์ มีนบุรี กรุงเทพฯ',
+      code: 'GI02',
+      name: 'บริษัท โกลด์ อินทิเกรท มีนบุรี จำกัด',
+      address: 'ถนนสุวินทวงศ์ มีนบุรี กรุงเทพฯ',
+    },
+  });
+
+  const branchLBD = await prisma.branch.create({
+    data: {
+      code: 'GI03',
+      name: 'บริษัท โกลด์ อินทิเกรท เลียบด่วนรามอินทรา จำกัด',
+      address: 'ถนนประดิษฐ์มนูธรรม (เลียบด่วนรามอินทรา) กรุงเทพฯ',
+    },
+  });
+
+  const branchGI04 = await prisma.branch.create({
+    data: {
+      code: 'GI04',
+      name: 'บริษัท โกลด์ อินทิเกรท สีลม ซอย 9 จำกัด',
+      address: 'สีลม ซอย 9 กรุงเทพฯ',
+    },
+  });
+
+  const branchGI05 = await prisma.branch.create({
+    data: {
+      code: 'GI05',
+      name: 'บริษัท โกลด์ อินทิเกรท อุบลราชธานี จำกัด',
+      address: 'จังหวัดอุบลราชธานี',
+    },
+  });
+
+  const branchGI06 = await prisma.branch.create({
+    data: {
+      code: 'GI06',
+      name: 'EV7 Co.,Ltd.',
+      address: 'กรุงเทพฯ',
     },
   });
 
   const branchMHC = await prisma.branch.create({
     data: {
-      code: 'MHC',
-      name: 'Aion มหาชัย',
+      code: 'GI07',
+      name: 'บริษัท โกลด์ อินทิเกรท มหาชัย จำกัด',
       address: 'ถนนพระราม 2 สมุทรสาคร',
     },
   });
 
   const branchSLY = await prisma.branch.create({
     data: {
-      code: 'SLY',
-      name: 'Aion ศาลายา',
+      code: 'GI08',
+      name: 'บริษัท โกลด์ อินทิเกรท ศาลายา จำกัด',
       address: 'ถนนบรมราชชนนี นครปฐม',
+    },
+  });
+
+  const branchGI09 = await prisma.branch.create({
+    data: {
+      code: 'GI09',
+      name: 'บริษัท โกลด์ อินทิเกรท วิภาวดี จำกัด',
+      address: 'ถนนวิภาวดีรังสิต กรุงเทพฯ',
+    },
+  });
+
+  const branchPBL = await prisma.branch.create({
+    data: {
+      code: 'GI10',
+      name: 'บริษัท โกลด์ อินทิเกรท พิบูลสงคราม จำกัด',
+      address: 'ถนนพิบูลสงคราม นนทบุรี',
     },
   });
 
   const branchAYT = await prisma.branch.create({
     data: {
-      code: 'AYT',
-      name: 'Aion อยุธยา',
+      code: 'GI11',
+      name: 'บริษัท โกลด์ อินทิเกรท อยุธยา จำกัด',
       address: 'ถนนสายเอเชีย พระนครศรีอยุธยา',
     },
   });
 
-  const branchPPD = await prisma.branch.create({
+  const branchGI12 = await prisma.branch.create({
     data: {
-      code: 'PPD',
-      name: 'Aion พระประแดง',
-      address: 'ถนนสุขสวัสดิ์ อำเภอพระประแดง สมุทรปราการ',
+      code: 'GI12',
+      name: 'บริษัท โกลด์ อินทิเกรท เชียงใหม่ จำกัด',
+      address: 'จังหวัดเชียงใหม่',
     },
   });
 
-  console.log('🏢 Created branches:', branchKJN.code, branchLBD.code, branchPBL.code, branchMBR.code, branchMHC.code, branchSLY.code, branchAYT.code, branchPPD.code);
+  console.log(
+    '🏢 Created branches:',
+    branchGI.code,
+    branchKJN.code,
+    branchMBR.code,
+    branchLBD.code,
+    branchGI04.code,
+    branchGI05.code,
+    branchGI06.code,
+    branchMHC.code,
+    branchSLY.code,
+    branchGI09.code,
+    branchPBL.code,
+    branchAYT.code,
+    branchGI12.code
+  );
 
   // 3. Create Users
   const passwordHash = bcrypt.hashSync('password123', 10);

@@ -32,7 +32,7 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
   const canCreateJobs = userRole !== 'INSPECTOR';
   const canDelete = userRole === 'MASTER';
 
-  const dbBranches = branches && branches.length > 0 ? branches : [{ id: 'mock-branch', code: 'MBR', name: 'มีนบุรี' }];
+  const dbBranches = branches && branches.length > 0 ? branches : [{ id: 'mock-branch', code: 'GI02', name: 'บริษัท โกลด์ อินทิเกรท มีนบุรี จำกัด' }];
 
   // Destructure state and actions from Hook
   const {

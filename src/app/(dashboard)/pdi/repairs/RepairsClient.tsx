@@ -24,14 +24,19 @@ export default function RepairsClient({ initialJobs, isDbConnected, branches = [
   const { data: session } = useSession();
 
   const dbBranches = branches && branches.length > 0 ? branches : [
-    { id: '1', code: 'MBR', name: 'Aion มีนบุรี' },
-    { id: '2', code: 'KJN', name: 'Aion กาญจนาภิเษก' },
-    { id: '3', code: 'LBD', name: 'Aion ลาดบังดี' },
-    { id: '4', code: 'PBL', name: 'Aion พิบูลสงคราม' },
-    { id: '5', code: 'MHC', name: 'Aion มหาชัย' },
-    { id: '6', code: 'SLY', name: 'Aion สุราษฎร์ธานี' },
-    { id: '7', code: 'AYT', name: 'Aion อยุธยา' },
-    { id: '8', code: 'PPD', name: 'Aion พระประแดง' },
+    { id: '1', code: 'GI', name: 'บริษัท โกลด์ อินทิเกรท จำกัด' },
+    { id: '2', code: 'GI01', name: 'บริษัท โกลด์อินทิเกรท กาญจนาภิเษก – บางแค จำกัด' },
+    { id: '3', code: 'GI02', name: 'บริษัท โกลด์ อินทิเกรท มีนบุรี จำกัด' },
+    { id: '4', code: 'GI03', name: 'บริษัท โกลด์ อินทิเกรท เลียบด่วนรามอินทรา จำกัด' },
+    { id: '5', code: 'GI04', name: 'บริษัท โกลด์ อินทิเกรท สีลม ซอย 9 จำกัด' },
+    { id: '6', code: 'GI05', name: 'บริษัท โกลด์ อินทิเกรท อุบลราชธานี จำกัด' },
+    { id: '7', code: 'GI06', name: 'EV7 Co.,Ltd.' },
+    { id: '8', code: 'GI07', name: 'บริษัท โกลด์ อินทิเกรท มหาชัย จำกัด' },
+    { id: '9', code: 'GI08', name: 'บริษัท โกลด์ อินทิเกรท ศาลายา จำกัด' },
+    { id: '10', code: 'GI09', name: 'บริษัท โกลด์ อินทิเกรท วิภาวดี จำกัด' },
+    { id: '11', code: 'GI10', name: 'บริษัท โกลด์ อินทิเกรท พิบูลสงคราม จำกัด' },
+    { id: '12', code: 'GI11', name: 'บริษัท โกลด์ อินทิเกรท อยุธยา จำกัด' },
+    { id: '13', code: 'GI12', name: 'บริษัท โกลด์ อินทิเกรท เชียงใหม่ จำกัด' },
   ];
 
   // Destructure hook state and handlers

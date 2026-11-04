@@ -46,7 +46,7 @@ export default async function RepairsPage() {
     });
 
     dbBranches = await prisma.branch.findMany({
-      orderBy: { name: 'asc' },
+      orderBy: { code: 'asc' },
     });
   } catch (error) {
     console.warn('Database connection failed in repairs list. Using mock.');

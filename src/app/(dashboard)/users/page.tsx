@@ -27,7 +27,7 @@ export default async function UsersPage() {
     });
 
     dbBranches = await prisma.branch.findMany({
-      orderBy: { name: 'asc' },
+      orderBy: { code: 'asc' },
     });
   } catch (error) {
     console.error('Failed to load users page data:', error);
