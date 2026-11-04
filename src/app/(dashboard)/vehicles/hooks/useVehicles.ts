@@ -211,7 +211,22 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
       { code: 'GAC_M8', name: 'GAC M8' },
     ];
 
-    const dbBranches = branches && branches.length > 0 ? branches : [{ code: 'GI02', name: 'บริษัท โกลด์ อินทิเกรท มีนบุรี จำกัด' }];
+    const fallbackBranches = [
+      { code: 'GI', name: 'บริษัท โกลด์ อินทิเกรท จำกัด' },
+      { code: 'GI01', name: 'บริษัท โกลด์อินทิเกรท กาญจนาภิเษก – บางแค จำกัด' },
+      { code: 'GI02', name: 'บริษัท โกลด์ อินทิเกรท มีนบุรี จำกัด' },
+      { code: 'GI03', name: 'บริษัท โกลด์ อินทิเกรท เลียบด่วนรามอินทรา จำกัด' },
+      { code: 'GI04', name: 'บริษัท โกลด์ อินทิเกรท สีลม ซอย 9 จำกัด' },
+      { code: 'GI05', name: 'บริษัท โกลด์ อินทิเกรท อุบลราชธานี จำกัด' },
+      { code: 'GI06', name: 'บริษัท โกลด์ อินทิเกรท พิษณุโลก จำกัด' },
+      { code: 'GI07', name: 'บริษัท โกลด์ อินทิเกรท เชียงใหม่ จำกัด' },
+      { code: 'GI08', name: 'บริษัท โกลด์ อินทิเกรท เชียงราย จำกัด' },
+      { code: 'GI09', name: 'บริษัท โกลด์ อินทิเกรท ภูเก็ต จำกัด' },
+      { code: 'GI10', name: 'บริษัท โกลด์ อินทิเกรท สุราษฎร์ธานี จำกัด' },
+      { code: 'GI11', name: 'บริษัท โกลด์ อินทิเกรท หาดใหญ่ จำกัด' },
+      { code: 'GI12', name: 'บริษัท โกลด์ อินทิเกรท ปัตตานี จำกัด' },
+    ];
+    const dbBranches = branches && branches.length > 0 ? branches : fallbackBranches;
     const maxRows = Math.max(dbBranches.length, modelCodes.length);
     const referenceData = [];
 
@@ -259,7 +274,7 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
         const parsedRows = rawRows.map(row => ({
           vin: row.vin || row['เลขตัวถัง (VIN)'] || row['เลขตัวถัง'] || row['VIN'] || '',
           modelCode: row.modelCode || row['รหัสรุ่น'] || row['Model Code'] || '',
-          colorName: row.colorName || row['สีรถภายนอกหลัก'] || row['สีหลัก'] || row['Color'] || '',
+          colorName: row.colorName || row['สีรถภายนอกหลัก'] || row['สีภายนอก'] || row['ลักษณะสีภายนอก'] || row['สีหลัก'] || row['Color'] || row['Exterior Color'] || '',
           interiorColor: row.interiorColor || row['โทนตกแต่งภายใน'] || row['สีภายใน'] || row['Interior Color'] || '',
           productionYear: row.productionYear || row['ปีที่ผลิตรถ'] || row['ปีผลิต'] || row['Year'] || '',
           warehouse: row.warehouse || row['คลังสินค้าโกดัง'] || row['โกดัง'] || row['Warehouse'] || '',

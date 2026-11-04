@@ -23,6 +23,9 @@ export default async function VehiclesPage() {
   const vehicleWhere = isBranchRestricted ? { branchId: userBranchId } : {};
 
   try {
+    dbBranches = await prisma.branch.findMany({
+      orderBy: { code: 'asc' },
+    });
     dbVehicles = await prisma.vehicle.findMany({
       where: vehicleWhere,
       include: {
@@ -32,10 +35,6 @@ export default async function VehiclesPage() {
         },
       },
       orderBy: { arrivedAt: 'desc' },
-    });
-
-    dbBranches = await prisma.branch.findMany({
-      orderBy: { code: 'asc' },
     });
   } catch (error: any) {
     console.warn('Database connection failed in vehicles page. Using mock data.');
