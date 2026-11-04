@@ -64,7 +64,7 @@ export default function ImportPreviewDialog({
                   <TableHead className="text-xs">เลขตัวถัง (VIN)</TableHead>
                   <TableHead className="text-xs">รุ่นโมเดล</TableHead>
                   <TableHead className="text-xs">สีภายนอก</TableHead>
-                  <TableHead className="text-xs">สีภายใน</TableHead>
+                  <TableHead className="text-xs">สีภายในรถ</TableHead>
                   <TableHead className="text-xs">ปีผลิต</TableHead>
                   <TableHead className="text-xs">สาขา</TableHead>
                   <TableHead className="text-xs">โกดัง/โซน/ล็อต</TableHead>

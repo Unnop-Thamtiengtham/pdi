@@ -165,11 +165,11 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-slate-100 pb-3">
                 <div>
-                  <p className="text-slate-500">สีรถภายนอกหลัก</p>
+                  <p className="text-slate-500">สีภายนอกรถ</p>
                   <p className="text-slate-800 font-medium">{vehicle.colorName || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-slate-500">โทนตกแต่งภายใน</p>
+                  <p className="text-slate-500">สีภายในรถ</p>
                   <p className="text-slate-800 font-medium">{vehicle.interiorColor || '-'}</p>
                 </div>
               </div>

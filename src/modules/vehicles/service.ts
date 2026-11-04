@@ -174,7 +174,7 @@ export async function updateVehicle(currentVin: string, input: UpdateVehicleInpu
   if (input.colorName !== undefined && input.colorName !== current.colorName)
     changes.push(`สีหลัก: "${current.colorName || '-'}" ➔ "${input.colorName || '-'}"`);
   if (input.interiorColor !== undefined && input.interiorColor !== current.interiorColor)
-    changes.push(`โทนตกแต่งภายใน: "${current.interiorColor || '-'}" ➔ "${input.interiorColor || '-'}"`);
+    changes.push(`สีภายในรถ: "${current.interiorColor || '-'}" ➔ "${input.interiorColor || '-'}"`);
   if (input.productionYear !== undefined && parseInt(input.productionYear) !== current.productionYear)
     changes.push(`ปีผลิต: "${current.productionYear || '-'}" ➔ "${input.productionYear || '-'}"`);
 
