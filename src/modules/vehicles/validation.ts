@@ -43,6 +43,12 @@ export async function validateImportBatch(
     if (batchVins.has(rawVin)) { errors.push(`แถวที่ ${rowNum}: เลขตัวถัง (VIN) "${v.vin}" ซ้ำกับรายการอื่นในไฟล์ที่อัปโหลด`); continue; }
     batchVins.add(rawVin);
 
+    // Motor Battery Number
+    if (!v.motorBatteryNumber || !String(v.motorBatteryNumber).trim()) {
+      errors.push(`แถวที่ ${rowNum}: ไม่มีเลขมอเตอร์แบตเตอรี่ (motorBatteryNumber)`);
+      continue;
+    }
+
     // Model
     if (!v.modelCode) { errors.push(`แถวที่ ${rowNum}: ไม่มีรหัสรุ่นรถ (modelCode)`); continue; }
     const mCode = String(v.modelCode).trim();
@@ -51,8 +57,22 @@ export async function validateImportBatch(
       continue;
     }
 
-    // Color
-    if (!v.colorName) { errors.push(`แถวที่ ${rowNum}: ไม่มีสีภายนอกรถ (colorName)`); continue; }
+    // Exterior Color
+    if (!v.colorName || !String(v.colorName).trim()) { errors.push(`แถวที่ ${rowNum}: ไม่มีสีภายนอกรถ (colorName)`); continue; }
+
+    // Interior Color
+    if (!v.interiorColor || !String(v.interiorColor).trim()) { errors.push(`แถวที่ ${rowNum}: ไม่มีสีภายในรถ (interiorColor)`); continue; }
+
+    // Production Year
+    if (!v.productionYear) { errors.push(`แถวที่ ${rowNum}: ไม่มีปีที่ผลิตรถ (productionYear)`); continue; }
+    const prodYear = parseInt(String(v.productionYear).trim());
+    if (isNaN(prodYear)) {
+      errors.push(`แถวที่ ${rowNum}: ปีที่ผลิตรถ "${v.productionYear}" ไม่ถูกต้อง`);
+      continue;
+    }
+
+    // Lot Number
+    if (!v.lotNumber || !String(v.lotNumber).trim()) { errors.push(`แถวที่ ${rowNum}: ไม่มีเลขล็อต/เลขล็อค (lotNumber)`); continue; }
 
     // Branch
     if (!v.branchCode) { errors.push(`แถวที่ ${rowNum}: ไม่มีรหัสสาขา (branchCode)`); continue; }
@@ -64,24 +84,18 @@ export async function validateImportBatch(
       continue;
     }
 
-    let prodYear: number | null = null;
-    if (v.productionYear) {
-      const py = parseInt(v.productionYear);
-      if (!isNaN(py)) prodYear = py;
-    }
-
     validated.push({
       vin: rawVin,
       modelCode: mCode as ModelCode,
       modelName: MODEL_NAMES[mCode as ModelCode],
       colorName: String(v.colorName).trim(),
-      interiorColor: v.interiorColor ? String(v.interiorColor).trim() : null,
+      interiorColor: String(v.interiorColor).trim(),
       productionYear: prodYear,
       branchId,
       warehouse: v.warehouse ? String(v.warehouse).trim() : null,
       floorplan: v.floorplan ? String(v.floorplan).trim() : null,
-      lotNumber: v.lotNumber ? String(v.lotNumber).trim() : null,
-      motorBatteryNumber: v.motorBatteryNumber ? String(v.motorBatteryNumber).trim() : null,
+      lotNumber: String(v.lotNumber).trim(),
+      motorBatteryNumber: String(v.motorBatteryNumber).trim(),
     });
   }
 

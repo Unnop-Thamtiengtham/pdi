@@ -279,11 +279,11 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
       },
       {
         'เลขตัวถัง (VIN)': 'LNAT4AB34T5G00009',
-        'เลขมอเตอร์แบตเตอรี่ (Motor Battery No.)': '',
+        'เลขมอเตอร์แบตเตอรี่ (Motor Battery No.)': 'TZ300XS-BAT2026060000009',
         'รหัสรุ่น': 'HYPTEC_SSR',
         'สีภายนอกรถ': 'Flame Red',
-        'สีภายในรถ': '',
-        'ปีที่ผลิตรถ': '',
+        'สีภายในรถ': 'ดำ-แดง (Black-Red)',
+        'ปีที่ผลิตรถ': 2026,
         'คลังสินค้าโกดัง': '',
         'โซน/ตำแหน่งจอด': '',
         'เลขล็อต/เลขล็อค': 'LOT-2026-02',
@@ -291,14 +291,14 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
       },
       {
         'เลขตัวถัง (VIN)': 'LNAT4AB34T5G00010',
-        'เลขมอเตอร์แบตเตอรี่ (Motor Battery No.)': '',
+        'เลขมอเตอร์แบตเตอรี่ (Motor Battery No.)': 'TZ280XS-BAT2026060000010',
         'รหัสรุ่น': 'GAC_M8',
         'สีภายนอกรถ': 'Pearl White',
-        'สีภายในรถ': '',
-        'ปีที่ผลิตรถ': '',
+        'สีภายในรถ': 'น้ำตาล-ครีม (Brown-Cream)',
+        'ปีที่ผลิตรถ': 2026,
         'คลังสินค้าโกดัง': '',
         'โซน/ตำแหน่งจอด': '',
-        'เลขล็อต/เลขล็อค': '',
+        'เลขล็อต/เลขล็อค': 'LOT-2026-02',
         'รหัสสาขา (Branch Code)': 'GI02'
       }
     ];
@@ -414,14 +414,30 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
             seenVins.add(vinUpper);
           }
 
+          if (!row.motorBatteryNumber || !String(row.motorBatteryNumber).trim()) {
+            clientErrors.push(`แถวที่ ${rowNum}: ไม่มีเลขมอเตอร์แบตเตอรี่ (motorBatteryNumber)`);
+          }
+
           if (!row.modelCode) {
             clientErrors.push(`แถวที่ ${rowNum}: ไม่มีรหัสรุ่นรถ (modelCode)`);
           } else if (!validModelCodes.includes(String(row.modelCode).trim())) {
             clientErrors.push(`แถวที่ ${rowNum}: รหัสรุ่น "${row.modelCode}" ไม่ถูกต้อง (เลือกได้เฉพาะ: AION_V, AION_V5, AION_UT, AION_YP, AION_YP5, AION_ES, HYPTEC_HT, HYPTEC_HT8, HYPTEC_SSR, GAC_M8)`);
           }
 
-          if (!row.colorName) {
+          if (!row.colorName || !String(row.colorName).trim()) {
             clientErrors.push(`แถวที่ ${rowNum}: ไม่มีสีภายนอกรถ (colorName)`);
+          }
+
+          if (!row.interiorColor || !String(row.interiorColor).trim()) {
+            clientErrors.push(`แถวที่ ${rowNum}: ไม่มีสีภายในรถ (interiorColor)`);
+          }
+
+          if (!row.productionYear || isNaN(parseInt(String(row.productionYear).trim()))) {
+            clientErrors.push(`แถวที่ ${rowNum}: ไม่มีปีที่ผลิตรถ หรือปีไม่ถูกต้อง (productionYear)`);
+          }
+
+          if (!row.lotNumber || !String(row.lotNumber).trim()) {
+            clientErrors.push(`แถวที่ ${rowNum}: ไม่มีเลขล็อต/เลขล็อค (lotNumber)`);
           }
 
           if (!row.branchCode) {
