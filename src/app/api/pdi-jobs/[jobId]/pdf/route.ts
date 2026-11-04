@@ -288,7 +288,7 @@ export async function GET(
     page.drawText(job.vehicle?.motorBatteryNumber || '-', { x: meta.motorNumber.x, y: meta.motorNumber.y, size: 7, font: thaiFont });
     page.drawText(formatThaiDate(job.targetDeliveryDate), { x: meta.deliveryDate.x, y: meta.deliveryDate.y, size: 7, font: thaiFont });
     page.drawText(job.salesName || job.inspector?.name || '-', { x: meta.salesName.x, y: meta.salesName.y, size: 8, font: thaiFont });
-    page.drawText(job.vehicle?.colorName || job.vehicle?.exteriorColor || '-', { x: meta.colorName.x, y: meta.colorName.y, size: 8, font: thaiFont });
+    page.drawText(job.vehicle?.colorName || '-', { x: meta.colorName.x, y: meta.colorName.y, size: 8, font: thaiFont });
     page.drawText(formatThaiDate(job.vehicle?.arrivedAt), { x: meta.arrivedAt.x, y: meta.arrivedAt.y, size: 7, font: thaiFont });
     page.drawText(formatThaiDate(job.completedAt || new Date()), { x: meta.completedAt.x, y: meta.completedAt.y, size: 7, font: thaiFont });
 

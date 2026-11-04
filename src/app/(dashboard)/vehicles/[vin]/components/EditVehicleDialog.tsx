@@ -18,8 +18,6 @@ interface EditVehicleDialogProps {
   setEditModelCode: (val: string) => void;
   editColorName: string;
   setEditColorName: (val: string) => void;
-  editExteriorColor: string;
-  setEditExteriorColor: (val: string) => void;
   editInteriorColor: string;
   setEditInteriorColor: (val: string) => void;
   editProductionYear: string;
@@ -47,8 +45,6 @@ export function EditVehicleDialog({
   setEditModelCode,
   editColorName,
   setEditColorName,
-  editExteriorColor,
-  setEditExteriorColor,
   editInteriorColor,
   setEditInteriorColor,
   editProductionYear,
@@ -102,21 +98,11 @@ export function EditVehicleDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-slate-500">ชื่อสีมาตรฐาน (Color Name)</Label>
+              <Label className="text-xs text-slate-500">สีรถภายนอกหลัก (Color Name)</Label>
               <Input
                 value={editColorName}
                 onChange={(e) => setEditColorName(e.target.value)}
                 placeholder="เช่น Rose Gold"
-                className="text-xs"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs text-slate-500">ลักษณะลักษณะสีภายนอก (Exterior Color)</Label>
-              <Input
-                value={editExteriorColor}
-                onChange={(e) => setEditExteriorColor(e.target.value)}
-                placeholder="เช่น สีทูโทนหลังคาดำ"
                 className="text-xs"
               />
             </div>

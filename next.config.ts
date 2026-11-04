@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Hide the X-Powered-By: Next.js header to reduce information leakage
   poweredByHeader: false,
+  serverExternalPackages: ['@prisma/client', 'pg'],
 
   // Security headers for all routes
   headers: async () => [

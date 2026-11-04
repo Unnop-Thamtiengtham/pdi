@@ -46,7 +46,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
             modelCode: 'AION_V',
             modelName: 'AION V',
             colorName: 'Space Gray',
-            exteriorColor: 'Gray Metallic',
             interiorColor: 'Coal Black',
             productionYear: 2026,
             currentStatus: 'IN_STOCK',
@@ -62,7 +61,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
             modelCode: 'HYPTEC_HT',
             modelName: 'HYPTEC HT',
             colorName: 'Rose Gold',
-            exteriorColor: 'Rose Gold Satin',
             interiorColor: 'Cream White',
             productionYear: 2026,
             currentStatus: 'IN_STOCK',
@@ -81,7 +79,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
   const [vin, setVin] = useState('');
   const [modelCode, setModelCode] = useState('AION_V');
   const [colorName, setColorName] = useState('');
-  const [exteriorColor, setExteriorColor] = useState('');
   const [interiorColor, setInteriorColor] = useState('');
   const [productionYear, setProductionYear] = useState('2026');
   const [branchId, setBranchId] = useState(branches[0]?.id || 'mock-branch');
@@ -159,8 +156,7 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
         'เลขตัวถัง (VIN)': v.vin,
         'รุ่นโมเดล (Model)': v.modelName || v.modelCode,
         'รหัสรุ่น (Model Code)': v.modelCode,
-        'สีหลัก (Color)': v.colorName,
-        'ลักษณะสีภายนอก (Exterior Color)': v.exteriorColor || '',
+        'สีรถภายนอกหลัก (Color)': v.colorName || '',
         'โทนสีภายใน (Interior Color)': v.interiorColor || '',
         'ปีที่ผลิต (Year)': v.productionYear || '',
         'วันที่เข้าคลัง (Arrived)': v.arrivedAt ? new Date(v.arrivedAt).toLocaleDateString('th-TH') : '',
@@ -190,7 +186,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
         'เลขมอเตอร์แบตเตอรี่ (Motor Battery No.)': 'TZ220XS-BAT2026060000001',
         'รหัสรุ่น': 'AION_V',
         'สีรถภายนอกหลัก': 'Space Gray',
-        'ลักษณะสีภายนอก': 'Gray Metallic',
         'โทนตกแต่งภายใน': 'Coal Black',
         'ปีที่ผลิตรถ': 2026,
         'คลังสินค้าโกดัง': 'คลังท่าเรือแหลมฉบัง',
@@ -265,7 +260,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
           vin: row.vin || row['เลขตัวถัง (VIN)'] || row['เลขตัวถัง'] || row['VIN'] || '',
           modelCode: row.modelCode || row['รหัสรุ่น'] || row['Model Code'] || '',
           colorName: row.colorName || row['สีรถภายนอกหลัก'] || row['สีหลัก'] || row['Color'] || '',
-          exteriorColor: row.exteriorColor || row['ลักษณะสีภายนอก'] || row['สีภายนอก'] || row['Exterior Color'] || '',
           interiorColor: row.interiorColor || row['โทนตกแต่งภายใน'] || row['สีภายใน'] || row['Interior Color'] || '',
           productionYear: row.productionYear || row['ปีที่ผลิตรถ'] || row['ปีผลิต'] || row['Year'] || '',
           warehouse: row.warehouse || row['คลังสินค้าโกดัง'] || row['โกดัง'] || row['Warehouse'] || '',
@@ -368,7 +362,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
             modelCode: v.modelCode,
             modelName: modelMap[v.modelCode] || v.modelCode,
             colorName: v.colorName,
-            exteriorColor: v.exteriorColor,
             interiorColor: v.interiorColor,
             productionYear: parseInt(v.productionYear) || 2026,
             motorBatteryNumber: v.motorBatteryNumber,
@@ -407,7 +400,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
       modelCode,
       modelName: modelMap[modelCode],
       colorName,
-      exteriorColor,
       interiorColor,
       productionYear: parseInt(productionYear),
       branchId,
@@ -447,7 +439,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
       // Reset form
       setVin('');
       setColorName('');
-      setExteriorColor('');
       setInteriorColor('');
       setWarehouse('');
       setFloorplan('');
@@ -541,7 +532,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
     vin, setVin,
     modelCode, setModelCode,
     colorName, setColorName,
-    exteriorColor, setExteriorColor,
     interiorColor, setInteriorColor,
     productionYear, setProductionYear,
     branchId, setBranchId,

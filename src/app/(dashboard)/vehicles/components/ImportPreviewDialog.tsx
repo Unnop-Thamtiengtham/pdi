@@ -76,7 +76,7 @@ export default function ImportPreviewDialog({
                   <TableRow key={idx}>
                     <TableCell className="font-mono text-xs font-semibold text-slate-800">{v.vin}</TableCell>
                     <TableCell className="text-xs">{modelMap[v.modelCode] || v.modelCode}</TableCell>
-                    <TableCell className="text-xs">{v.colorName} {v.exteriorColor ? `(${v.exteriorColor})` : ''}</TableCell>
+                    <TableCell className="text-xs">{v.colorName || '-'}</TableCell>
                     <TableCell className="text-xs">{v.interiorColor || '-'}</TableCell>
                     <TableCell className="text-xs font-mono">{v.productionYear || '-'}</TableCell>
                     <TableCell className="text-xs font-bold text-slate-700">{v.branchCode}</TableCell>

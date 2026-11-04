@@ -66,8 +66,6 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
     setEditModelCode,
     editColorName,
     setEditColorName,
-    editExteriorColor,
-    setEditExteriorColor,
     editInteriorColor,
     setEditInteriorColor,
     editProductionYear,
@@ -171,20 +169,14 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                   <p className="text-slate-800 font-medium">{vehicle.colorName || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-slate-500">ปีที่ผลิตรถ</p>
-                  <p className="text-slate-800 font-mono">{vehicle.productionYear || '-'}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-slate-100 pb-3">
-                <div>
-                  <p className="text-slate-500">ลักษณะสีภายนอก</p>
-                  <p className="text-slate-800 font-medium">{vehicle.exteriorColor || '-'}</p>
-                </div>
-                <div>
                   <p className="text-slate-500">โทนตกแต่งภายใน</p>
                   <p className="text-slate-800 font-medium">{vehicle.interiorColor || '-'}</p>
                 </div>
+              </div>
+
+              <div className="space-y-1.5 border-b border-slate-100 pb-3">
+                <p className="text-slate-500">ปีที่ผลิตรถ</p>
+                <p className="text-slate-800 font-mono">{vehicle.productionYear || '-'}</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-slate-100 pb-3">
@@ -505,8 +497,6 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
         setEditModelCode={setEditModelCode}
         editColorName={editColorName}
         setEditColorName={setEditColorName}
-        editExteriorColor={editExteriorColor}
-        setEditExteriorColor={setEditExteriorColor}
         editInteriorColor={editInteriorColor}
         setEditInteriorColor={setEditInteriorColor}
         editProductionYear={editProductionYear}

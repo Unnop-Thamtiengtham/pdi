@@ -75,7 +75,6 @@ export async function validateImportBatch(
       modelCode: mCode as ModelCode,
       modelName: MODEL_NAMES[mCode as ModelCode],
       colorName: String(v.colorName).trim(),
-      exteriorColor: v.exteriorColor ? String(v.exteriorColor).trim() : null,
       interiorColor: v.interiorColor ? String(v.interiorColor).trim() : null,
       productionYear: prodYear,
       branchId,

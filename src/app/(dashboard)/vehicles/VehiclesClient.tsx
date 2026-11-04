@@ -219,7 +219,7 @@ export default function VehiclesClient({ initialVehicles, branches, isDbConnecte
                         </TableCell>
                         <TableCell className="text-xs font-semibold py-4 whitespace-nowrap">{veh.modelName}</TableCell>
                         <TableCell className="text-xs py-4">
-                          <div className="text-slate-700">{veh.exteriorColor || veh.colorName || '-'}</div>
+                          <div className="text-slate-700">{veh.colorName || '-'}</div>
                           <div className="text-slate-500 text-[10px]">ใน: {veh.interiorColor || '-'}</div>
                         </TableCell>
                         <TableCell className="text-xs font-mono py-4">{veh.productionYear || '-'}</TableCell>

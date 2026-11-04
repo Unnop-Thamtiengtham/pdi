@@ -11,7 +11,26 @@ interface UseVehicleDetailProps {
 
 export function useVehicleDetail({ initialVehicle, vin, isDbConnected, dbBranches }: UseVehicleDetailProps) {
   const router = useRouter();
-  const [vehicle, setVehicle] = useState(initialVehicle);
+  const fallbackVehicle = initialVehicle || {
+    vin,
+    modelCode: 'AION_V',
+    modelName: 'AION V',
+    colorName: '-',
+    interiorColor: '-',
+    productionYear: 2026,
+    motorBatteryNumber: '-',
+    warehouse: '-',
+    floorplan: '-',
+    branchId: dbBranches?.[0]?.id || '',
+    branch: dbBranches?.[0] || null,
+    arrivedAt: new Date().toISOString(),
+    incomingDeadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    currentStatus: 'IN_STOCK',
+    pdiJobs: [],
+    defects: [],
+    editLogs: [],
+  };
+  const [vehicle, setVehicle] = useState(fallbackVehicle);
   const [loading, setLoading] = useState(false);
 
   // Manual Trigger Modals States
@@ -29,16 +48,15 @@ export function useVehicleDetail({ initialVehicle, vin, isDbConnected, dbBranche
 
   // Edit Vehicle Details state
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editVin, setEditVin] = useState(initialVehicle.vin);
-  const [editModelCode, setEditModelCode] = useState(initialVehicle.modelCode || 'AION_V');
-  const [editColorName, setEditColorName] = useState(initialVehicle.colorName || '');
-  const [editExteriorColor, setEditExteriorColor] = useState(initialVehicle.exteriorColor || '');
-  const [editInteriorColor, setEditInteriorColor] = useState(initialVehicle.interiorColor || '');
-  const [editProductionYear, setEditProductionYear] = useState(String(initialVehicle.productionYear || 2026));
-  const [editMotorBatteryNumber, setEditMotorBatteryNumber] = useState(initialVehicle.motorBatteryNumber || '');
-  const [editWarehouse, setEditWarehouse] = useState(initialVehicle.warehouse || '');
-  const [editFloorplan, setEditFloorplan] = useState(initialVehicle.floorplan || '');
-  const [editBranchId, setEditBranchId] = useState(initialVehicle.branchId || '');
+  const [editVin, setEditVin] = useState(fallbackVehicle.vin);
+  const [editModelCode, setEditModelCode] = useState(fallbackVehicle.modelCode || 'AION_V');
+  const [editColorName, setEditColorName] = useState(fallbackVehicle.colorName || '');
+  const [editInteriorColor, setEditInteriorColor] = useState(fallbackVehicle.interiorColor || '');
+  const [editProductionYear, setEditProductionYear] = useState(String(fallbackVehicle.productionYear || 2026));
+  const [editMotorBatteryNumber, setEditMotorBatteryNumber] = useState(fallbackVehicle.motorBatteryNumber || '');
+  const [editWarehouse, setEditWarehouse] = useState(fallbackVehicle.warehouse || '');
+  const [editFloorplan, setEditFloorplan] = useState(fallbackVehicle.floorplan || '');
+  const [editBranchId, setEditBranchId] = useState(fallbackVehicle.branchId || '');
   const [editLoading, setEditLoading] = useState(false);
 
   // Delete Vehicle state
@@ -50,7 +68,7 @@ export function useVehicleDetail({ initialVehicle, vin, isDbConnected, dbBranche
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isDbConnected) {
+    if (isDbConnected && initialVehicle) {
       setVehicle(initialVehicle);
     }
   }, [initialVehicle, isDbConnected]);
@@ -213,7 +231,6 @@ export function useVehicleDetail({ initialVehicle, vin, isDbConnected, dbBranche
       vin: editVin.trim().toUpperCase(),
       modelCode: editModelCode,
       colorName: editColorName,
-      exteriorColor: editExteriorColor,
       interiorColor: editInteriorColor,
       productionYear: parseInt(editProductionYear),
       motorBatteryNumber: editMotorBatteryNumber,
@@ -333,8 +350,6 @@ export function useVehicleDetail({ initialVehicle, vin, isDbConnected, dbBranche
     setEditModelCode,
     editColorName,
     setEditColorName,
-    editExteriorColor,
-    setEditExteriorColor,
     editInteriorColor,
     setEditInteriorColor,
     editProductionYear,

@@ -1,9 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
+import { createRequire } from 'module';
+import path from 'path';
+
+const PRISMA_SCHEMA_REV = '2026-11-04-v5';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
+  prismaSchemaRev: string | undefined;
   pgPool: pg.Pool | undefined;
 };
 
@@ -27,12 +32,35 @@ const prismaClientSingleton = () => {
     });
   }
   const adapter = new PrismaPg(globalForPrisma.pgPool);
+
+  let ClientClass: typeof PrismaClient = PrismaClient;
+  try {
+    const req = createRequire(path.join(process.cwd(), 'package.json'));
+    if (req.cache) {
+      for (const key of Object.keys(req.cache)) {
+        if (key.includes('.prisma/client') || key.includes('@prisma/client')) {
+          delete req.cache[key];
+        }
+      }
+    }
+    const freshMod = req('.prisma/client/index.js');
+    if (freshMod?.PrismaClient) {
+      ClientClass = freshMod.PrismaClient;
+    }
+  } catch (e) {
+    console.warn('Fallback to static PrismaClient import:', e);
+  }
   
-  return new PrismaClient({
+  return new ClientClass({
     adapter,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 };
+
+if (globalForPrisma.prismaSchemaRev !== PRISMA_SCHEMA_REV) {
+  globalForPrisma.prisma = undefined;
+  globalForPrisma.prismaSchemaRev = PRISMA_SCHEMA_REV;
+}
 
 export const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 

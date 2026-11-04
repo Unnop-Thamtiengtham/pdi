@@ -79,7 +79,6 @@ export interface CreateVehicleInput {
   warehouse?: string;
   floorplan?: string;
   lotNumber?: string;
-  exteriorColor?: string;
   interiorColor?: string;
   productionYear?: string;
   motorBatteryNumber?: string;
@@ -108,7 +107,6 @@ export async function createVehicleWithIncomingJob(input: CreateVehicleInput) {
         warehouse: input.warehouse,
         floorplan: input.floorplan,
         lotNumber: input.lotNumber,
-        exteriorColor: input.exteriorColor,
         interiorColor: input.interiorColor,
         productionYear: input.productionYear ? parseInt(input.productionYear) : null,
         motorBatteryNumber: input.motorBatteryNumber,
@@ -141,7 +139,6 @@ export interface UpdateVehicleInput {
   vin?: string;
   modelCode?: string;
   colorName?: string;
-  exteriorColor?: string;
   interiorColor?: string;
   productionYear?: string;
   motorBatteryNumber?: string;
@@ -176,8 +173,6 @@ export async function updateVehicle(currentVin: string, input: UpdateVehicleInpu
 
   if (input.colorName !== undefined && input.colorName !== current.colorName)
     changes.push(`สีหลัก: "${current.colorName || '-'}" ➔ "${input.colorName || '-'}"`);
-  if (input.exteriorColor !== undefined && input.exteriorColor !== current.exteriorColor)
-    changes.push(`ลักษณะสีภายนอก: "${current.exteriorColor || '-'}" ➔ "${input.exteriorColor || '-'}"`);
   if (input.interiorColor !== undefined && input.interiorColor !== current.interiorColor)
     changes.push(`โทนตกแต่งภายใน: "${current.interiorColor || '-'}" ➔ "${input.interiorColor || '-'}"`);
   if (input.productionYear !== undefined && parseInt(input.productionYear) !== current.productionYear)
@@ -205,7 +200,6 @@ export async function updateVehicle(currentVin: string, input: UpdateVehicleInpu
         modelCode: input.modelCode || undefined,
         modelName: input.modelCode ? (MODEL_NAMES[input.modelCode as ModelCode] || input.modelCode) : undefined,
         colorName: input.colorName !== undefined ? input.colorName : undefined,
-        exteriorColor: input.exteriorColor !== undefined ? input.exteriorColor : undefined,
         interiorColor: input.interiorColor !== undefined ? input.interiorColor : undefined,
         productionYear: input.productionYear !== undefined ? (input.productionYear ? parseInt(input.productionYear) : null) : undefined,
         motorBatteryNumber: input.motorBatteryNumber !== undefined ? input.motorBatteryNumber : undefined,
@@ -246,7 +240,6 @@ export interface ValidatedImportVehicle {
   modelCode: string;
   modelName: string;
   colorName: string;
-  exteriorColor: string | null;
   interiorColor: string | null;
   productionYear: number | null;
   branchId: string;
@@ -266,7 +259,6 @@ export async function bulkImportVehicles(validatedVehicles: ValidatedImportVehic
     modelCode: item.modelCode,
     modelName: item.modelName,
     colorName: item.colorName,
-    exteriorColor: item.exteriorColor,
     interiorColor: item.interiorColor,
     productionYear: item.productionYear,
     branchId: item.branchId,

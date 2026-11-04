@@ -110,7 +110,6 @@ model Vehicle {
   modelName       String                     // เช่น "AION V", "HYPTEC HT"
   colorCode       String?
   colorName       String?
-  exteriorColor   String?                    // ลักษณะสีภายนอก
   interiorColor   String?                    // ลักษณะสีภายใน
   productionYear  Int?                       // ปีผลิตรถ
   branch          Branch    @relation(fields: [branchId], references: [id])
