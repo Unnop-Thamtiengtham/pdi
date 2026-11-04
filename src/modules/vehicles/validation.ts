@@ -52,7 +52,7 @@ export async function validateImportBatch(
     }
 
     // Color
-    if (!v.colorName) { errors.push(`แถวที่ ${rowNum}: ไม่มีสีหลักภายนอก (colorName)`); continue; }
+    if (!v.colorName) { errors.push(`แถวที่ ${rowNum}: ไม่มีสีภายนอกรถ (colorName)`); continue; }
 
     // Branch
     if (!v.branchCode) { errors.push(`แถวที่ ${rowNum}: ไม่มีรหัสสาขา (branchCode)`); continue; }

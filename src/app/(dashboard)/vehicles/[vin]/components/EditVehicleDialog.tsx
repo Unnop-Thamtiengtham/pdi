@@ -98,7 +98,7 @@ export function EditVehicleDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-slate-500">สีรถภายนอกหลัก (Color Name)</Label>
+              <Label className="text-xs text-slate-500">สีภายนอกรถ (Color Name)</Label>
               <Input
                 value={editColorName}
                 onChange={(e) => setEditColorName(e.target.value)}

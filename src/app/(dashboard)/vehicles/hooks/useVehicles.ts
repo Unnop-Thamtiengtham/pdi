@@ -156,7 +156,7 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
         'เลขตัวถัง (VIN)': v.vin,
         'รุ่นโมเดล (Model)': v.modelName || v.modelCode,
         'รหัสรุ่น (Model Code)': v.modelCode,
-        'สีรถภายนอกหลัก (Color)': v.colorName || '',
+        'สีภายนอกรถ (Color)': v.colorName || '',
         'สีภายในรถ (Interior Color)': v.interiorColor || '',
         'ปีที่ผลิต (Year)': v.productionYear || '',
         'วันที่เข้าคลัง (Arrived)': v.arrivedAt ? new Date(v.arrivedAt).toLocaleDateString('th-TH') : '',
@@ -185,7 +185,7 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
         'เลขตัวถัง (VIN)': 'LNAT4AB34T5G00001',
         'เลขมอเตอร์แบตเตอรี่ (Motor Battery No.)': 'TZ220XS-BAT2026060000001',
         'รหัสรุ่น': 'AION_V',
-        'สีรถภายนอกหลัก': 'Space Gray',
+        'สีภายนอกรถ': 'Space Gray',
         'สีภายในรถ': 'Coal Black',
         'ปีที่ผลิตรถ': 2026,
         'คลังสินค้าโกดัง': 'คลังท่าเรือแหลมฉบัง',
@@ -274,7 +274,7 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
         const parsedRows = rawRows.map(row => ({
           vin: row.vin || row['เลขตัวถัง (VIN)'] || row['เลขตัวถัง'] || row['VIN'] || '',
           modelCode: row.modelCode || row['รหัสรุ่น'] || row['Model Code'] || '',
-          colorName: row.colorName || row['สีรถภายนอกหลัก'] || row['สีภายนอก'] || row['ลักษณะสีภายนอก'] || row['สีหลัก'] || row['Color'] || row['Exterior Color'] || '',
+          colorName: row.colorName || row['สีภายนอกรถ'] || row['สีรถภายนอกหลัก'] || row['สีภายนอก'] || row['ลักษณะสีภายนอก'] || row['สีหลัก'] || row['Color'] || row['Exterior Color'] || '',
           interiorColor: row.interiorColor || row['สีภายในรถ'] || row['โทนตกแต่งภายใน'] || row['สีภายใน'] || row['Interior Color'] || '',
           productionYear: row.productionYear || row['ปีที่ผลิตรถ'] || row['ปีผลิต'] || row['Year'] || '',
           warehouse: row.warehouse || row['คลังสินค้าโกดัง'] || row['โกดัง'] || row['Warehouse'] || '',
@@ -313,7 +313,7 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
           }
 
           if (!row.colorName) {
-            clientErrors.push(`แถวที่ ${rowNum}: ไม่มีสีหลักภายนอก (colorName)`);
+            clientErrors.push(`แถวที่ ${rowNum}: ไม่มีสีภายนอกรถ (colorName)`);
           }
 
           if (!row.branchCode) {
@@ -405,7 +405,7 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vin || !colorName) {
-      toast.warning('กรุณากรอกข้อมูลสำคัญ: เลขตัวถัง (VIN), สีหลัก');
+      toast.warning('กรุณากรอกข้อมูลสำคัญ: เลขตัวถัง (VIN), สีภายนอกรถ');
       return;
     }
 
