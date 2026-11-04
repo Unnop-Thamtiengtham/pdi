@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
 
 interface Branch {
   id: string;
@@ -156,12 +157,12 @@ export function UserFormDialog({
           <div className="space-y-1.5">
             <Label htmlFor="role" className="text-xs font-semibold text-slate-700">บทบาทในระบบ (User Role) *</Label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+              <span className="pointer-events-none z-10 absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                 <Shield className="w-4 h-4" />
               </span>
-              <select
+              <Select
                 id="role"
-                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-shadow"
+                className="pl-9 text-sm"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 required
@@ -171,7 +172,7 @@ export function UserFormDialog({
                 <option value="SUPERVISOR">Supervisor / QC</option>
                 <option value="SALE">Sales</option>
                 <option value="MASTER">Master</option>
-              </select>
+              </Select>
             </div>
           </div>
 
@@ -180,12 +181,12 @@ export function UserFormDialog({
             <div className="space-y-1.5">
               <Label htmlFor="branch" className="text-xs font-semibold text-slate-700">สังกัดสาขา (Branch) *</Label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <span className="pointer-events-none z-10 absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                   <Building className="w-4 h-4" />
                 </span>
-                <select
+                <Select
                   id="branch"
-                  className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-shadow"
+                  className="pl-9 text-sm"
                   value={branchId}
                   onChange={(e) => setBranchId(e.target.value)}
                   required
@@ -196,7 +197,7 @@ export function UserFormDialog({
                       [{b.code}] {b.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
             </div>
           )}
@@ -206,18 +207,18 @@ export function UserFormDialog({
             <div className="space-y-1.5">
               <Label htmlFor="status" className="text-xs font-semibold text-slate-700">สถานะการใช้งาน *</Label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <span className="pointer-events-none z-10 absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                   <Power className="w-4 h-4" />
                 </span>
-                <select
+                <Select
                   id="status"
-                  className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-shadow"
+                  className="pl-9 text-sm"
                   value={isActive ? 'true' : 'false'}
                   onChange={(e) => setIsActive(e.target.value === 'true')}
                 >
                   <option value="true">เปิดใช้งานปกติ</option>
                   <option value="false">ระงับการใช้งาน</option>
-                </select>
+                </Select>
               </div>
             </div>
           )}
