@@ -35,7 +35,6 @@ export function useVehicleDetail({ initialVehicle, vin, isDbConnected, dbBranche
   const [editExteriorColor, setEditExteriorColor] = useState(initialVehicle.exteriorColor || '');
   const [editInteriorColor, setEditInteriorColor] = useState(initialVehicle.interiorColor || '');
   const [editProductionYear, setEditProductionYear] = useState(String(initialVehicle.productionYear || 2026));
-  const [editWsDate, setEditWsDate] = useState(initialVehicle.wsDate ? new Date(initialVehicle.wsDate).toISOString().slice(0, 10) : '');
   const [editMotorBatteryNumber, setEditMotorBatteryNumber] = useState(initialVehicle.motorBatteryNumber || '');
   const [editWarehouse, setEditWarehouse] = useState(initialVehicle.warehouse || '');
   const [editFloorplan, setEditFloorplan] = useState(initialVehicle.floorplan || '');
@@ -217,7 +216,6 @@ export function useVehicleDetail({ initialVehicle, vin, isDbConnected, dbBranche
       exteriorColor: editExteriorColor,
       interiorColor: editInteriorColor,
       productionYear: parseInt(editProductionYear),
-      wsDate: editWsDate ? new Date(editWsDate).toISOString() : null,
       motorBatteryNumber: editMotorBatteryNumber,
       warehouse: editWarehouse,
       floorplan: editFloorplan,
@@ -341,8 +339,6 @@ export function useVehicleDetail({ initialVehicle, vin, isDbConnected, dbBranche
     setEditInteriorColor,
     editProductionYear,
     setEditProductionYear,
-    editWsDate,
-    setEditWsDate,
     editMotorBatteryNumber,
     setEditMotorBatteryNumber,
     editWarehouse,

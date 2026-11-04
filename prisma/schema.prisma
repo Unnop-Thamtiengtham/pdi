@@ -112,7 +112,6 @@ model Vehicle {
   colorName       String?
   exteriorColor   String?                    // ลักษณะสีภายนอก
   interiorColor   String?                    // ลักษณะสีภายใน
-  wsDate          DateTime?                  // Wholesale Date (วันที่ซื้อเข้า Stock)
   productionYear  Int?                       // ปีผลิตรถ
   branch          Branch    @relation(fields: [branchId], references: [id])
   branchId        String

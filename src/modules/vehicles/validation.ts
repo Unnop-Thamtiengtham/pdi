@@ -64,14 +64,6 @@ export async function validateImportBatch(
       continue;
     }
 
-    // wsDate
-    if (!v.wsDate) { errors.push(`แถวที่ ${rowNum}: ไม่มีวันที่ขายส่งดีลเลอร์ (wsDate)`); continue; }
-    const parsedWsDate = new Date(v.wsDate);
-    if (isNaN(parsedWsDate.getTime())) {
-      errors.push(`แถวที่ ${rowNum}: วันที่ wsDate "${v.wsDate}" รูปแบบไม่ถูกต้อง`);
-      continue;
-    }
-
     let prodYear: number | null = null;
     if (v.productionYear) {
       const py = parseInt(v.productionYear);
@@ -86,7 +78,6 @@ export async function validateImportBatch(
       exteriorColor: v.exteriorColor ? String(v.exteriorColor).trim() : null,
       interiorColor: v.interiorColor ? String(v.interiorColor).trim() : null,
       productionYear: prodYear,
-      wsDate: parsedWsDate,
       branchId,
       warehouse: v.warehouse ? String(v.warehouse).trim() : null,
       floorplan: v.floorplan ? String(v.floorplan).trim() : null,

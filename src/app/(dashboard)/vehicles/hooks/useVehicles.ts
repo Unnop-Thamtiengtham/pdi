@@ -49,7 +49,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
             exteriorColor: 'Gray Metallic',
             interiorColor: 'Coal Black',
             productionYear: 2026,
-            wsDate: '2026-05-10T00:00:00.000Z',
             currentStatus: 'IN_STOCK',
             warehouse: 'Main Dock',
             floorplan: 'Zone A',
@@ -66,7 +65,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
             exteriorColor: 'Rose Gold Satin',
             interiorColor: 'Cream White',
             productionYear: 2026,
-            wsDate: '2026-05-15T00:00:00.000Z',
             currentStatus: 'IN_STOCK',
             warehouse: 'Rooftop Lot',
             floorplan: 'Zone B',
@@ -86,7 +84,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
   const [exteriorColor, setExteriorColor] = useState('');
   const [interiorColor, setInteriorColor] = useState('');
   const [productionYear, setProductionYear] = useState('2026');
-  const [wsDate, setWsDate] = useState('');
   const [branchId, setBranchId] = useState(branches[0]?.id || 'mock-branch');
   const [warehouse, setWarehouse] = useState('');
   const [floorplan, setFloorplan] = useState('');
@@ -166,7 +163,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
         'ลักษณะสีภายนอก (Exterior Color)': v.exteriorColor || '',
         'โทนสีภายใน (Interior Color)': v.interiorColor || '',
         'ปีที่ผลิต (Year)': v.productionYear || '',
-        'วันที่ขายส่ง (WSDate)': v.wsDate ? new Date(v.wsDate).toLocaleDateString('th-TH') : '',
         'วันที่เข้าคลัง (Arrived)': v.arrivedAt ? new Date(v.arrivedAt).toLocaleDateString('th-TH') : '',
         'คลังสินค้า (Warehouse)': v.warehouse || '',
         'ตำแหน่งจอด (Floorplan)': v.floorplan || '',
@@ -197,7 +193,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
         'ลักษณะสีภายนอก': 'Gray Metallic',
         'โทนตกแต่งภายใน': 'Coal Black',
         'ปีที่ผลิตรถ': 2026,
-        'วันที่ขายส่งดีลเลอร์ (WSDate)': '2026-06-23',
         'คลังสินค้าโกดัง': 'คลังท่าเรือแหลมฉบัง',
         'โซน/ตำแหน่งจอด': 'Zone A-3',
         'เลขล็อต/เลขล็อค': 'LOT-2026-01',
@@ -273,7 +268,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
           exteriorColor: row.exteriorColor || row['ลักษณะสีภายนอก'] || row['สีภายนอก'] || row['Exterior Color'] || '',
           interiorColor: row.interiorColor || row['โทนตกแต่งภายใน'] || row['สีภายใน'] || row['Interior Color'] || '',
           productionYear: row.productionYear || row['ปีที่ผลิตรถ'] || row['ปีผลิต'] || row['Year'] || '',
-          wsDate: row.wsDate || row['วันที่ขายส่งดีลเลอร์ (WSDate)'] || row['วันที่ขายส่ง'] || row['WSDate'] || '',
           warehouse: row.warehouse || row['คลังสินค้าโกดัง'] || row['โกดัง'] || row['Warehouse'] || '',
           floorplan: row.floorplan || row['โซน/ตำแหน่งจอด'] || row['ตำแหน่งจอด'] || row['Floorplan'] || '',
           lotNumber: row.lotNumber || row['เลขล็อต/เลขล็อค'] || row['ล็อต'] || row['เลขล็อต'] || row['Lot'] || row['Lot Number'] || row['ล็อค'] || row['เลขล็อค'] || '',
@@ -319,21 +313,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
             const bCode = String(row.branchCode).trim().toUpperCase();
             if (isDbConnected && !branchCodesInDb.includes(bCode)) {
               clientErrors.push(`แถวที่ ${rowNum}: รหัสสาขา "${row.branchCode}" ไม่ถูกต้อง (สาขาที่มี: ${branchCodesInDb.join(', ')})`);
-            }
-          }
-
-          if (!row.wsDate) {
-            clientErrors.push(`แถวที่ ${rowNum}: ไม่มีวันที่ wsDate`);
-          } else {
-            let dateVal = row.wsDate;
-            if (typeof dateVal === 'number') {
-              const excelEpoch = new Date(Date.UTC(1899, 11, 30));
-              dateVal = new Date(excelEpoch.getTime() + dateVal * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-              row.wsDate = dateVal;
-            }
-            const d = new Date(dateVal);
-            if (isNaN(d.getTime())) {
-              clientErrors.push(`แถวที่ ${rowNum}: วันที่ wsDate "${row.wsDate}" รูปแบบไม่ถูกต้อง`);
             }
           }
         });
@@ -392,7 +371,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
             exteriorColor: v.exteriorColor,
             interiorColor: v.interiorColor,
             productionYear: parseInt(v.productionYear) || 2026,
-            wsDate: new Date(v.wsDate).toISOString(),
             motorBatteryNumber: v.motorBatteryNumber,
             arrivedAt: nowStr,
             incomingDeadline: deadlineStr,
@@ -418,8 +396,8 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
   // Manual register vehicle
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!vin || !colorName || !wsDate) {
-      toast.warning('กรุณากรอกข้อมูลสำคัญ: เลขตัวถัง (VIN), สีหลัก, วันที่ Wholesale');
+    if (!vin || !colorName) {
+      toast.warning('กรุณากรอกข้อมูลสำคัญ: เลขตัวถัง (VIN), สีหลัก');
       return;
     }
 
@@ -432,7 +410,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
       exteriorColor,
       interiorColor,
       productionYear: parseInt(productionYear),
-      wsDate: new Date(wsDate).toISOString(),
       branchId,
       warehouse,
       floorplan,
@@ -474,7 +451,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
       setInteriorColor('');
       setWarehouse('');
       setFloorplan('');
-      setWsDate('');
     } catch (err: any) {
       console.error(err);
       toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
@@ -568,7 +544,6 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
     exteriorColor, setExteriorColor,
     interiorColor, setInteriorColor,
     productionYear, setProductionYear,
-    wsDate, setWsDate,
     branchId, setBranchId,
     warehouse, setWarehouse,
     floorplan, setFloorplan,

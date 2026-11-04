@@ -24,8 +24,6 @@ interface EditVehicleDialogProps {
   setEditInteriorColor: (val: string) => void;
   editProductionYear: string;
   setEditProductionYear: (val: string) => void;
-  editWsDate: string;
-  setEditWsDate: (val: string) => void;
   editMotorBatteryNumber: string;
   setEditMotorBatteryNumber: (val: string) => void;
   editWarehouse: string;
@@ -55,8 +53,6 @@ export function EditVehicleDialog({
   setEditInteriorColor,
   editProductionYear,
   setEditProductionYear,
-  editWsDate,
-  setEditWsDate,
   editMotorBatteryNumber,
   setEditMotorBatteryNumber,
   editWarehouse,
@@ -142,16 +138,6 @@ export function EditVehicleDialog({
                 value={editProductionYear}
                 onChange={(e) => setEditProductionYear(e.target.value)}
                 className="text-xs font-mono"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs text-slate-500">วันที่ขายส่งดีลเลอร์ (WSDate)</Label>
-              <Input
-                type="date"
-                value={editWsDate}
-                onChange={(e) => setEditWsDate(e.target.value)}
-                className="text-xs"
               />
             </div>
 

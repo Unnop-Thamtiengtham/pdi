@@ -72,8 +72,6 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
     setEditInteriorColor,
     editProductionYear,
     setEditProductionYear,
-    editWsDate,
-    setEditWsDate,
     editMotorBatteryNumber,
     setEditMotorBatteryNumber,
     editWarehouse,
@@ -187,11 +185,6 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
                   <p className="text-slate-500">โทนตกแต่งภายใน</p>
                   <p className="text-slate-800 font-medium">{vehicle.interiorColor || '-'}</p>
                 </div>
-              </div>
-
-              <div className="space-y-1.5 border-b border-slate-100 pb-3">
-                <p className="text-slate-500">วันที่ขายส่งดีลเลอร์ (WSDate)</p>
-                <p className="text-slate-800 font-medium">{formatLocalDate(vehicle.wsDate)}</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-slate-100 pb-3">
@@ -518,8 +511,6 @@ export default function VehicleDetailClient({ initialVehicle, vin, isDbConnected
         setEditInteriorColor={setEditInteriorColor}
         editProductionYear={editProductionYear}
         setEditProductionYear={setEditProductionYear}
-        editWsDate={editWsDate}
-        setEditWsDate={setEditWsDate}
         editMotorBatteryNumber={editMotorBatteryNumber}
         setEditMotorBatteryNumber={setEditMotorBatteryNumber}
         editWarehouse={editWarehouse}

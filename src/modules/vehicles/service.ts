@@ -81,7 +81,6 @@ export interface CreateVehicleInput {
   lotNumber?: string;
   exteriorColor?: string;
   interiorColor?: string;
-  wsDate?: string;
   productionYear?: string;
   motorBatteryNumber?: string;
 }
@@ -111,7 +110,6 @@ export async function createVehicleWithIncomingJob(input: CreateVehicleInput) {
         lotNumber: input.lotNumber,
         exteriorColor: input.exteriorColor,
         interiorColor: input.interiorColor,
-        wsDate: input.wsDate ? new Date(input.wsDate) : null,
         productionYear: input.productionYear ? parseInt(input.productionYear) : null,
         motorBatteryNumber: input.motorBatteryNumber,
         arrivedAt,
@@ -146,7 +144,6 @@ export interface UpdateVehicleInput {
   exteriorColor?: string;
   interiorColor?: string;
   productionYear?: string;
-  wsDate?: string;
   motorBatteryNumber?: string;
   warehouse?: string;
   floorplan?: string;
@@ -186,12 +183,6 @@ export async function updateVehicle(currentVin: string, input: UpdateVehicleInpu
   if (input.productionYear !== undefined && parseInt(input.productionYear) !== current.productionYear)
     changes.push(`ปีผลิต: "${current.productionYear || '-'}" ➔ "${input.productionYear || '-'}"`);
 
-  if (input.wsDate !== undefined) {
-    const currentWsStr = current.wsDate ? new Date(current.wsDate).toISOString().slice(0, 10) : '-';
-    const newWsStr = input.wsDate ? new Date(input.wsDate).toISOString().slice(0, 10) : '-';
-    if (currentWsStr !== newWsStr) changes.push(`วันที่ Wholesale: "${currentWsStr}" ➔ "${newWsStr}"`);
-  }
-
   if (input.motorBatteryNumber !== undefined && input.motorBatteryNumber !== current.motorBatteryNumber)
     changes.push(`เลขมอเตอร์แบตเตอรี่: "${current.motorBatteryNumber || '-'}" ➔ "${input.motorBatteryNumber || '-'}"`);
   if (input.warehouse !== undefined && input.warehouse !== current.warehouse)
@@ -217,7 +208,6 @@ export async function updateVehicle(currentVin: string, input: UpdateVehicleInpu
         exteriorColor: input.exteriorColor !== undefined ? input.exteriorColor : undefined,
         interiorColor: input.interiorColor !== undefined ? input.interiorColor : undefined,
         productionYear: input.productionYear !== undefined ? (input.productionYear ? parseInt(input.productionYear) : null) : undefined,
-        wsDate: input.wsDate !== undefined ? (input.wsDate ? new Date(input.wsDate) : null) : undefined,
         motorBatteryNumber: input.motorBatteryNumber !== undefined ? input.motorBatteryNumber : undefined,
         warehouse: input.warehouse !== undefined ? input.warehouse : undefined,
         floorplan: input.floorplan !== undefined ? input.floorplan : undefined,
@@ -259,7 +249,6 @@ export interface ValidatedImportVehicle {
   exteriorColor: string | null;
   interiorColor: string | null;
   productionYear: number | null;
-  wsDate: Date;
   branchId: string;
   warehouse: string | null;
   floorplan: string | null;
@@ -280,7 +269,6 @@ export async function bulkImportVehicles(validatedVehicles: ValidatedImportVehic
     exteriorColor: item.exteriorColor,
     interiorColor: item.interiorColor,
     productionYear: item.productionYear,
-    wsDate: item.wsDate,
     branchId: item.branchId,
     warehouse: item.warehouse,
     floorplan: item.floorplan,

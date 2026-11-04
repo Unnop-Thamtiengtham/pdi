@@ -66,7 +66,6 @@ export default function ImportPreviewDialog({
                   <TableHead className="text-xs">สีภายนอก</TableHead>
                   <TableHead className="text-xs">สีภายใน</TableHead>
                   <TableHead className="text-xs">ปีผลิต</TableHead>
-                  <TableHead className="text-xs">วันที่ WSDate</TableHead>
                   <TableHead className="text-xs">สาขา</TableHead>
                   <TableHead className="text-xs">โกดัง/โซน/ล็อต</TableHead>
                   <TableHead className="text-xs">เลขมอเตอร์แบตเตอรี่</TableHead>
@@ -80,7 +79,6 @@ export default function ImportPreviewDialog({
                     <TableCell className="text-xs">{v.colorName} {v.exteriorColor ? `(${v.exteriorColor})` : ''}</TableCell>
                     <TableCell className="text-xs">{v.interiorColor || '-'}</TableCell>
                     <TableCell className="text-xs font-mono">{v.productionYear || '-'}</TableCell>
-                    <TableCell className="text-xs font-mono">{v.wsDate}</TableCell>
                     <TableCell className="text-xs font-bold text-slate-700">{v.branchCode}</TableCell>
                     <TableCell className="text-xs">{v.warehouse || '-'} / {v.floorplan || '-'} {v.lotNumber ? `/ ล็อต: ${v.lotNumber}` : ''}</TableCell>
                     <TableCell className="text-xs font-mono">{v.motorBatteryNumber || '-'}</TableCell>
