@@ -95,25 +95,25 @@ export default function ApprovalsClient({ initialJobs, isDbConnected }: Approval
                 ) : (
                   filteredJobs.map((job) => (
                     <TableRow key={job.id} className="hover:bg-slate-50/50 transition-colors">
-                      <TableCell className="font-mono text-xs font-semibold text-slate-800 py-4">
+                      <TableCell className="font-mono text-xs font-semibold text-slate-800 py-4 whitespace-nowrap">
                         {job.jobNumber}
                       </TableCell>
-                      <TableCell className="text-xs font-semibold py-4">
+                      <TableCell className="text-xs font-semibold py-4 whitespace-nowrap">
                         {job.vehicle?.modelName || 'ไม่พบรุ่นรถ'}
                       </TableCell>
                       <TableCell className="text-xs py-4 font-mono font-semibold text-slate-700 whitespace-nowrap" title={job.vehicle?.branch?.name}>
                         {job.vehicle?.branch?.code || job.vehicle?.branch?.name || '-'}
                       </TableCell>
-                      <TableCell className="font-mono text-xs text-slate-600 font-medium py-4 select-all">
+                      <TableCell className="font-mono text-xs text-slate-600 font-medium py-4 whitespace-nowrap select-all">
                         {job.vehicleVin}
                       </TableCell>
-                      <TableCell className="py-4">
+                      <TableCell className="py-4 whitespace-nowrap">
                         {getPdiTypeBadge(job.pdiType)}
                       </TableCell>
-                      <TableCell className="text-xs py-4">
+                      <TableCell className="text-xs py-4 whitespace-nowrap">
                         {job.inspector?.name || '-'}
                       </TableCell>
-                      <TableCell className="text-xs font-mono text-slate-500 py-4">
+                      <TableCell className="text-xs font-mono text-slate-500 py-4 whitespace-nowrap">
                         {job.completedAt 
                           ? new Date(job.completedAt).toLocaleString('th-TH') 
                           : job.updatedAt 

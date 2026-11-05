@@ -123,17 +123,17 @@ export default function ReportsClient({ initialJobs, isDbConnected }: ReportsCli
                 ) : (
                   filteredJobs.map((job) => (
                     <TableRow key={job.id} className="hover:bg-slate-50/50 transition-colors">
-                      <TableCell className="font-mono text-xs text-slate-800 font-medium py-4 select-all">{job.jobNumber}</TableCell>
-                      <TableCell className="font-mono text-xs py-4 select-all">{job.vehicleVin}</TableCell>
-                      <TableCell className="text-xs py-4">{job.vehicle?.modelName}</TableCell>
-                      <TableCell className="py-4">
+                      <TableCell className="font-mono text-xs text-slate-800 font-medium py-4 whitespace-nowrap select-all">{job.jobNumber}</TableCell>
+                      <TableCell className="font-mono text-xs py-4 whitespace-nowrap select-all">{job.vehicleVin}</TableCell>
+                      <TableCell className="text-xs py-4 whitespace-nowrap">{job.vehicle?.modelName}</TableCell>
+                      <TableCell className="py-4 whitespace-nowrap">
                         <Badge variant="outline" className="text-xs">
                           {job.pdiType}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs py-4">{job.inspector?.name || '-'}</TableCell>
-                      <TableCell className="text-xs py-4">{job.approver?.name || '-'}</TableCell>
-                      <TableCell className="text-xs font-mono py-4">
+                      <TableCell className="text-xs py-4 whitespace-nowrap">{job.inspector?.name || '-'}</TableCell>
+                      <TableCell className="text-xs py-4 whitespace-nowrap">{job.approver?.name || '-'}</TableCell>
+                      <TableCell className="text-xs font-mono py-4 whitespace-nowrap">
                         {formatDateTime(job.approvedAt)}
                       </TableCell>
                       <TableCell className="text-center whitespace-nowrap py-4">

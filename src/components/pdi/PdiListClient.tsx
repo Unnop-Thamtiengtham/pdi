@@ -160,30 +160,30 @@ export default function PdiListClient({ pdiType, initialJobs, isDbConnected }: P
             <Table>
               <TableHeader className="bg-slate-50/75 border-b border-slate-100">
                 <TableRow>
-                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขสั่งงาน<br/><span className="text-[10px] text-slate-400 font-normal">(Job No.)</span></TableHead>
-                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">เลขตัวถัง<br/><span className="text-[10px] text-slate-400 font-normal">(VIN)</span></TableHead>
-                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">รุ่นโมเดล<br/><span className="text-[10px] text-slate-400 font-normal">(Model)</span></TableHead>
-                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">สาขา<br/><span className="text-[10px] text-slate-400 font-normal">(Branch)</span></TableHead>
-                  <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">สถานะตรวจ<br/><span className="text-[10px] text-slate-400 font-normal">(Status)</span></TableHead>
+                  <TableHead className="whitespace-nowrap px-2.5 pl-4 py-3 font-semibold text-slate-700 text-xs">เลขสั่งงาน<br/><span className="text-[10px] text-slate-400 font-normal">(Job No.)</span></TableHead>
+                  <TableHead className="whitespace-nowrap px-2.5 py-3 font-semibold text-slate-700 text-xs">เลขตัวถัง<br/><span className="text-[10px] text-slate-400 font-normal">(VIN)</span></TableHead>
+                  <TableHead className="whitespace-nowrap px-2.5 py-3 font-semibold text-slate-700 text-xs">รุ่นโมเดล<br/><span className="text-[10px] text-slate-400 font-normal">(Model)</span></TableHead>
+                  <TableHead className="whitespace-nowrap px-2.5 py-3 font-semibold text-slate-700 text-xs">สาขา<br/><span className="text-[10px] text-slate-400 font-normal">(Branch)</span></TableHead>
+                  <TableHead className="text-center whitespace-nowrap px-2.5 py-3 font-semibold text-slate-700 text-xs">สถานะตรวจ<br/><span className="text-[10px] text-slate-400 font-normal">(Status)</span></TableHead>
                   
                   {/* Dynamic Headers based on PDI Type */}
-                  {pdiType === 'INCOMING' && <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">กำหนด SLA<br/><span className="text-[10px] text-slate-400 font-normal">(SLA 24h)</span></TableHead>}
+                  {pdiType === 'INCOMING' && <TableHead className="whitespace-nowrap px-2.5 py-3 font-semibold text-slate-700 text-xs">กำหนด SLA<br/><span className="text-[10px] text-slate-400 font-normal">(SLA 24h)</span></TableHead>}
                   {pdiType === 'LONG_TERM' && (
                     <>
-                      <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">รอบตรวจ<br/><span className="text-[10px] text-slate-400 font-normal">(Interval)</span></TableHead>
-                      <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">วันที่ครบกำหนด<br/><span className="text-[10px] text-slate-400 font-normal">(Due Date)</span></TableHead>
+                      <TableHead className="whitespace-nowrap px-2.5 py-3 font-semibold text-slate-700 text-xs">รอบตรวจ<br/><span className="text-[10px] text-slate-400 font-normal">(Interval)</span></TableHead>
+                      <TableHead className="whitespace-nowrap px-2.5 py-3 font-semibold text-slate-700 text-xs">วันที่ครบกำหนด<br/><span className="text-[10px] text-slate-400 font-normal">(Due Date)</span></TableHead>
                     </>
                   )}
                   {pdiType === 'PRE_DELIVERY' && (
                     <>
-                      <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ชื่อลูกค้า<br/><span className="text-[10px] text-slate-400 font-normal">(Customer / PDPA)</span></TableHead>
-                      <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ผู้รับผิดชอบขาย<br/><span className="text-[10px] text-slate-400 font-normal">(Sales Rep)</span></TableHead>
-                      <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">วันส่งมอบรถ<br/><span className="text-[10px] text-slate-400 font-normal">(Delivery Date)</span></TableHead>
+                      <TableHead className="whitespace-nowrap px-2.5 py-3 font-semibold text-slate-700 text-xs">ชื่อลูกค้า<br/><span className="text-[10px] text-slate-400 font-normal">(PDPA)</span></TableHead>
+                      <TableHead className="whitespace-nowrap px-2.5 py-3 font-semibold text-slate-700 text-xs">ผู้รับผิดชอบขาย<br/><span className="text-[10px] text-slate-400 font-normal">(Sales Rep)</span></TableHead>
+                      <TableHead className="whitespace-nowrap px-2.5 py-3 font-semibold text-slate-700 text-xs">วันส่งมอบรถ<br/><span className="text-[10px] text-slate-400 font-normal">(Delivery Date)</span></TableHead>
                     </>
                   )}
 
-                  <TableHead className="whitespace-nowrap py-3.5 font-semibold text-slate-700">ช่างผู้ตรวจ<br/><span className="text-[10px] text-slate-400 font-normal">(Inspector)</span></TableHead>
-                  <TableHead className="text-center whitespace-nowrap py-3.5 font-semibold text-slate-700">ดำเนินการ<br/><span className="text-[10px] text-slate-400 font-normal">(Action)</span></TableHead>
+                  <TableHead className="whitespace-nowrap px-2.5 py-3 font-semibold text-slate-700 text-xs">ช่างผู้ตรวจ<br/><span className="text-[10px] text-slate-400 font-normal">(Inspector)</span></TableHead>
+                  <TableHead className="text-center whitespace-nowrap px-2.5 pr-4 py-3 font-semibold text-slate-700 text-xs">ดำเนินการ<br/><span className="text-[10px] text-slate-400 font-normal">(Action)</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -199,13 +199,13 @@ export default function PdiListClient({ pdiType, initialJobs, isDbConnected }: P
                 ) : (
                   filteredJobs.map((job) => (
                     <TableRow key={job.id} className="hover:bg-slate-50/50 transition-colors">
-                      <TableCell className="font-mono text-xs text-slate-800 font-medium py-4 select-all">{job.jobNumber}</TableCell>
-                      <TableCell className="font-mono text-xs py-4 select-all">{job.vehicleVin}</TableCell>
-                      <TableCell className="text-xs py-4">{job.vehicle?.modelName}</TableCell>
-                      <TableCell className="text-xs py-4 font-mono font-semibold text-slate-700 whitespace-nowrap" title={job.vehicle?.branch?.name}>
+                      <TableCell className="font-mono text-[11px] text-slate-800 font-medium px-2.5 pl-4 py-3.5 whitespace-nowrap select-all">{job.jobNumber}</TableCell>
+                      <TableCell className="font-mono text-[11px] px-2.5 py-3.5 whitespace-nowrap select-all">{job.vehicleVin}</TableCell>
+                      <TableCell className="text-xs font-medium px-2.5 py-3.5 whitespace-nowrap">{job.vehicle?.modelName}</TableCell>
+                      <TableCell className="text-xs px-2.5 py-3.5 font-mono font-semibold text-slate-700 whitespace-nowrap" title={job.vehicle?.branch?.name}>
                         {job.vehicle?.branch?.code || job.vehicle?.branch?.name || '-'}
                       </TableCell>
-                      <TableCell className="text-center whitespace-nowrap py-4">
+                      <TableCell className="text-center whitespace-nowrap px-2.5 py-3.5">
                         {job.status === 'PENDING' && <Badge variant="default">รอตรวจ</Badge>}
                         {job.status === 'IN_PROGRESS' && <Badge variant="info">กำลังตรวจ</Badge>}
                         {job.status === 'DEFECT_FOUND' && <Badge variant="danger">พบจุดชำรุด</Badge>}
@@ -216,39 +216,39 @@ export default function PdiListClient({ pdiType, initialJobs, isDbConnected }: P
 
                       {/* Dynamic Columns */}
                       {pdiType === 'INCOMING' && (
-                        <TableCell className="text-xs text-error font-mono py-4">
+                        <TableCell className="text-xs text-error font-mono px-2.5 py-3.5 whitespace-nowrap">
                           {new Date(job.vehicle?.incomingDeadline || job.scheduledDate).toLocaleString('th-TH')}
                         </TableCell>
                       )}
                       {pdiType === 'LONG_TERM' && (
                         <>
-                          <TableCell className="py-4">
+                          <TableCell className="px-2.5 py-3.5 whitespace-nowrap">
                             <Badge variant="outline" className="text-brand-teal border-brand-teal/20">
                               {job.ltmInterval} วัน
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-xs font-mono py-4">
+                          <TableCell className="text-xs font-mono px-2.5 py-3.5 whitespace-nowrap">
                             {job.scheduledDate ? new Date(job.scheduledDate).toLocaleDateString('th-TH') : '-'}
                           </TableCell>
                         </>
                       )}
                       {pdiType === 'PRE_DELIVERY' && (
                         <>
-                          <TableCell className="text-xs font-semibold py-4">
+                          <TableCell className="text-xs font-semibold px-2.5 py-3.5 whitespace-nowrap">
                             {job.customerName ? `${job.customerName.charAt(0)}***` : 'ไม่ระบุ'}
                           </TableCell>
-                          <TableCell className="text-xs py-4">{job.salesName || '-'}</TableCell>
-                          <TableCell className="text-xs font-mono text-slate-800 py-4">
+                          <TableCell className="text-xs px-2.5 py-3.5 whitespace-nowrap">{job.salesName || '-'}</TableCell>
+                          <TableCell className="text-xs font-mono text-slate-800 px-2.5 py-3.5 whitespace-nowrap">
                             {job.targetDeliveryDate ? new Date(job.targetDeliveryDate).toLocaleDateString('th-TH') : '-'}
                           </TableCell>
                         </>
                       )}
 
-                      <TableCell className="text-xs py-4">{job.inspector?.name || '-'}</TableCell>
-                      <TableCell className="text-center whitespace-nowrap py-4">
-                        <div className="flex items-center justify-center gap-2">
+                      <TableCell className="text-xs px-2.5 py-3.5 whitespace-nowrap">{job.inspector?.name || '-'}</TableCell>
+                      <TableCell className="text-center whitespace-nowrap px-2.5 pr-4 py-3.5">
+                        <div className="flex items-center justify-center gap-1.5">
                           <Link href={`/pdi/${getPdiRouteSlug(pdiType)}/${job.id}`}>
-                            <Button variant="outline" size="sm" className="h-8 text-xs font-semibold px-2.5 whitespace-nowrap">
+                            <Button variant="outline" size="sm" className="h-7 text-[11px] font-semibold px-2 whitespace-nowrap">
                               {job.status === 'APPROVED' ? 'ดูรายละเอียด' : 'ลงบันทึกตรวจ'}
                             </Button>
                           </Link>
@@ -257,7 +257,7 @@ export default function PdiListClient({ pdiType, initialJobs, isDbConnected }: P
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 text-xs font-semibold px-2.5 whitespace-nowrap border-brand-teal text-brand-teal hover:bg-brand-teal/5"
+                                className="h-7 text-[11px] font-semibold px-2 whitespace-nowrap border-brand-teal text-brand-teal hover:bg-brand-teal/5"
                               >
                                 เอกสารส่งมอบ
                               </Button>
