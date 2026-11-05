@@ -603,6 +603,128 @@ async function main() {
           { category: 'การวินิจฉัยและการอัปเกรด', categoryOrder: 12, itemCode: 'OTA_001', itemName: 'ตรวจสอบและการลบรหัสปัญหา', itemOrder: 1 },
           { category: 'การวินิจฉัยและการอัปเกรด', categoryOrder: 12, itemCode: 'OTA_002', itemName: 'อัปเดต OTA ให้เป็นเวอร์ชั่นล่าสุด', itemOrder: 2 },
         );
+      } else if (modelCode === 'GAC_M8') {
+        // ========== GAC_M8 Dedicated Checklist (97 items from M8 PDF) ==========
+        itemsData.push(
+          // A: ยกรถขึ้นจนสุด เพื่อทำการตรวจสอบด้วยสายตาและใช้ประแจปอนด์ในการตรวจสอบ
+          { category: 'A: ยกรถขึ้นจนสุด (ช่วงล่างและใต้ท้องรถ)', categoryOrder: 1, itemCode: 'M8_001', itemName: '01 สายส่งเชื้อเพลิง/ท่อเบรก/สายไฟแรงสูงอยู่ในสภาพดี/ไม่มีการรั่วซึมหรือความเสียหาย', itemOrder: 1 },
+          { category: 'A: ยกรถขึ้นจนสุด (ช่วงล่างและใต้ท้องรถ)', categoryOrder: 1, itemCode: 'M8_002', itemName: '02 ตรวจสอบการรั่วซึมของระบบเชื้อเพลิง น้ำมันเบรก น้ำยาหล่อเย็น น้ำมันเครื่องและของเหลวที่เกี่ยวข้องอื่นๆ', itemOrder: 2 },
+          { category: 'A: ยกรถขึ้นจนสุด (ช่วงล่างและใต้ท้องรถ)', categoryOrder: 1, itemCode: 'M8_003', itemName: '03 ยืนยันว่าแรงบิดของโบลต์และน็อตบริเวณช่วงล่างและระบบส่งกำลังอยู่ในค่าที่กำหนด', itemOrder: 3 },
+          { category: 'A: ยกรถขึ้นจนสุด (ช่วงล่างและใต้ท้องรถ)', categoryOrder: 1, itemCode: 'M8_004', itemName: '04 ไม่มีรอยแตก รอยรั่ว หรือความเสียหายบริเวณภายนอกของแบตเตอรี่แรงดันสูง', itemOrder: 4 },
+
+          // B: เมื่อรถถูกลดลงจนอยู่ในระดับปกติ ตรวจสอบแรงดันลมยางและแรงบิดของน็อตล้อ
+          { category: 'B: ลดรถอยู่ในระดับปกติ (ยางและน็อตล้อ)', categoryOrder: 2, itemCode: 'M8_005', itemName: '05 ไม่มีรอยแตก รอยรั่ว หรือความเสียหายบริเวณภายนอกของแบตเตอรี่แรงดันสูง', itemOrder: 1 },
+          { category: 'B: ลดรถอยู่ในระดับปกติ (ยางและน็อตล้อ)', categoryOrder: 2, itemCode: 'M8_006', itemName: '06 ตรวจสอบแรงดันลมยางและสภาพพื้นผิวยาง (รวมถึงสัญลักษณ์ G ที่อาจปรากฏในรูปแบบลอยตัว)', itemOrder: 2 },
+
+          // C: เวอร์ชันซอฟต์แวร์ ใช้ VCI ตรวจสอบ
+          { category: 'C: เวอร์ชันซอฟต์แวร์ (ใช้ VCI ตรวจสอบ)', categoryOrder: 3, itemCode: 'M8_007', itemName: '07 โปรแกรมของแต่ละระบบเป็นเวอร์ชันล่าสุด', itemOrder: 1 },
+          { category: 'C: เวอร์ชันซอฟต์แวร์ (ใช้ VCI ตรวจสอบ)', categoryOrder: 3, itemCode: 'M8_008', itemName: '08 ออกจากโหมดทรานสปอร์ต', itemOrder: 2 },
+
+          // D: ลักษณะภายในและภายนอก ตรวจสอบด้วยสายตา
+          { category: 'D: ลักษณะภายในและภายนอก', categoryOrder: 4, itemCode: 'M8_009', itemName: '09 พื้นผิวสีภายนอก ชิ้นส่วนที่ชุบและอุปกรณ์ตกแต่งตัวถังรถมีความแตกต่างของสี รอยขีดข่วน จุดด่างหรือสีหลุดลอกหรือไม่', itemOrder: 1 },
+          { category: 'D: ลักษณะภายในและภายนอก', categoryOrder: 4, itemCode: 'M8_010', itemName: '10 ตรวจสอบว่าภายในรถ ที่นั่ง พรม และหน้าจอต่างๆ มีรอยขีดข่วนหรือความเสียหายหรือไม่', itemOrder: 2 },
+
+          // E: ส่วนห้องเครื่องยนต์ ตรวจสอบด้วยสายตา
+          { category: 'E: ส่วนห้องเครื่องยนต์', categoryOrder: 5, itemCode: 'M8_011', itemName: '11 ระดับน้ำยาฉีดกระจก', itemOrder: 1 },
+          { category: 'E: ส่วนห้องเครื่องยนต์', categoryOrder: 5, itemCode: 'M8_012', itemName: '12 ระดับน้ำยาหล่อเย็นเครื่องยนต์', itemOrder: 2 },
+          { category: 'E: ส่วนห้องเครื่องยนต์', categoryOrder: 5, itemCode: 'M8_013', itemName: '13 ระดับน้ำยาหล่อเย็นแบตเตอรี่แรงดันสูง (แบตเตอรี่ขับเคลื่อน)', itemOrder: 3 },
+          { category: 'E: ส่วนห้องเครื่องยนต์', categoryOrder: 5, itemCode: 'M8_014', itemName: '14 ระดับน้ำยาหล่อเย็นอินเตอร์คูลเลอร์', itemOrder: 4 },
+          { category: 'E: ส่วนห้องเครื่องยนต์', categoryOrder: 5, itemCode: 'M8_015', itemName: '15 ระดับน้ำมันเครื่องยนต์', itemOrder: 5 },
+          { category: 'E: ส่วนห้องเครื่องยนต์', categoryOrder: 5, itemCode: 'M8_016', itemName: '16 ระดับน้ำมันเบรก', itemOrder: 6 },
+          { category: 'E: ส่วนห้องเครื่องยนต์', categoryOrder: 5, itemCode: 'M8_017', itemName: '17 ฟิวส์หลักของรถและอะไหล่สำรอง', itemOrder: 7 },
+          { category: 'E: ส่วนห้องเครื่องยนต์', categoryOrder: 5, itemCode: 'M8_018', itemName: '18 การเชื่อมต่อของสายกราวด์หลักแน่นหนา', itemOrder: 8 },
+          { category: 'E: ส่วนห้องเครื่องยนต์', categoryOrder: 5, itemCode: 'M8_019', itemName: '19 การเชื่อมต่อของสายไฟและท่อส่งต่างๆ ต้องแน่นหนาและไม่มีการรั่วไหล', itemOrder: 9 },
+
+          // F: การใช้งานและฟังก์ชัน
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_020', itemName: '20 ตรวจสอบการทำงานของหน้าปัดรถ มีไฟเตือนทุกดวง ไฟแสดงสถานะต่างๆ และเสียงเตือนให้อยู่ในสภาพปกติ', itemOrder: 1 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_021', itemName: '21 ระบบล็อกประตูผ่านหน้าจอกลางและรีโมตควบคุม/ระบบกระจกไฟฟ้าขึ้น-ลงพร้อมระบบป้องกันการหนีบทำงานปกติหรือไม่', itemOrder: 2 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_022', itemName: '22 ซันรูฟไฟฟ้าและระบบป้องกันการหนีบ', itemOrder: 3 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_023', itemName: '23 การปรับเลื่อนเบาะหน้า-หลัง มุมพนักพิง การปรับหมอนรองศีรษะ ★ฟังก์ชัน SPA แบบปุ่มเดียว', itemOrder: 4 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_024', itemName: '24 เบาะคนขับแถวหน้า: ระบบระบายอากาศ ระบบทำความร้อน หน่วยความจำตำแหน่งเบาะ (ฟังก์ชันต้อนรับ)', itemOrder: 5 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_025', itemName: '25 เบาะผู้โดยสารแถวกลาง: ระบบระบายอากาศ ระบบทำความร้อน ระบบนวด ★หมอนรองศีรษะพร้อมระบบเสียงเพลง', itemOrder: 6 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_026', itemName: '26 เบาะผู้โดยสารแถวกลาง: ★จอควบคุม LCD ขนาด 5 นิ้วที่พนักวางแขน', itemOrder: 7 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_027', itemName: '27 ★ม่านบังแดดข้างหน้าต่าง (แถวที่สอง)', itemOrder: 8 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_028', itemName: '28 เข็มขัดนิรภัยของเบาะโดยสาร/ไฟเตือนคาดเข็มขัดนิรภัยเบาะหน้า', itemOrder: 9 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_029', itemName: '29 ฟังก์ชันปรับกระจกมองข้างด้านนอก พับ-กางออกปกติ', itemOrder: 10 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_030', itemName: '30 แตรรถยนต์และแหล่งจ่ายไฟที่ช่องจุดบุหรี่', itemOrder: 11 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_031', itemName: '31 การปรับยืด-หดพวงมาลัยและฟังก์ชันล็อกอัตโนมัติ', itemOrder: 12 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_032', itemName: '32 ระบบฉีดน้ำและปัดน้ำฝนหน้า-หลัง (พร้อมเซ็นเซอร์วัดปริมาณน้ำฝน) ความสะอาดหลังปัดน้ำฝน', itemOrder: 13 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_033', itemName: '33 ฝาครอบที่วางแขนกลางของเบาะเปิด-ปิดได้ตามปกติ', itemOrder: 14 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_034', itemName: '34 ฟิล์มหุ้มโมดูลน้ำหอมภายในรถถูกลอกออกแล้วหรือไม่', itemOrder: 15 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_035', itemName: '35 ★โต๊ะพับเก็บได้เปิดปิดได้ตามปกติ', itemOrder: 16 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_036', itemName: '36 ช่องวางแก้วร้อนเย็น (บริเวณด้านหลังที่วางแขนกลาง)', itemOrder: 17 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_037', itemName: '37 ★ระบบนำทางระบุตำแหน่งได้แม่นยำ', itemOrder: 18 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_038', itemName: '38 ฟังก์ชันวิทยุ/ลำโพงเสียงทำงานปกติ', itemOrder: 19 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_039', itemName: '39 การปรับควบคุมกระจกมองหลังภายในรถทำงานปกติ', itemOrder: 20 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_040', itemName: '40 การทำงานของสวิตช์กล่องแว่นตา', itemOrder: 21 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_041', itemName: '41 ตรวจสอบพอร์ต USB และระบบชาร์จไร้สาย', itemOrder: 22 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_042', itemName: '42 ★ฟังก์ชันปลุกด้วยเสียง (Voice Wake-up)', itemOrder: 23 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_043', itemName: '43 ฟังก์ชันเชื่อมต่ออินเทอร์เน็ตรถยนต์และการเชื่อมต่อฮอตสปอต', itemOrder: 24 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_044', itemName: '44 หน้าจอหลัก / ★หน้าจอผู้โดยสารแถวหน้า / ★หน้าจอเพดานแถวกลาง ไม่มีอาการดับ จอดำ จอมืด หรือทัชสกรีนผิดปกติ', itemOrder: 25 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_045', itemName: '45 ยืนยันการเชื่อมต่อ Bluetooth (หน้าจอหลัก/หน้าจอผู้โดยสารแถวหน้า/หน้าจอเพดานแถวกลาง)', itemOrder: 26 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_046', itemName: '46 ★ยืนยันฟังก์ชัน Apple CarPlay/Android Auto', itemOrder: 27 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_047', itemName: '47 แรงดันแบตเตอรี่ (V)', itemOrder: 28, hasNumeric: true, numericUnit: 'V', numericMin: 12.6 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_048', itemName: '48 ระบบแจ้งเตือนรถยนต์ที่วิ่งตัดผ่านด้านหลัง (RCTA) (หน้าจอแสดงสถานะการเปิด-ปิดใช้งานได้ปกติ ไม่มีการเด้งกลับ)', itemOrder: 29 },
+          { category: 'F: การใช้งานและฟังก์ชัน (ตำแหน่ง ON)', categoryOrder: 6, itemCode: 'M8_049', itemName: '49 ระบบช่วยเตือนขณะถอยหลัง (RCTB) (หน้าจอแสดงสถานะการเปิด-ปิดใช้งานได้ปกติ ไม่มีการเด้งกลับ)', itemOrder: 30 },
+
+          // G: สตาร์ทเครื่องยนต์ การตรวจสอบการทำงาน
+          { category: 'G: สตาร์ทเครื่องยนต์', categoryOrder: 7, itemCode: 'M8_050', itemName: '50 ประสิทธิภาพการสตาร์ทเครื่องยนต์', itemOrder: 1 },
+          { category: 'G: สตาร์ทเครื่องยนต์', categoryOrder: 7, itemCode: 'M8_051', itemName: '51 สภาพการเดินเบาของเครื่องยนต์', itemOrder: 2 },
+          { category: 'G: สตาร์ทเครื่องยนต์', categoryOrder: 7, itemCode: 'M8_052', itemName: '52 การสลับโหมดการขับขี่ทั้งสามโหมดเป็นปกติ ไม่มีการเด้งกลับ', itemOrder: 3 },
+          { category: 'G: สตาร์ทเครื่องยนต์', categoryOrder: 7, itemCode: 'M8_053', itemName: '53 หลังจากสตาร์ทเครื่องยนต์ มีไฟเตือนปรากฏบนหน้าปัด', itemOrder: 4 },
+
+          // H: ระบบไฟ ตรวจสอบด้วยสายตา
+          { category: 'H: ระบบไฟ', categoryOrder: 8, itemCode: 'M8_054', itemName: '54 แผงบังแดดและไฟแต่งหน้า (ไฟกระจกแต่งหน้า)', itemOrder: 1 },
+          { category: 'H: ระบบไฟ', categoryOrder: 8, itemCode: 'M8_055', itemName: '55 ไฟเพดานภายในรถ แถวหน้า/แถวที่สอง/แถวที่สาม', itemOrder: 2 },
+          { category: 'H: ระบบไฟ', categoryOrder: 8, itemCode: 'M8_056', itemName: '56 ไฟเลี้ยวและไฟฉุกเฉิน', itemOrder: 3 },
+          { category: 'H: ระบบไฟ', categoryOrder: 8, itemCode: 'M8_057', itemName: '57 ไฟสร้างบรรยากาศแบบหลายสี (พร้อมเอฟเฟกต์ตามจังหวะเพลง)', itemOrder: 4 },
+          { category: 'H: ระบบไฟ', categoryOrder: 8, itemCode: 'M8_058', itemName: '58 ไฟอ่านหนังสือ LED แบบผู้โดยสารชั้นหนึ่งบริเวณเพดานแถวที่สอง', itemOrder: 5 },
+          { category: 'H: ระบบไฟ', categoryOrder: 8, itemCode: 'M8_059', itemName: '59 แผ่นบันไดเรืองแสงต้อนรับผู้โดยสารแถวที่สอง', itemOrder: 6 },
+          { category: 'H: ระบบไฟ', categoryOrder: 8, itemCode: 'M8_060', itemName: '60 ไฟหรี่และไฟป้ายทะเบียน', itemOrder: 7 },
+          { category: 'H: ระบบไฟ', categoryOrder: 8, itemCode: 'M8_061', itemName: '61 ไฟต่ำไฟสูงและไฟกระพริบ (พร้อมฟังก์ชันต้อนรับ/หน่วงเวลาปิด)', itemOrder: 8 },
+          { category: 'H: ระบบไฟ', categoryOrder: 8, itemCode: 'M8_062', itemName: '62 ไฟส่องสว่างกลางวัน (DRL)', itemOrder: 9 },
+          { category: 'H: ระบบไฟ', categoryOrder: 8, itemCode: 'M8_063', itemName: '63 ไฟตัดหมอกหน้าและหลัง', itemOrder: 10 },
+          { category: 'H: ระบบไฟ', categoryOrder: 8, itemCode: 'M8_064', itemName: '64 ไฟเบรกและไฟถอยหลัง', itemOrder: 11 },
+          { category: 'H: ระบบไฟ', categoryOrder: 8, itemCode: 'M8_065', itemName: '65 ไฟส่องสว่างบริเวณห้องเก็บสัมภาระ (ท้ายรถ)', itemOrder: 12 },
+
+          // I: เปิดประตูทุกบาน การตรวจสอบการทำงาน
+          { category: 'I: เปิดประตูทุกบาน', categoryOrder: 9, itemCode: 'M8_066', itemName: '66 ตรวจสอบป้ายแรงดันลมยาง', itemOrder: 1 },
+          { category: 'I: เปิดประตูทุกบาน', categoryOrder: 9, itemCode: 'M8_067', itemName: '67 กลอนล็อกป้องกันเด็กที่ประตูหลัง (Child Lock)', itemOrder: 2 },
+          { category: 'I: เปิดประตูทุกบาน', categoryOrder: 9, itemCode: 'M8_068', itemName: '68 ระบบเตือนและไฟแจ้งเตือนกรณีประตูปิดไม่สนิท', itemOrder: 3 },
+          { category: 'I: เปิดประตูทุกบาน', categoryOrder: 9, itemCode: 'M8_069', itemName: '69 การทำงานของประตูทั้ง 4 บาน ระบบล็อก มือจับและแรงปิดประตู', itemOrder: 4 },
+          { category: 'I: เปิดประตูทุกบาน', categoryOrder: 9, itemCode: 'M8_070', itemName: '70 ฟังก์ชันพับเบาะหลัง', itemOrder: 5 },
+          { category: 'I: เปิดประตูทุกบาน', categoryOrder: 9, itemCode: 'M8_071', itemName: '71 การเปิด-ปิดฝาถังน้ำมันและป้ายแสดงประเภทน้ำมันเชื้อเพลิงที่รองรับ', itemOrder: 6 },
+          { category: 'I: เปิดประตูทุกบาน', categoryOrder: 9, itemCode: 'M8_072', itemName: '72 การเปิด-ปิดและล็อกประตูท้ายแบบเซ็นเซอร์ (ฝาท้ายไฟฟ้าแบบแฮนด์ฟรี)', itemOrder: 7 },
+          { category: 'I: เปิดประตูทุกบาน', categoryOrder: 9, itemCode: 'M8_073', itemName: '73 การควบคุมการขึ้น-ลงของกระจก การเปิด-ปิดประตูเลื่อนไฟฟ้าและฝาท้ายด้วยกุญแจ/รีโมต', itemOrder: 8 },
+          { category: 'I: เปิดประตูทุกบาน', categoryOrder: 9, itemCode: 'M8_074', itemName: '74 เสื้อสะท้อนแสงนิรภัยและป้ายสามเหลี่ยมเตือนฉุกเฉิน', itemOrder: 9 },
+          { category: 'I: เปิดประตูทุกบาน', categoryOrder: 9, itemCode: 'M8_075', itemName: '75 ชุดคู่มือการใช้งานรถยนต์', itemOrder: 10 },
+          { category: 'I: เปิดประตูทุกบาน', categoryOrder: 9, itemCode: 'M8_076', itemName: '76 น้ำยาอุดรอยรั่วและเครื่องปั๊มลม', itemOrder: 11 },
+          { category: 'I: เปิดประตูทุกบาน', categoryOrder: 9, itemCode: 'M8_077', itemName: '77 กุญแจรถ (2 ดอก) หูลากรถ และอุปกรณ์ถอดฝาครอบล้อแม็กมีอยู่ครบ', itemOrder: 12 },
+
+          // J: การทดสอบบนถนน ตรวจสอบขณะขับขี่
+          { category: 'J: การทดสอบบนถนน', categoryOrder: 10, itemCode: 'M8_078', itemName: '78 สมรรถนะการขับขี่ (เร่งความเร็ว ความเร็วคงที่ ชะลอความเร็วและความไวต่อการควบคุม)', itemOrder: 1 },
+          { category: 'J: การทดสอบบนถนน', categoryOrder: 10, itemCode: 'M8_079', itemName: '79 ระบบปรับอากาศทำงาน (ทั้งระบบความเย็นและความร้อน)', itemOrder: 2 },
+          { category: 'J: การทดสอบบนถนน', categoryOrder: 10, itemCode: 'M8_080', itemName: '80 ขณะขับขี่มีเสียงแปลกปลอม เสียงรบกวนและการสั่นสะเทือนหรือไม่', itemOrder: 3 },
+          { category: 'J: การทดสอบบนถนน', categoryOrder: 10, itemCode: 'M8_081', itemName: '81 การตอบสนองของระบบเบรก', itemOrder: 4 },
+          { category: 'J: การทดสอบบนถนน', categoryOrder: 10, itemCode: 'M8_082', itemName: '82 ตำแหน่งพวงมาลัยและการคืนตัวอัตโนมัติ', itemOrder: 5 },
+          { category: 'J: การทดสอบบนถนน', categoryOrder: 10, itemCode: 'M8_083', itemName: '83 การทำงานของเกียร์', itemOrder: 6 },
+          { category: 'J: การทดสอบบนถนน', categoryOrder: 10, itemCode: 'M8_084', itemName: '84 การทำงานของหน้าปัดรถ', itemOrder: 7 },
+          { category: 'J: การทดสอบบนถนน', categoryOrder: 10, itemCode: 'M8_085', itemName: '85 ระบบล็อกประตูอัตโนมัติ 4 ประตูตามความเร็วรถ', itemOrder: 8 },
+          { category: 'J: การทดสอบบนถนน', categoryOrder: 10, itemCode: 'M8_086', itemName: '86 กล้องมองภาพรอบคันความละเอียดสูง 540 องศา', itemOrder: 9 },
+          { category: 'J: การทดสอบบนถนน', categoryOrder: 10, itemCode: 'M8_087', itemName: '87 การตรวจสอบความดันลมยาง (TPMS)', itemOrder: 10 },
+          { category: 'J: การทดสอบบนถนน', categoryOrder: 10, itemCode: 'M8_088', itemName: '88 ระบบเบรกมือไฟฟ้า', itemOrder: 11 },
+
+          // K: การชาร์จไฟและการปล่อยไฟ การตรวจสอบการทำงาน
+          { category: 'K: การชาร์จไฟและการปล่อยไฟ', categoryOrder: 11, itemCode: 'M8_089', itemName: '89 การเปิด-ปิดฝาปิดช่องชาร์จไฟ', itemOrder: 1 },
+          { category: 'K: การชาร์จไฟและการปล่อยไฟ', categoryOrder: 11, itemCode: 'M8_090', itemName: '90 ช่องชาร์จไฟแบบ DC และ AC ไม่มีสิ่งแปลกปลอมติดอยู่', itemOrder: 2 },
+          { category: 'K: การชาร์จไฟและการปล่อยไฟ', categoryOrder: 11, itemCode: 'M8_091', itemName: '91 หลังจากปลดล็อกอิเล็กทรอนิกส์ที่ช่องชาร์จไฟ AC สายชาร์จสามารถถอดออกได้', itemOrder: 3 },
+          { category: 'K: การชาร์จไฟและการปล่อยไฟ', categoryOrder: 11, itemCode: 'M8_092', itemName: '92 ช่องชาร์จไฟแบบ DC และ AC ไม่มีสิ่งแปลกปลอมติดอยู่ (ซ้ำกับข้อบนเพื่อเน้นย้ำ)', itemOrder: 4 },
+          { category: 'K: การชาร์จไฟและการปล่อยไฟ', categoryOrder: 11, itemCode: 'M8_093', itemName: '93 ★ฟังก์ชันการจองเวลาชาร์จไฟ', itemOrder: 5 },
+          { category: 'K: การชาร์จไฟและการปล่อยไฟ', categoryOrder: 11, itemCode: 'M8_094', itemName: '94 การทำงานของระบบชาร์จ (ขณะชาร์จสายชาร์จจะถูกล็อกไม่สามารถถอดออกได้)', itemOrder: 6 },
+          { category: 'K: การชาร์จไฟและการปล่อยไฟ', categoryOrder: 11, itemCode: 'M8_095', itemName: '95 ฟังก์ชันล็อกประตูเลื่อนซ้ายขวาแบบสลับล็อก (Interlock)', itemOrder: 7 },
+          { category: 'K: การชาร์จไฟและการปล่อยไฟ', categoryOrder: 11, itemCode: 'M8_096', itemName: '96 ฟังก์ชันการปล่อยกระแสไฟฟ้า (V to L)', itemOrder: 8 },
+          { category: 'K: การชาร์จไฟและการปล่อยไฟ', categoryOrder: 11, itemCode: 'M8_097', itemName: '97 ระดับพลังงานของแบตเตอรี่แรงดันสูง (ต้องมากกว่าหรือเท่ากับ 35%)', itemOrder: 9, hasNumeric: true, numericUnit: '%', numericMin: 35 },
+        );
       } else {
         // Category 1: Exterior
         itemsData.push(

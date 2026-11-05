@@ -12,12 +12,14 @@ interface FieldItem {
 export default function PdfCoordinatePickerPage() {
   const [modelCode, setModelCode] = useState('AION_V');
   const [prevModelCode, setPrevModelCode] = useState('AION_V');
+  const [activePage, setActivePage] = useState<number>(1);
 
   // Resolve PDF and image dimensions dynamically based on selected model
   const isUt = modelCode === 'AION_UT';
-  const pdfWidth = isUt ? 612.00 : 595.32;
-  const pdfHeight = isUt ? 792.00 : 841.92;
-  const imgWidth = isUt ? 1545 : 1414;
+  const isM8 = modelCode === 'GAC_M8';
+  const pdfWidth = isUt ? 612.00 : isM8 ? 595.56 : 595.32;
+  const pdfHeight = isUt ? 792.00 : isM8 ? 842.04 : 841.92;
+  const imgWidth = isUt ? 1545 : isM8 ? 1415 : 1414;
   const imgHeight = 2000;
 
   // Display scale
@@ -27,7 +29,7 @@ export default function PdfCoordinatePickerPage() {
   const imgRef = useRef<HTMLImageElement>(null);
   const [mousePos, setMousePos] = useState<{ pdfX: number; pdfY: number } | null>(null);
   const [activeFieldIdx, setActiveFieldIdx] = useState(0);
-  const [mappedCoords, setMappedCoords] = useState<Record<string, { x: number; y: number }>>({});
+  const [mappedCoords, setMappedCoords] = useState<Record<string, { x: number; y: number; page?: number }>>({});
   const [saveStatus, setSaveStatus] = useState<string>('');
   const [exportText, setExportText] = useState('');
   const [fields, setFields] = useState<FieldItem[]>([]);
@@ -36,6 +38,7 @@ export default function PdfCoordinatePickerPage() {
 
   if (modelCode !== prevModelCode) {
     setPrevModelCode(modelCode);
+    setActivePage(1);
     setLoading(true);
     setMappedCoords({});
   }
@@ -113,11 +116,14 @@ export default function PdfCoordinatePickerPage() {
     const field = fields[activeFieldIdx];
     if (!field) return;
 
-    setMappedCoords(prev => ({ ...prev, [field.id]: { x: pdfX, y: pdfY } }));
+    setMappedCoords(prev => ({
+      ...prev,
+      [field.id]: isM8 ? { x: pdfX, y: pdfY, page: activePage } : { x: pdfX, y: pdfY }
+    }));
     if (activeFieldIdx < fields.length - 1) {
       setActiveFieldIdx(activeFieldIdx + 1);
     }
-  }, [activeFieldIdx, pixelToPdf, fields]);
+  }, [activeFieldIdx, pixelToPdf, fields, isM8, activePage]);
 
   const buildOutput = () => {
     const output: any = { metadata: {}, checklist: {}, battery: {}, defects: {} };
@@ -177,7 +183,7 @@ export default function PdfCoordinatePickerPage() {
         {/* Model selector */}
         <select
           value={modelCode}
-          onChange={e => { setModelCode(e.target.value); setActiveFieldIdx(0); }}
+          onChange={e => { setModelCode(e.target.value); setActiveFieldIdx(0); setActivePage(1); }}
           className="bg-slate-800 border border-slate-600 rounded px-3 py-1 text-sm font-bold text-cyan-400"
         >
           <option value="AION_V">AION V</option>
@@ -188,7 +194,30 @@ export default function PdfCoordinatePickerPage() {
           <option value="AION_UT">AION UT</option>
           <option value="HYPTEC_HT">Hyptec HT</option>
           <option value="HYPTEC_HT8">Hyptec HT8</option>
+          <option value="GAC_M8">GAC M8</option>
         </select>
+        {isM8 && (
+          <div className="flex items-center gap-1 bg-slate-800 border border-slate-600 rounded p-0.5">
+            <button
+              type="button"
+              onClick={() => setActivePage(1)}
+              className={`px-2.5 py-0.5 rounded text-xs font-bold cursor-pointer ${
+                activePage === 1 ? 'bg-cyan-500 text-slate-950' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              หน้าที่ 1 (ข้อ 01–57)
+            </button>
+            <button
+              type="button"
+              onClick={() => setActivePage(2)}
+              className={`px-2.5 py-0.5 rounded text-xs font-bold cursor-pointer ${
+                activePage === 2 ? 'bg-cyan-500 text-slate-950' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              หน้าที่ 2 (ข้อ 58–97)
+            </button>
+          </div>
+        )}
         <span className="text-xs text-slate-500">
           {fields.length} รายการจากฐานข้อมูล
         </span>
@@ -207,13 +236,17 @@ export default function PdfCoordinatePickerPage() {
             <img
               ref={imgRef}
               src={
-                modelCode === 'AION_UT'
-                  ? '/templates/aion-ut-pdi.pdf.png'
-                  : modelCode === 'HYPTEC_HT' || modelCode === 'HYPTEC_HT8'
-                    ? '/templates/hyptec-ht-pdi.pdf.png'
-                    : modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES'
-                      ? '/templates/aion-yp-pdi.pdf.png'
-                      : '/templates/aion-v-pdi.pdf.png'
+                modelCode === 'GAC_M8'
+                  ? activePage === 2
+                    ? '/templates/gac-m8-pdi-page2.pdf.png'
+                    : '/templates/gac-m8-pdi.pdf.png'
+                  : modelCode === 'AION_UT'
+                    ? '/templates/aion-ut-pdi.pdf.png'
+                    : modelCode === 'HYPTEC_HT' || modelCode === 'HYPTEC_HT8'
+                      ? '/templates/hyptec-ht-pdi.pdf.png'
+                      : modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES'
+                        ? '/templates/aion-yp-pdi.pdf.png'
+                        : '/templates/aion-v-pdi.pdf.png'
               }
               alt="PDF Template"
               width={displayWidth}
@@ -226,6 +259,7 @@ export default function PdfCoordinatePickerPage() {
             />
             {/* Render placed markers */}
             {Object.entries(mappedCoords).map(([id, coords]) => {
+              if (isM8 && (coords.page || 1) !== activePage) return null;
               const dispX = (coords.x / pdfWidth) * displayWidth;
               const dispY = ((pdfHeight - coords.y) / pdfHeight) * displayHeight;
               return (
@@ -279,7 +313,8 @@ export default function PdfCoordinatePickerPage() {
                               ...prev,
                               [activeField.id]: {
                                 x: isNaN(val) ? 0 : val,
-                                y: currentCoord ? currentCoord.y : 0
+                                y: currentCoord ? currentCoord.y : 0,
+                                ...(isM8 ? { page: currentCoord?.page || activePage } : {})
                               }
                             }));
                           }}
@@ -298,7 +333,8 @@ export default function PdfCoordinatePickerPage() {
                               ...prev,
                               [activeField.id]: {
                                 x: currentCoord ? currentCoord.x : 0,
-                                y: isNaN(val) ? 0 : val
+                                y: isNaN(val) ? 0 : val,
+                                ...(isM8 ? { page: currentCoord?.page || activePage } : {})
                               }
                             }));
                           }}
@@ -327,7 +363,10 @@ export default function PdfCoordinatePickerPage() {
                   return (
                     <div
                       key={field.id}
-                      onClick={() => setActiveFieldIdx(globalIdx)}
+                      onClick={() => {
+                        setActiveFieldIdx(globalIdx);
+                        if (isM8 && coord?.page) setActivePage(coord.page);
+                      }}
                       className={`flex justify-between items-center px-2 py-0.5 rounded text-xs cursor-pointer ${
                         isActive
                           ? 'bg-amber-500/20 border border-amber-500/50 text-amber-300'

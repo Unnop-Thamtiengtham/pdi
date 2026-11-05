@@ -1,0 +1,33 @@
+{
+  "metadata": {
+    "completedAt": {
+      "x": 115,
+      "y": 756,
+      "page": 1
+    },
+    "modelName": {
+      "x": 260,
+      "y": 756,
+      "page": 1
+    },
+    "vin": {
+      "x": 430,
+      "y": 756,
+      "page": 1
+    },
+    "salesName": {
+      "x": 115,
+      "y": 733,
+      "page": 1
+    },
+    "motorNumber": {
+      "x": 430,
+      "y": 733,
+      "page": 1
+    }
+  },
+  "checklist": {},
+  "battery": {},
+  "defects": {}
+}
+

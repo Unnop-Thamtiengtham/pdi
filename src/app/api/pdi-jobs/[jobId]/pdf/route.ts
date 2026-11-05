@@ -17,13 +17,16 @@ function loadSavedCoordinates(modelCode: string): { metadata?: any; checklist?: 
     const isYp = modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES';
     const isHt = modelCode === 'HYPTEC_HT' || modelCode === 'HYPTEC_HT8';
     const isUt = modelCode === 'AION_UT';
-    const filename = isUt
-      ? 'aion-ut-coordinates.json'
-      : isHt 
-        ? 'hyptec-ht-coordinates.json' 
-        : isYp 
-          ? 'aion-yp-coordinates.json' 
-          : 'aion-v-coordinates.json';
+    const isM8 = modelCode === 'GAC_M8';
+    const filename = isM8
+      ? 'gac-m8-coordinates.json'
+      : isUt
+        ? 'aion-ut-coordinates.json'
+        : isHt 
+          ? 'hyptec-ht-coordinates.json' 
+          : isYp 
+            ? 'aion-yp-coordinates.json' 
+            : 'aion-v-coordinates.json';
     const filePath = path.join(process.cwd(), 'public', 'templates', filename);
     if (fs.existsSync(filePath)) {
       return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
@@ -192,7 +195,7 @@ export async function GET(
     // Load coordinates (from saved JSON or defaults)
     const COORDINATES = getCoordinates(modelCode);
 
-    const isSupported = ['AION_V', 'AION_V5', 'AION_YP', 'AION_YP5', 'AION_UT', 'HYPTEC_HT', 'HYPTEC_HT8', 'AION_ES'].includes(modelCode);
+    const isSupported = ['AION_V', 'AION_V5', 'AION_YP', 'AION_YP5', 'AION_UT', 'HYPTEC_HT', 'HYPTEC_HT8', 'AION_ES', 'GAC_M8'].includes(modelCode);
 
     if (!isSupported) {
       return NextResponse.json({ 
@@ -204,13 +207,16 @@ export async function GET(
     const isYp = modelCode === 'AION_YP' || modelCode === 'AION_YP5' || modelCode === 'AION_ES';
     const isHt = modelCode === 'HYPTEC_HT' || modelCode === 'HYPTEC_HT8';
     const isUt = modelCode === 'AION_UT';
-    const templateName = isUt
-      ? 'aion-ut-pdi.pdf'
-      : isHt 
-        ? 'hyptec-ht-pdi.pdf' 
-        : isYp 
-          ? 'aion-yp-pdi.pdf' 
-          : 'aion-v-pdi.pdf';
+    const isM8 = modelCode === 'GAC_M8';
+    const templateName = isM8
+      ? 'gac-m8-pdi.pdf'
+      : isUt
+        ? 'aion-ut-pdi.pdf'
+        : isHt 
+          ? 'hyptec-ht-pdi.pdf' 
+          : isYp 
+            ? 'aion-yp-pdi.pdf' 
+            : 'aion-v-pdi.pdf';
     const templatePath = path.join(process.cwd(), 'public', 'templates', templateName);
     const fontPath = path.join(process.cwd(), 'public', 'fonts', 'THSarabunNew.ttf');
 
@@ -234,17 +240,22 @@ export async function GET(
     const thaiFontBytes = fs.readFileSync(fontPath);
     const thaiFont = await pdfDoc.embedFont(thaiFontBytes);
 
-    const page = pdfDoc.getPages()[0];
+    const pages = pdfDoc.getPages();
+    const page = pages[0];
+    const getTargetPage = (coordObj: any) => {
+      const pIdx = coordObj?.page ? Number(coordObj.page) - 1 : 0;
+      return pages[pIdx] || page;
+    };
 
     // ── Vector drawing helpers ──
-    const drawVectorCheck = (x: number, y: number) => {
-      page.drawLine({
+    const drawVectorCheck = (x: number, y: number, targetPage = page) => {
+      targetPage.drawLine({
         start: { x: x + 1, y: y + 4 },
         end: { x: x + 4, y: y + 1 },
         thickness: 1.5,
         color: rgb(0, 0, 0),
       });
-      page.drawLine({
+      targetPage.drawLine({
         start: { x: x + 4, y: y + 1 },
         end: { x: x + 9, y: y + 8 },
         thickness: 1.5,
@@ -252,14 +263,14 @@ export async function GET(
       });
     };
 
-    const drawVectorCross = (x: number, y: number) => {
-      page.drawLine({
+    const drawVectorCross = (x: number, y: number, targetPage = page) => {
+      targetPage.drawLine({
         start: { x: x + 1, y: y + 1 },
         end: { x: x + 9, y: y + 9 },
         thickness: 1.5,
         color: rgb(0.85, 0.1, 0.1),
       });
-      page.drawLine({
+      targetPage.drawLine({
         start: { x: x + 1, y: y + 9 },
         end: { x: x + 9, y: y + 1 },
         thickness: 1.5,
@@ -267,8 +278,8 @@ export async function GET(
       });
     };
 
-    const drawVectorCircle = (x: number, y: number) => {
-      page.drawCircle({
+    const drawVectorCircle = (x: number, y: number, targetPage = page) => {
+      targetPage.drawCircle({
         x: x + 5,
         y: y + 5,
         size: 4,
@@ -305,25 +316,26 @@ export async function GET(
       };
     });
 
-    Object.entries(COORDINATES.checklist).forEach(([code, coords]) => {
+    Object.entries(COORDINATES.checklist).forEach(([code, coords]: [string, any]) => {
       const info = resultsMap[code];
       if (!info) return;
+      const targetPage = getTargetPage(coords);
 
       // If this item has numeric data, draw the value as text instead of a checkmark
       if (info.hasNumeric && info.numericValue !== null && info.numericValue !== undefined) {
         const unit = info.numericUnit || '';
         const text = `${info.numericValue}${unit}`;
-        page.drawText(text, { x: coords.x, y: coords.y, size: 8, font: thaiFont, color: rgb(0, 0, 0) });
+        targetPage.drawText(text, { x: coords.x, y: coords.y, size: 8, font: thaiFont, color: rgb(0, 0, 0) });
         return;
       }
 
       // Otherwise draw pass/fail/repaired checkmark
       if (info.result === 'PASS') {
-        drawVectorCheck(coords.x, coords.y);
+        drawVectorCheck(coords.x, coords.y, targetPage);
       } else if (info.result === 'FAIL') {
-        drawVectorCross(coords.x, coords.y);
+        drawVectorCross(coords.x, coords.y, targetPage);
       } else if (info.result === 'REPAIRED') {
-        drawVectorCircle(coords.x, coords.y);
+        drawVectorCircle(coords.x, coords.y, targetPage);
       }
     });
 

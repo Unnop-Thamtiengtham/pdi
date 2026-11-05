@@ -7,13 +7,16 @@ function getCoordsFilePath(modelCode: string | null): string {
   const isYp = code === 'AION_YP' || code === 'AION_YP5' || code === 'AION_ES';
   const isHt = code === 'HYPTEC_HT' || code === 'HYPTEC_HT8';
   const isUt = code === 'AION_UT';
-  const filename = isUt
-    ? 'aion-ut-coordinates.json'
-    : isHt 
-      ? 'hyptec-ht-coordinates.json' 
-      : isYp 
-        ? 'aion-yp-coordinates.json' 
-        : 'aion-v-coordinates.json';
+  const isM8 = code === 'GAC_M8';
+  const filename = isM8
+    ? 'gac-m8-coordinates.json'
+    : isUt
+      ? 'aion-ut-coordinates.json'
+      : isHt 
+        ? 'hyptec-ht-coordinates.json' 
+        : isYp 
+          ? 'aion-yp-coordinates.json' 
+          : 'aion-v-coordinates.json';
   return path.join(process.cwd(), 'public', 'templates', filename);
 }
 
