@@ -103,7 +103,8 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
   // Get list of unique lot numbers for the filter dropdown
   const uniqueLots = useMemo(() => {
     const lots = new Set<string>();
-    vehicles.forEach((v) => {
+    const list = Array.isArray(vehicles) ? vehicles : [];
+    list.forEach((v) => {
       if (v.lotNumber) {
         lots.add(v.lotNumber);
       }
@@ -112,7 +113,7 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
   }, [vehicles]);
 
   // Filtered dataset based on activeTab, searchQuery, and selectedLotFilter
-  const filteredVehicles = vehicles.filter((veh) => {
+  const filteredVehicles = (Array.isArray(vehicles) ? vehicles : []).filter((veh) => {
     const latestJob = veh.pdiJobs?.[0];
     if (activeTab !== 'ALL') {
       if (!latestJob || latestJob.pdiType !== activeTab) {
@@ -487,10 +488,10 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
         const data = await res.json();
         toast.success(`นำเข้าเรียบร้อยแล้ว: ${data.message}`);
         
-        const refreshRes = await fetch('/api/vehicles');
+        const refreshRes = await fetch('/api/vehicles?limit=500');
         if (refreshRes.ok) {
           const updatedList = await refreshRes.json();
-          setVehicles(updatedList);
+          setVehicles(Array.isArray(updatedList) ? updatedList : (updatedList.data || []));
         }
       } else {
         const mockImported = importVehicles.map((v, i) => {
@@ -609,10 +610,10 @@ export function useVehicles({ initialVehicles, branches, isDbConnected }: UseVeh
         const data = await res.json();
         toast.success(`สำเร็จ: ${data.message}`);
 
-        const refreshRes = await fetch('/api/vehicles');
+        const refreshRes = await fetch('/api/vehicles?limit=500');
         if (refreshRes.ok) {
           const updatedList = await refreshRes.json();
-          setVehicles(updatedList);
+          setVehicles(Array.isArray(updatedList) ? updatedList : (updatedList.data || []));
         }
       } else {
         const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');

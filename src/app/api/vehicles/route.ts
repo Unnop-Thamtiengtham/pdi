@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
       {
         branchId: req.nextUrl.searchParams.get('branchId') || undefined,
         page: parseInt(req.nextUrl.searchParams.get('page') || '1', 10),
-        limit: Math.min(parseInt(req.nextUrl.searchParams.get('limit') || '50', 10), 100),
+        limit: Math.min(parseInt(req.nextUrl.searchParams.get('limit') || '100', 10), 500),
       },
       isBranchRestricted ? userBranchId : undefined
     );
