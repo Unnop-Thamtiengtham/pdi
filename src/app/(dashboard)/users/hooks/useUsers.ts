@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 
 interface Branch {
@@ -25,6 +26,7 @@ interface UseUsersProps {
 
 export function useUsers({ initialUsers }: UseUsersProps) {
   const router = useRouter();
+  const { update: updateSession } = useSession();
   const [users, setUsers] = useState<UserData[]>(initialUsers);
   const [loading, setLoading] = useState(false);
 
@@ -161,6 +163,7 @@ export function useUsers({ initialUsers }: UseUsersProps) {
       toast.success(editingUser ? `แก้ไขข้อมูลคุณ ${name} สำเร็จ!` : `เพิ่มผู้ใช้งาน ${name} สำเร็จแล้ว!`);
       
       handleCancelEdit();
+      await updateSession();
       router.refresh();
       
       const fetchUsers = await fetch('/api/users');

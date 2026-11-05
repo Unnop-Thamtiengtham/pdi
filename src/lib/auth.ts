@@ -79,11 +79,31 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
         token.role = (user as any).role;
         token.employeeId = (user as any).employeeId;
         token.branchId = (user as any).branchId;
         token.branchCode = (user as any).branchCode;
         token.branchName = (user as any).branchName;
+      } else if (token.id) {
+        try {
+          const freshUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            include: { branch: true },
+          });
+          if (freshUser) {
+            token.name = freshUser.name;
+            token.email = freshUser.email;
+            token.role = freshUser.role;
+            token.employeeId = freshUser.employeeId;
+            token.branchId = freshUser.branchId;
+            token.branchCode = freshUser.branch?.code || null;
+            token.branchName = freshUser.branch?.name || null;
+          }
+        } catch {
+          // Ignore transient DB errors and keep existing token values
+        }
       }
       return token;
     },
@@ -92,6 +112,8 @@ export const authOptions: NextAuthOptions = {
         session.user = {
           ...session.user,
           id: token.id as string,
+          name: token.name as string,
+          email: token.email as string,
           role: token.role as string,
           employeeId: token.employeeId as string,
           branchId: token.branchId as string,
